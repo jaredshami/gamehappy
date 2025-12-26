@@ -275,12 +275,16 @@ class Game {
 
         this.playerName = playerName;
 
-        this.ws.send(JSON.stringify({
+        const message = {
             action: 'createGame',
             playerName: playerName,
             eyeWitness: eyeWitness,
             bodyGuard: bodyGuard
-        }));
+        };
+        
+        console.log('Sending message to server:', message);
+        this.ws.send(JSON.stringify(message));
+        console.log('Message sent!');
     }
 
     joinGame() {
