@@ -140,9 +140,15 @@ class Game {
     // Event Binding
     bindEvents() {
         // Home screen buttons
-        document.getElementById('btn-create-game').addEventListener('click', () => {
-            this.showScreen('create-screen');
-        });
+        const createBtn = document.getElementById('btn-create-game');
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                console.log('Create game button clicked');
+                this.showScreen('create-screen');
+            });
+        } else {
+            console.error('btn-create-game not found in DOM');
+        }
 
         document.getElementById('btn-join-game').addEventListener('click', () => {
             this.showScreen('join-screen');
