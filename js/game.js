@@ -1,7 +1,10 @@
 // Secret Syndicates - Client Game Logic
 
+console.log('Game.js loaded');
+
 class Game {
     constructor() {
+        console.log('Game constructor called');
         this.ws = null;
         this.isHost = false;
         this.gameCode = null;
@@ -21,6 +24,7 @@ class Game {
     }
 
     init() {
+        console.log('Game.init() called');
         this.loadSession();
         this.bindEvents();
         this.connect();
@@ -225,10 +229,21 @@ class Game {
 
     // Screen Management
     showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-        });
-        document.getElementById(screenId).classList.add('active');
+        console.log('showScreen called with:', screenId);
+        try {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                console.log('Screen changed to:', screenId);
+            } else {
+                console.error('Screen not found:', screenId);
+            }
+        } catch (e) {
+            console.error('Error changing screen:', e);
+        }
     }
 
     clearErrors() {
