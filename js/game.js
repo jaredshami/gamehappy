@@ -84,9 +84,14 @@ class Game {
             };
 
             this.ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                console.log('Received message:', data.action, data);
-                this.handleMessage(data);
+                console.log('Raw message from server:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Parsed message:', data.action, data);
+                    this.handleMessage(data);
+                } catch (e) {
+                    console.error('Failed to parse message from server:', e, event.data);
+                }
             };
 
             this.ws.onclose = () => {
