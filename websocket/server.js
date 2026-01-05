@@ -127,14 +127,23 @@ io.on('connection', (socket) => {
       const result = gameServer.startGame(gameCode, playerToken);
       
       if (result.success) {
-        const gameState = gameServer.getGameStateForPlayer(playerToken);
+        const game = gameServer.games.get(gameCode);
         
-        // Notify all players in game
-        io.to(`game-${gameCode}`).emit('game-started', {
-          phase: result.phase,
-          round: result.round,
-          gameState
-        });
+        // Send game-started to each player with their individual gameState
+        for (const [socketId, playerSocket] of io.sockets.sockets) {
+          // Find which player this socket belongs to
+          const playerToken = playerSocket.handshake.query.token || socketId;
+          
+          if (game.hasPlayer(playerToken)) {
+            const playerGameState = gameServer.getGameStateForPlayer(playerToken);
+            playerSocket.emit('game-started', {
+              phase: result.phase,
+              round: result.round,
+              gameState: playerGameState
+            });
+            console.log(`[${gameCode}] Sent game-started to player ${playerToken} with role: ${playerGameState.playerRole}`);
+          }
+        }
 
         callback({ success: true, phase: result.phase });
       } else {
