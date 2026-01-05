@@ -11,7 +11,7 @@ const server = https.createServer({
 }, app);
 
 const io = new Server(server, {
-  path: '/socket.io',
+  path: '/websocket/socket.io',
   cors: {
     origin: ['https://gamehappy.app', 'http://localhost:3000'],
     methods: ['GET', 'POST']
