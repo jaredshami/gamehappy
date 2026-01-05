@@ -71,40 +71,76 @@ class Game {
         this.updateConnectionStatus('connecting');
 
         try {
-            this.ws = new WebSocket('wss://gamehappy.app/ws/');
+            // Connect to Socket.IO server with player token
+            this.socket = io('wss://gamehappy.app/websocket', {
+                query: {
+                    token: this.playerToken || ''
+                },
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: 5
+            });
 
-            this.ws.onopen = () => {
-                console.log('Connected to server');
+            this.socket.on('connect', () => {
+                console.log('Connected to server via Socket.IO');
                 this.updateConnectionStatus('connected');
                 
                 // Try to reconnect to existing game if we have a token
-                if (this.playerToken) {
+                if (this.playerToken && this.gameCode) {
                     this.attemptReconnect();
                 }
-            };
+            });
 
-            this.ws.onmessage = (event) => {
-                console.log('Raw message from server:', event.data);
-                try {
-                    const data = JSON.parse(event.data);
-                    console.log('Parsed message:', data.action, data);
-                    this.handleMessage(data);
-                } catch (e) {
-                    console.error('Failed to parse message from server:', e, event.data);
-                }
-            };
+            // Listen for game events from server
+            this.socket.on('game-created', (data) => {
+                console.log('Game created:', data);
+                this.gameCode = data.gameCode;
+                this.isHost = data.isHost;
+                this.updateLobby(data.game);
+            });
 
-            this.ws.onclose = () => {
+            this.socket.on('player-joined', (data) => {
+                console.log('Player joined:', data);
+                this.updateLobby(data.game);
+            });
+
+            this.socket.on('game-started', (data) => {
+                console.log('Game started:', data);
+                this.showScreen('role-screen');
+                this.displayRoleIntro(data.gameState);
+            });
+
+            this.socket.on('game-state-updated', (data) => {
+                console.log('Game state updated:', data);
+                this.handleGameStateUpdate(data.gameState, data.eventResult);
+            });
+
+            this.socket.on('player-ready-updated', (data) => {
+                console.log('Ready count updated:', data);
+                this.updateReadyStatus(data.playerCount, data.totalPlayers);
+            });
+
+            this.socket.on('player-left', (data) => {
+                console.log('Player left:', data);
+                this.updateLobby(data.game);
+            });
+
+            this.socket.on('player-disconnected', (data) => {
+                console.log('Player disconnected:', data);
+                this.updateLobby(data.game);
+            });
+
+            this.socket.on('disconnect', () => {
                 console.log('Disconnected from server');
                 this.updateConnectionStatus('disconnected');
-                // Try to reconnect after 3 seconds
-                setTimeout(() => this.connect(), 3000);
-            };
+            });
 
-            this.ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
+            this.socket.on('error', (error) => {
+                console.error('Socket.IO error:', error);
                 this.updateConnectionStatus('disconnected');
-            };
+            });
+
         } catch (error) {
             console.error('Failed to connect:', error);
             this.updateConnectionStatus('disconnected');
@@ -112,15 +148,16 @@ class Game {
     }
 
     attemptReconnect() {
-        if (!this.playerToken) return;
+        if (!this.playerToken || !this.gameCode) return;
         
         this.reconnecting = true;
         this.updateConnectionStatus('reconnecting');
         
-        this.ws.send(JSON.stringify({
-            action: 'reconnect',
+        // Emit rejoin event to server
+        this.socket.emit('rejoin-game', {
+            gameCode: this.gameCode,
             playerToken: this.playerToken
-        }));
+        });
     }
 
     updateConnectionStatus(status) {
@@ -270,7 +307,7 @@ class Game {
             return;
         }
 
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        if (!this.socket || !this.socket.connected) {
             this.showError('create-error', 'Not connected to server. Please wait...');
             return;
         }
@@ -280,16 +317,34 @@ class Game {
 
         this.playerName = playerName;
 
-        const message = {
-            action: 'createGame',
+        console.log('Creating game with settings:', { eyeWitness, bodyGuard });
+
+        // Emit create-game event to server
+        this.socket.emit('create-game', {
+            gameType: 'secretsyndicates',
             playerName: playerName,
-            eyeWitness: eyeWitness,
-            bodyGuard: bodyGuard
-        };
-        
-        console.log('Sending message to server:', message);
-        this.ws.send(JSON.stringify(message));
-        console.log('Message sent!');
+            settings: {
+                enableEyeWitness: eyeWitness,
+                enableBodyGuard: bodyGuard
+            }
+        }, (response) => {
+            if (response.success) {
+                console.log('Game created:', response.gameCode);
+                this.gameCode = response.gameCode;
+                this.isHost = response.isHost;
+                
+                // Generate and display player token if new
+                if (!this.playerToken) {
+                    this.playerToken = response.gameCode + '_' + Date.now();
+                }
+                
+                this.saveSession();
+                this.showScreen('lobby-screen');
+                this.updateLobby(response.game);
+            } else {
+                this.showError('create-error', response.message || 'Failed to create game');
+            }
+        });
     }
 
     joinGame() {
@@ -306,7 +361,7 @@ class Game {
             return;
         }
 
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        if (!this.socket || !this.socket.connected) {
             this.showError('join-error', 'Not connected to server. Please wait...');
             return;
         }
@@ -314,11 +369,28 @@ class Game {
         this.playerName = playerName;
         console.log('Joining game:', gameCode, 'as', playerName);
 
-        this.ws.send(JSON.stringify({
-            action: 'joinGame',
-            playerName: playerName,
-            gameCode: gameCode
-        }));
+        // Emit join-game event to server
+        this.socket.emit('join-game', {
+            gameCode: gameCode,
+            playerName: playerName
+        }, (response) => {
+            if (response.success) {
+                console.log('Successfully joined game:', gameCode);
+                this.gameCode = gameCode;
+                this.isHost = response.isHost;
+                
+                // Generate and display player token if new
+                if (!this.playerToken) {
+                    this.playerToken = gameCode + '_' + Date.now();
+                }
+                
+                this.saveSession();
+                this.showScreen('lobby-screen');
+                this.updateLobby(response.game);
+            } else {
+                this.showError('join-error', response.message || 'Failed to join game');
+            }
+        });
     }
 
     startGame() {
@@ -334,8 +406,18 @@ class Game {
             startBtn.textContent = 'Starting...';
         }
 
-        this.sendMessage({
-            action: 'startGame'
+        // Emit start-game event to server
+        this.socket.emit('start-game', {
+            gameCode: this.gameCode
+        }, (response) => {
+            if (!response.success) {
+                console.error('Failed to start game:', response.message);
+                this.startGameInProgress = false;
+                if (startBtn) {
+                    startBtn.disabled = false;
+                    startBtn.textContent = 'Start Game';
+                }
+            }
         });
         
         // Reset flag after a delay in case of error
@@ -1995,16 +2077,20 @@ class Game {
 
     leaveGame() {
         console.log('leaveGame() called');
-        console.log('WebSocket state:', this.ws ? this.ws.readyState : 'null');
         
         if (!confirm('Are you sure you want to leave the game?')) {
             console.log('User cancelled leave');
             return;
         }
         
-        console.log('Sending leaveGame message');
-        this.sendMessage({
-            action: 'leaveGame'
+        console.log('Leaving game');
+        this.socket.emit('leave-game', {}, (response) => {
+            if (response.success) {
+                this.clearSession();
+                this.showScreen('home-screen');
+            } else {
+                console.error('Failed to leave game:', response.message);
+            }
         });
     }
 
