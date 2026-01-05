@@ -598,6 +598,37 @@ class Game {
         this.clearErrors();
     }
 
+    updateLobby(gameData) {
+        console.log('updateLobby called with:', gameData);
+        
+        if (!gameData) return;
+
+        // Update game code display
+        if (gameData.gameCode) {
+            const gameCodeEl = document.getElementById('display-game-code');
+            if (gameCodeEl) {
+                gameCodeEl.textContent = gameData.gameCode;
+            }
+        }
+
+        // Update player list
+        if (gameData.players) {
+            this.updatePlayerList(gameData.players);
+        }
+
+        // Update host controls visibility
+        const hostControls = document.getElementById('host-controls');
+        const guestMessage = document.getElementById('guest-message');
+        
+        if (this.isHost) {
+            if (hostControls) hostControls.style.display = 'block';
+            if (guestMessage) guestMessage.style.display = 'none';
+        } else {
+            if (hostControls) hostControls.style.display = 'none';
+            if (guestMessage) guestMessage.style.display = 'block';
+        }
+    }
+
     onGameJoined(data) {
         this.isHost = false;
         this.gameCode = data.gameCode;
