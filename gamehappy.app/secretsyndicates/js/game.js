@@ -36,6 +36,16 @@ class Game {
         if (savedSession) {
             try {
                 const session = JSON.parse(savedSession);
+                // Check if session is not too old (1 hour)
+                const sessionAge = Date.now() - (session.createdAt || 0);
+                const maxSessionAge = 60 * 60 * 1000; // 1 hour
+                
+                if (sessionAge > maxSessionAge) {
+                    console.log('Session expired');
+                    this.clearSession();
+                    return;
+                }
+                
                 this.playerToken = session.playerToken;
                 this.gameCode = session.gameCode;
                 this.playerName = session.playerName;
@@ -55,7 +65,8 @@ class Game {
             const sessionData = JSON.stringify({
                 playerToken: this.playerToken,
                 gameCode: this.gameCode,
-                playerName: this.playerName
+                playerName: this.playerName,
+                createdAt: Date.now()
             });
             localStorage.setItem('secretSyndicatesSession', sessionData);
         }
