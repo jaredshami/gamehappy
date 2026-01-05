@@ -1,1 +1,143 @@
-<h1>GameHappy is live\!</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GameHappy - Mobile Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
+            padding-bottom: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            width: 100%;
+            padding: 20px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            padding: 30px 0 20px 0;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+            justify-items: center;
+        }
+
+        .game-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .game-card:active {
+            transform: scale(0.95);
+        }
+
+        .game-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            margin-bottom: 12px;
+            font-size: 48px;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .game-card:hover .game-icon {
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+            transform: translateY(-4px);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .game-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            word-break: break-word;
+            width: 130px;
+        }
+
+        /* Responsive for larger screens */
+        @media (max-width: 400px) {
+            .games-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                padding: 15px 0;
+            }
+
+            .game-icon {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .container {
+                max-width: 480px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>GameHappy</h1>
+            <p>Your Mobile Game Collection</p>
+        </div>
+
+        <div class="games-grid">
+            <!-- Secret Syndicates Game -->
+            <a href="/secretsyndicates/" class="game-card">
+                <div class="game-icon">🕵️</div>
+                <div class="game-name">Secret Syndicates</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
