@@ -253,6 +253,52 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Player rejoin attempt - when they reconnect after refresh
+   */
+  socket.on('rejoin-game', (data) => {
+    try {
+      const { gameCode, playerToken: clientToken } = data;
+      console.log(`Player attempting rejoin: gameCode=${gameCode}, token=${clientToken}`);
+
+      // Check if game exists
+      const game = gameServer.games.get(gameCode);
+      if (!game) {
+        socket.emit('rejoin-rejected', { message: 'Game not found' });
+        return;
+      }
+
+      // Check if player is in the game
+      if (!game.hasPlayer(playerToken)) {
+        socket.emit('rejoin-rejected', { message: 'Player not in game' });
+        return;
+      }
+
+      // Rejoin successful - add socket to game room
+      socket.join(`game-${gameCode}`);
+      
+      const gameState = gameServer.getGameStateForPlayer(playerToken);
+      
+      console.log(`Player ${playerToken} rejoined game ${gameCode}`);
+      socket.emit('rejoin-accepted', {
+        gameCode,
+        game: gameServer.getGameLobbyInfo(gameCode),
+        gameState: game.gameState,
+        currentPhase: game.currentPhase
+      });
+
+      // Notify other players that player reconnected
+      io.to(`game-${gameCode}`).emit('player-reconnected', {
+        playerToken,
+        playerName: game.getPlayer(playerToken).name,
+        game: gameServer.getGameLobbyInfo(gameCode)
+      });
+    } catch (err) {
+      console.error('Error during rejoin:', err);
+      socket.emit('rejoin-rejected', { message: 'Server error during rejoin' });
+    }
+  });
+
+  /**
    * Disconnect handler
    */
   socket.on('disconnect', () => {

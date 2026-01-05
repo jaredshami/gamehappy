@@ -109,6 +109,7 @@ class Game {
                 console.log('Game created:', data);
                 this.gameCode = data.gameCode;
                 this.isHost = data.isHost;
+                this.saveSession();
                 this.updateLobby(data.game);
             });
 
@@ -146,6 +147,30 @@ class Game {
             this.socket.on('player-disconnected', (data) => {
                 console.log('Player disconnected:', data);
                 this.updateLobby(data.game);
+            });
+
+            this.socket.on('rejoin-accepted', (data) => {
+                console.log('Rejoin accepted, returning to game:', data);
+                this.reconnecting = false;
+                this.updateConnectionStatus('connected');
+                
+                // Restore game state
+                if (data.gameState === 'waiting' || data.gameState === 'created') {
+                    this.updateLobby(data.game);
+                } else if (data.gameState === 'started') {
+                    // Game is in progress, show role screen
+                    this.showScreen('role-screen');
+                    this.displayRoleIntro(data.gameState);
+                }
+            });
+
+            this.socket.on('rejoin-rejected', (data) => {
+                console.log('Rejoin rejected:', data.message);
+                this.reconnecting = false;
+                this.clearSession();
+                this.gameCode = null;
+                this.playerToken = null;
+                this.showScreen('home-screen');
             });
 
             this.socket.on('disconnect', () => {
