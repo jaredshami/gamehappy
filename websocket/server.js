@@ -55,10 +55,11 @@ io.on('connection', (socket) => {
         io.to(`game-${gameCode}`).emit('game-created', {
           gameCode,
           game: result.game,
-          isHost: result.isHost
+          isHost: result.isHost,
+          playerToken: playerToken
         });
 
-        callback({ success: true, gameCode, game: result.game, isHost: result.isHost });
+        callback({ success: true, gameCode, game: result.game, isHost: result.isHost, playerToken: playerToken });
       } else {
         callback({ success: false, message: result.message });
       }
@@ -85,10 +86,11 @@ io.on('connection', (socket) => {
         // Notify everyone in the game
         io.to(`game-${gameCode}`).emit('player-joined', {
           game: result.game,
-          playerName
+          playerName,
+          playerToken: playerToken
         });
 
-        callback({ success: true, gameCode, game: result.game, isHost: result.isHost });
+        callback({ success: true, gameCode, game: result.game, isHost: result.isHost, playerToken: playerToken });
       } else {
         callback({ success: false, message: result.message });
       }

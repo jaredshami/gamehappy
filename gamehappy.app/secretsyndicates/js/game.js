@@ -394,9 +394,9 @@ class Game {
                 this.gameCode = response.gameCode;
                 this.isHost = response.isHost;
                 
-                // Generate and display player token if new
-                if (!this.playerToken) {
-                    this.playerToken = response.gameCode + '_' + Date.now();
+                // Use server-assigned playerToken
+                if (response.playerToken) {
+                    this.playerToken = response.playerToken;
                 }
                 
                 this.saveSession();
@@ -440,9 +440,9 @@ class Game {
                 this.gameCode = gameCode;
                 this.isHost = response.isHost;
                 
-                // Generate and display player token if new
-                if (!this.playerToken) {
-                    this.playerToken = gameCode + '_' + Date.now();
+                // Use server-assigned playerToken
+                if (response.playerToken) {
+                    this.playerToken = response.playerToken;
                 }
                 
                 this.saveSession();
