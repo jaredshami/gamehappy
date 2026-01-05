@@ -1,0 +1,3054 @@
+// Secret Syndicates - Client Game Logic
+
+console.log('Game.js loaded');
+
+class Game {
+    constructor() {
+        console.log('Game constructor called');
+        this.ws = null;
+        this.isHost = false;
+        this.gameCode = null;
+        this.playerName = null;
+        this.playerToken = null;
+        this.players = [];
+        this.role = null;
+        this.isReady = false;
+        this.reconnecting = false;
+        this.startGameInProgress = false;
+        
+        // Elimination tracking
+        this.isEliminated = false;
+        this.eliminationData = null;
+
+        this.init();
+    }
+
+    init() {
+        console.log('Game.init() called');
+        this.loadSession();
+        this.bindEvents();
+        this.connect();
+    }
+
+    // Session Management
+    loadSession() {
+        const savedSession = this.getSessionData();
+        if (savedSession) {
+            try {
+                const session = JSON.parse(savedSession);
+                this.playerToken = session.playerToken;
+                this.gameCode = session.gameCode;
+                this.playerName = session.playerName;
+                console.log('Loaded session for', this.playerName);
+            } catch (e) {
+                this.clearSession();
+            }
+        }
+    }
+
+    getSessionData() {
+        return localStorage.getItem('secretSyndicatesSession');
+    }
+
+    saveSession() {
+        if (this.playerToken && this.gameCode && this.playerName) {
+            const sessionData = JSON.stringify({
+                playerToken: this.playerToken,
+                gameCode: this.gameCode,
+                playerName: this.playerName
+            });
+            localStorage.setItem('secretSyndicatesSession', sessionData);
+        }
+    }
+
+    clearSession() {
+        localStorage.removeItem('secretSyndicatesSession');
+        this.playerToken = null;
+    }
+
+    // WebSocket Connection
+    connect() {
+        this.updateConnectionStatus('connecting');
+
+        try {
+            this.ws = new WebSocket('wss://gamehappy.app/ws/');
+
+            this.ws.onopen = () => {
+                console.log('Connected to server');
+                this.updateConnectionStatus('connected');
+                
+                // Try to reconnect to existing game if we have a token
+                if (this.playerToken) {
+                    this.attemptReconnect();
+                }
+            };
+
+            this.ws.onmessage = (event) => {
+                console.log('Raw message from server:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Parsed message:', data.action, data);
+                    this.handleMessage(data);
+                } catch (e) {
+                    console.error('Failed to parse message from server:', e, event.data);
+                }
+            };
+
+            this.ws.onclose = () => {
+                console.log('Disconnected from server');
+                this.updateConnectionStatus('disconnected');
+                // Try to reconnect after 3 seconds
+                setTimeout(() => this.connect(), 3000);
+            };
+
+            this.ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                this.updateConnectionStatus('disconnected');
+            };
+        } catch (error) {
+            console.error('Failed to connect:', error);
+            this.updateConnectionStatus('disconnected');
+        }
+    }
+
+    attemptReconnect() {
+        if (!this.playerToken) return;
+        
+        this.reconnecting = true;
+        this.updateConnectionStatus('reconnecting');
+        
+        this.ws.send(JSON.stringify({
+            action: 'reconnect',
+            playerToken: this.playerToken
+        }));
+    }
+
+    updateConnectionStatus(status) {
+        const statusEl = document.getElementById('connection-status');
+        const textEl = statusEl.querySelector('.status-text');
+
+        statusEl.classList.remove('connected');
+
+        switch (status) {
+            case 'connected':
+                statusEl.classList.add('connected');
+                textEl.textContent = 'Connected';
+                break;
+            case 'connecting':
+                textEl.textContent = 'Connecting...';
+                break;
+            case 'reconnecting':
+                textEl.textContent = 'Reconnecting...';
+                break;
+            case 'disconnected':
+                textEl.textContent = 'Disconnected';
+                break;
+        }
+    }
+
+    // Event Binding
+    bindEvents() {
+        // Home screen buttons
+        const createBtn = document.getElementById('btn-create-game');
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                console.log('Create game button clicked');
+                this.showScreen('create-screen');
+            });
+        } else {
+            console.error('btn-create-game not found in DOM');
+        }
+
+        document.getElementById('btn-join-game').addEventListener('click', () => {
+            this.showScreen('join-screen');
+        });
+
+        // How to Play button
+        document.getElementById('btn-how-to-play').addEventListener('click', () => {
+            this.showScreen('how-to-play-screen');
+        });
+
+        // Back buttons
+        document.getElementById('btn-back-create').addEventListener('click', () => {
+            this.showScreen('home-screen');
+            this.clearErrors();
+        });
+
+        document.getElementById('btn-back-join').addEventListener('click', () => {
+            this.showScreen('home-screen');
+            this.clearErrors();
+        });
+
+        document.getElementById('btn-back-how-to-play').addEventListener('click', () => {
+            this.showScreen('home-screen');
+        });
+
+        document.getElementById('btn-close-how-to-play').addEventListener('click', () => {
+            this.showScreen('home-screen');
+        });
+
+        // Create game
+        document.getElementById('btn-create-lobby').addEventListener('click', () => {
+            this.createGame();
+        });
+
+        // Join game
+        document.getElementById('btn-join-lobby').addEventListener('click', () => {
+            this.joinGame();
+        });
+
+        // Start game
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            this.startGame();
+        });
+
+        // Ready button
+        document.getElementById('btn-ready').addEventListener('click', () => {
+            this.setReady();
+        });
+
+        // Enter key handling for inputs
+        document.getElementById('create-player-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.createGame();
+        });
+
+        document.getElementById('join-player-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('join-game-code').focus();
+        });
+
+        document.getElementById('join-game-code').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.joinGame();
+        });
+
+        // Auto-uppercase game code
+        document.getElementById('join-game-code').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+
+    // Send message helper
+    sendMessage(data) {
+        console.log('Sending message:', JSON.stringify(data));
+        this.ws.send(JSON.stringify(data));
+    }
+
+    // Screen Management
+    showScreen(screenId) {
+        console.log('showScreen called with:', screenId);
+        try {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                console.log('Screen changed to:', screenId);
+            } else {
+                console.error('Screen not found:', screenId);
+            }
+        } catch (e) {
+            console.error('Error changing screen:', e);
+        }
+    }
+
+    clearErrors() {
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.textContent = '';
+        });
+    }
+
+    showError(elementId, message) {
+        document.getElementById(elementId).textContent = message;
+    }
+
+    // Game Actions
+    createGame() {
+        const playerName = document.getElementById('create-player-name').value.trim();
+
+        if (!playerName) {
+            this.showError('create-error', 'Please enter your name');
+            return;
+        }
+
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            this.showError('create-error', 'Not connected to server. Please wait...');
+            return;
+        }
+
+        const eyeWitness = document.getElementById('opt-eye-witness').checked;
+        const bodyGuard = document.getElementById('opt-body-guard').checked;
+
+        this.playerName = playerName;
+
+        const message = {
+            action: 'createGame',
+            playerName: playerName,
+            eyeWitness: eyeWitness,
+            bodyGuard: bodyGuard
+        };
+        
+        console.log('Sending message to server:', message);
+        this.ws.send(JSON.stringify(message));
+        console.log('Message sent!');
+    }
+
+    joinGame() {
+        const playerName = document.getElementById('join-player-name').value.trim();
+        const gameCode = document.getElementById('join-game-code').value.trim().toUpperCase();
+
+        if (!playerName) {
+            this.showError('join-error', 'Please enter your name');
+            return;
+        }
+
+        if (!gameCode || gameCode.length !== 4) {
+            this.showError('join-error', 'Please enter a valid 4-character game code');
+            return;
+        }
+
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            this.showError('join-error', 'Not connected to server. Please wait...');
+            return;
+        }
+
+        this.playerName = playerName;
+        console.log('Joining game:', gameCode, 'as', playerName);
+
+        this.ws.send(JSON.stringify({
+            action: 'joinGame',
+            playerName: playerName,
+            gameCode: gameCode
+        }));
+    }
+
+    startGame() {
+        if (!this.isHost) return;
+        
+        // Prevent multiple clicks - use a flag to ensure only one call
+        if (this.startGameInProgress) return;
+        this.startGameInProgress = true;
+        
+        const startBtn = document.getElementById('btn-start-game');
+        if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+        }
+
+        this.sendMessage({
+            action: 'startGame'
+        });
+        
+        // Reset flag after a delay in case of error
+        setTimeout(() => {
+            this.startGameInProgress = false;
+        }, 5000);
+    }
+
+    setReady() {
+        if (this.isReady) return;
+
+        this.isReady = true;
+        const btn = document.getElementById('btn-ready');
+        btn.disabled = true;
+        btn.textContent = '✓ Ready!';
+
+        this.sendMessage({
+            action: 'playerReady'
+        });
+    }
+
+    // Message Handling
+    handleMessage(data) {
+        switch (data.action) {
+            case 'gameCreated':
+                this.onGameCreated(data);
+                break;
+            case 'gameJoined':
+                this.onGameJoined(data);
+                break;
+            case 'playerListUpdate':
+                this.updatePlayerList(data.players);
+                break;
+            case 'becameHost':
+                this.onBecameHost();
+                break;
+            case 'roleAssigned':
+                this.onRoleAssigned(data);
+                break;
+            case 'readyUpdate':
+                this.onReadyUpdate(data);
+                break;
+            case 'phaseStart':
+                this.onPhaseStart(data);
+                break;
+            case 'reconnected':
+                this.onReconnected(data);
+                break;
+            case 'reconnectFailed':
+                this.onReconnectFailed(data);
+                break;
+            case 'playerDisconnected':
+                this.onPlayerDisconnected(data);
+                break;
+            case 'playerReconnected':
+                this.onPlayerReconnected(data);
+                break;
+            case 'syndicateRecommendationsUpdate':
+                this.onSyndicateRecommendationsUpdate(data);
+                break;
+            case 'syndicateLockInUpdate':
+                this.onSyndicateLockInUpdate(data);
+                break;
+            case 'syndicateTargetChosen':
+                this.onSyndicateTargetChosen(data);
+                break;
+            case 'syndicateTie':
+                this.onSyndicateTie(data);
+                break;
+            case 'syndicateTargetFailed':
+                this.onSyndicateTargetFailed(data);
+                break;
+            case 'syndicateAssassinChosen':
+                this.onSyndicateAssassinChosen(data);
+                break;
+            case 'playerDoneUpdate':
+                this.onPlayerDoneUpdate(data);
+                break;
+            case 'playerReadyUpdate':
+                this.onPlayerReadyUpdate(data);
+                break;
+            case 'phase2Start':
+                this.onPhase2Start(data);
+                break;
+            case 'phase3Start':
+                this.onPhase3Start(data);
+                break;
+            case 'phase3DoneUpdate':
+                this.onPhase3DoneUpdate(data);
+                break;
+            case 'phase4Start':
+                this.onPhase4Start(data);
+                break;
+            case 'phase4VoteUpdate':
+                this.onPhase4VoteUpdate(data);
+                break;
+            case 'phase5Start':
+                this.onPhase5Start(data);
+                break;
+            case 'phase5VoteUpdate':
+                this.onPhase5VoteUpdate(data);
+                break;
+            case 'playerEliminated':
+                this.onPlayerEliminated(data);
+                break;
+            case 'trialVerdict':
+                this.onTrialVerdict(data);
+                break;
+            case 'nextRoundStart':
+                this.onNextRoundStart(data);
+                break;
+            case 'gameEnd':
+                this.onGameEnd(data);
+                break;
+            case 'playAgain':
+                this.onPlayAgain(data);
+                break;
+            case 'leftGame':
+                this.onLeftGame(data);
+                break;
+            case 'removedFromGame':
+                this.onRemovedFromGame(data);
+                break;
+            case 'gameNoteAdded':
+                this.onGameNoteAdded(data);
+                break;
+            case 'error':
+                this.handleError(data.message);
+                break;
+        }
+    }
+
+    onGameCreated(data) {
+        console.log('onGameCreated called with data:', data);
+        this.isHost = true;
+        this.gameCode = data.gameCode;
+        this.playerToken = data.playerToken;
+        this.players = data.players;
+        this.saveSession();
+
+        try {
+            console.log('Setting game code...');
+            const gameCodeEl = document.getElementById('display-game-code');
+            if (gameCodeEl) {
+                gameCodeEl.textContent = data.gameCode;
+                console.log('Game code set to:', data.gameCode);
+            } else {
+                console.warn('display-game-code element not found');
+            }
+            
+            console.log('Updating player list with players:', data.players);
+            this.updatePlayerList(data.players);
+
+            // Show host controls
+            console.log('Setting host controls...');
+            const hostControls = document.getElementById('host-controls');
+            const guestMessage = document.getElementById('guest-message');
+            if (hostControls) {
+                hostControls.style.display = 'block';
+                console.log('Host controls shown');
+            } else {
+                console.warn('host-controls element not found');
+            }
+            if (guestMessage) {
+                guestMessage.style.display = 'none';
+                console.log('Guest message hidden');
+            } else {
+                console.warn('guest-message element not found');
+            }
+        } catch (e) {
+            console.error('Error in onGameCreated:', e);
+        }
+
+        console.log('About to show lobby-screen');
+        this.showScreen('lobby-screen');
+        console.log('Clearing errors');
+        this.clearErrors();
+    }
+
+    onGameJoined(data) {
+        this.isHost = false;
+        this.gameCode = data.gameCode;
+        this.playerToken = data.playerToken;
+        this.players = data.players;
+        this.saveSession();
+
+        try {
+            const gameCodeEl = document.getElementById('display-game-code');
+            if (gameCodeEl) {
+                gameCodeEl.textContent = data.gameCode;
+            }
+            this.updatePlayerList(data.players);
+
+            // Show guest message instead of host controls
+            const hostControls = document.getElementById('host-controls');
+            const guestMessage = document.getElementById('guest-message');
+            if (hostControls) hostControls.style.display = 'none';
+            if (guestMessage) guestMessage.style.display = 'block';
+        } catch (e) {
+            console.error('Error in onGameJoined:', e);
+        }
+
+        this.showScreen('lobby-screen');
+        this.clearErrors();
+    }
+
+    onBecameHost() {
+        this.isHost = true;
+        document.getElementById('host-controls').style.display = 'block';
+        document.getElementById('guest-message').style.display = 'none';
+        this.updateStartButton();
+    }
+
+    onRoleAssigned(data) {
+        console.log('onRoleAssigned called with data:', data);
+        console.log('Description object:', data.description);
+        console.log('Description type:', typeof data.description);
+        
+        this.role = data.role;
+        this.isReady = false;
+
+        try {
+            // Ensure description is an object
+            if (typeof data.description === 'string' || !data.description) {
+                console.error('Invalid description format:', data.description);
+                console.log('Using empty description');
+                data.description = {
+                    title: data.role,
+                    description: 'Role description unavailable',
+                    abilities: [],
+                    winCondition: 'Unknown'
+                };
+            }
+            
+            // Set role name with styling
+            const roleEl = document.getElementById('player-role');
+            if (!roleEl) {
+                console.error('Element player-role not found!');
+                return;
+            }
+            roleEl.textContent = data.description.title || data.role;
+            roleEl.className = 'role-name ' + data.role.toLowerCase().replace(' ', '-');
+
+            // Set description
+            const descEl = document.getElementById('role-description');
+            if (descEl) descEl.textContent = data.description.description || '';
+
+            // Set abilities
+            const abilitiesList = document.getElementById('role-abilities-list');
+            if (abilitiesList) {
+                abilitiesList.innerHTML = '';
+                const abilities = data.description.abilities || [];
+                abilities.forEach(ability => {
+                    const li = document.createElement('li');
+                    li.textContent = ability;
+                    abilitiesList.appendChild(li);
+                });
+            }
+
+            // Set win condition
+            const winEl = document.getElementById('role-win-condition');
+            if (winEl) winEl.textContent = data.description.winCondition || '';
+
+            // Show teammates for Syndicate
+            const teammatesSection = document.getElementById('teammates-section');
+            const teammatesList = document.getElementById('teammates-list');
+            
+            if (data.role === 'Syndicate' && data.teammates && data.teammates.length > 0) {
+                if (teammatesSection) {
+                    teammatesSection.style.display = 'block';
+                    if (teammatesList) {
+                        teammatesList.innerHTML = '';
+                        data.teammates.forEach(name => {
+                            const li = document.createElement('li');
+                            li.textContent = name;
+                            teammatesList.appendChild(li);
+                        });
+                    }
+                }
+            } else {
+                if (teammatesSection) teammatesSection.style.display = 'none';
+            }
+
+            // Reset ready button
+            const readyBtn = document.getElementById('btn-ready');
+            if (readyBtn) {
+                readyBtn.disabled = false;
+                readyBtn.textContent = "I'm Ready";
+            }
+
+            // Update ready count
+            const readyCountEl = document.getElementById('ready-count');
+            const readyTotalEl = document.getElementById('ready-total');
+            if (readyCountEl) readyCountEl.textContent = data.readyCount || 0;
+            if (readyTotalEl) readyTotalEl.textContent = data.totalPlayers || 0;
+
+            console.log('About to show role-screen');
+            this.showScreen('role-screen');
+            console.log('role-screen shown successfully');
+        } catch (e) {
+            console.error('Error in onRoleAssigned:', e);
+        }
+    }
+
+    onReadyUpdate(data) {
+        document.getElementById('ready-count').textContent = data.readyCount;
+        document.getElementById('ready-total').textContent = data.totalPlayers;
+    }
+
+    onPhaseStart(data) {
+        console.log('onPhaseStart received:', data);
+        document.getElementById('current-phase').textContent = data.phase;
+        document.getElementById('phase-name').textContent = data.phaseName || '';
+        
+        // If player is eliminated, always show elimination screen
+        if (this.isEliminated) {
+            this.showEliminationScreen(this.eliminationData);
+            return;
+        }
+        
+        if (data.phase === 1 && data.phaseState) {
+            console.log('onPhaseStart Phase 1 - phaseState.isHost:', data.phaseState.isHost);
+            this.initPhase1(data.phaseState);
+            this.showScreen('phase-screen');
+        } else if (data.phase === 2) {
+            this.initPhase2Screen(data);
+            this.showScreen('phase2-screen');
+        } else if (data.phase === 3) {
+            this.initPhase3Screen(data);
+            this.showScreen('phase3-screen');
+        }
+    }
+
+    initPhase2Screen(data) {
+        console.log('initPhase2Screen called with data:', data);
+        
+        // Store Phase 2 data for later use (needed to check if player is victim)
+        this.phase2Data = data;
+        this.phase2Ready = false;
+        
+        // Show the murder story view
+        const murderView = document.getElementById('murder-view');
+        if (murderView) {
+            murderView.style.display = 'block';
+        }
+        
+        // Check for special role messages
+        if (data.isEyewitness && data.eyewitnessData) {
+            // Show eyewitness screen
+            this.showEyewitnessMessage(data.eyewitnessData, data.murderStory);
+            return;
+        }
+        
+        if (data.isDetective && data.detectiveData) {
+            // Show detective screen
+            this.showDetectiveMessage(data.detectiveData, data.murderStory);
+            return;
+        }
+        
+        if (data.isAssassin && data.assassinData) {
+            // Show assassin warning screen
+            this.showAssassinWarning(data.assassinData, data.murderStory);
+            return;
+        }
+        
+        // Default behavior - show murder story with I'm Ready button
+        const storyEl = document.getElementById('murder-story');
+        if (storyEl) {
+            storyEl.textContent = data.murderStory;
+        }
+        
+        // Initialize the "I'm Ready" button for Phase 2
+        this.initPhase2ReadySection(data);
+    }
+
+    initPhase2ReadySection(data) {
+        this.phase2Ready = false;
+        
+        // Set total players
+        const totalEl = document.getElementById('phase2-ready-total');
+        const countEl = document.getElementById('phase2-ready-count');
+        if (totalEl && data.players) {
+            totalEl.textContent = data.players.length;
+        }
+        if (countEl) {
+            countEl.textContent = data.doneCount || 0;
+        }
+        
+        // Bind button event (remove old listener first)
+        const btn = document.getElementById('btn-phase2-ready');
+        if (btn) {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', () => this.markPhase2Ready());
+            
+            // Check if already ready (reconnection case)
+            if (data.amReady) {
+                this.phase2Ready = true;
+                newBtn.disabled = true;
+                newBtn.textContent = "✓ Ready";
+                document.getElementById('phase2-ready-hint').textContent = 'Waiting for other players...';
+            } else {
+                newBtn.disabled = false;
+                newBtn.textContent = "I'm Ready";
+                document.getElementById('phase2-ready-hint').textContent = 'Click when ready to proceed to the discussion phase';
+            }
+        }
+    }
+
+    markPhase2Ready() {
+        if (this.phase2Ready) {
+            console.warn('Already marked ready for Phase 2, ignoring duplicate click');
+            return;
+        }
+        
+        console.log('Marking player ready for Phase 2:', {
+            playerName: this.playerName,
+            role: this.role,
+            isTestGame: this.isTestGame,
+            testPlayerId: this.currentTestPlayerId,
+            gameCode: this.gameCode
+        });
+        
+        this.phase2Ready = true;
+        const btn = document.getElementById('btn-phase2-ready');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "✓ Ready";
+            document.getElementById('phase2-ready-hint').textContent = 'Waiting for other players...';
+        }
+        
+        const message = {
+            action: 'playerReadyPhase2'
+        };
+        
+        // For test games, include player ID and game code
+        if (this.isTestGame && this.currentTestPlayerId) {
+            message.testPlayerId = this.currentTestPlayerId;
+            message.gameCode = this.gameCode;
+        }
+        
+        console.log('Sending Phase 2 ready message:', message);
+        this.ws.send(JSON.stringify(message));
+    }
+    
+    showEyewitnessMessage(eyeData, murderStory) {
+        // Hide the main murder view
+        const murderView = document.getElementById('murder-view');
+        if (murderView) {
+            murderView.style.display = 'none';
+        }
+        
+        // Create overlay for eyewitness message
+        let overlay = document.getElementById('eyewitness-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'eyewitness-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        overlay.innerHTML = `
+            <div style="background: #1a1a2e; border: 3px solid #e94560; padding: 30px; max-width: 600px; border-radius: 10px; color: #fff; text-align: center;">
+                <h2 style="color: #e94560; font-size: 24px; margin-bottom: 20px;">🔍 YOU ARE THE EYEWITNESS 🔍</h2>
+                <div style="background: rgba(233, 69, 96, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e94560;">
+                    <p style="font-size: 18px; margin: 10px 0;"><strong>Assassin:</strong> ${eyeData.assassinName}</p>
+                    <p style="font-size: 18px; margin: 10px 0;"><strong>Victim:</strong> ${eyeData.victimName}</p>
+                </div>
+                <div style="background: rgba(78, 205, 196, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #4ecdc4;">
+                    <p style="font-size: 14px; margin: 10px 0;">Your Secret Signal:</p>
+                    <p style="font-size: 28px; font-weight: bold; color: #4ecdc4; margin: 10px 0;">${eyeData.keyword}</p>
+                    <p style="font-size: 12px; margin-top: 10px; font-style: italic;">Use this word or gesture subtly during discussions</p>
+                </div>
+                <div style="background: rgba(255, 193, 7, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                    <p style="font-size: 14px; white-space: pre-wrap; line-height: 1.6;">${eyeData.warning}</p>
+                </div>
+                <button id="btn-acknowledge-eyewitness" class="btn btn-primary" style="font-size: 16px; padding: 12px 30px;">I Understand</button>
+            </div>
+        `;
+        
+        document.getElementById('btn-acknowledge-eyewitness').addEventListener('click', () => {
+            overlay.remove();
+            // Show the murder story with ready button
+            const storyEl = document.getElementById('murder-story');
+            if (storyEl) {
+                storyEl.textContent = murderStory;
+            }
+            const murderView = document.getElementById('murder-view');
+            if (murderView) {
+                murderView.style.display = 'block';
+            }
+            this.initPhase2ReadySection(this.phase2Data);
+        });
+    }
+    
+    showDetectiveMessage(detectiveData, murderStory) {
+        // Hide the main murder view
+        const murderView = document.getElementById('murder-view');
+        if (murderView) {
+            murderView.style.display = 'none';
+        }
+        
+        // Create overlay for detective message
+        let overlay = document.getElementById('detective-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'detective-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        overlay.innerHTML = `
+            <div style="background: #1a1a2e; border: 3px solid #4ecdc4; padding: 30px; max-width: 600px; border-radius: 10px; color: #fff; text-align: center;">
+                <h2 style="color: #4ecdc4; font-size: 24px; margin-bottom: 20px;">🔍 DETECTIVE'S CLUE 🔍</h2>
+                <div style="background: rgba(78, 205, 196, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #4ecdc4;">
+                    <p style="font-size: 14px; margin: 10px 0;">Listen for the signal:</p>
+                    <p style="font-size: 28px; font-weight: bold; color: #4ecdc4; margin: 10px 0;">${detectiveData.keyword}</p>
+                    <p style="font-size: 12px; margin-top: 10px; font-style: italic;">This word or gesture might reveal the truth</p>
+                </div>
+                <div style="background: rgba(78, 205, 196, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #4ecdc4;">
+                    <p style="font-size: 14px; white-space: pre-wrap; line-height: 1.6;">${detectiveData.hint}</p>
+                </div>
+                <button id="btn-acknowledge-detective" class="btn btn-primary" style="font-size: 16px; padding: 12px 30px;">I Will Listen</button>
+            </div>
+        `;
+        
+        document.getElementById('btn-acknowledge-detective').addEventListener('click', () => {
+            overlay.remove();
+            // Show the murder story with ready button
+            const storyEl = document.getElementById('murder-story');
+            if (storyEl) {
+                storyEl.textContent = murderStory;
+            }
+            const murderView = document.getElementById('murder-view');
+            if (murderView) {
+                murderView.style.display = 'block';
+            }
+            this.initPhase2ReadySection(this.phase2Data);
+        });
+    }
+    
+    showAssassinWarning(assassinData, murderStory) {
+        // Hide the main murder view
+        const murderView = document.getElementById('murder-view');
+        if (murderView) {
+            murderView.style.display = 'none';
+        }
+        
+        // Create overlay for assassin warning
+        let overlay = document.getElementById('assassin-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'assassin-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        overlay.innerHTML = `
+            <div style="background: #1a1a2e; border: 3px solid #e94560; padding: 30px; max-width: 600px; border-radius: 10px; color: #fff; text-align: center;">
+                <h2 style="color: #e94560; font-size: 28px; margin-bottom: 20px; animation: pulse 1.5s infinite;">⚠️ WARNING ⚠️</h2>
+                <div style="background: rgba(233, 69, 96, 0.2); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e94560;">
+                    <p style="font-size: 14px; white-space: pre-wrap; line-height: 1.8;">${assassinData.warning}</p>
+                </div>
+                <button id="btn-acknowledge-assassin" class="btn btn-danger" style="font-size: 16px; padding: 12px 30px;">I Understand the Risk</button>
+            </div>
+        `;
+        
+        document.getElementById('btn-acknowledge-assassin').addEventListener('click', () => {
+            overlay.remove();
+            // Show the murder story with ready button
+            const storyEl = document.getElementById('murder-story');
+            if (storyEl) {
+                storyEl.textContent = murderStory;
+            }
+            const murderView = document.getElementById('murder-view');
+            if (murderView) {
+                murderView.style.display = 'block';
+            }
+            this.initPhase2ReadySection(this.phase2Data);
+        });
+    }
+
+    initPhase3Screen(data) {
+        console.log('initPhase3Screen called with data:', data);
+        document.getElementById('phase2-screen').style.display = 'none';
+        document.getElementById('phase3-screen').style.display = 'block';
+        
+        // Reset/hide all Phase 3 special role messages
+        document.getElementById('phase3-eyewitness-message').style.display = 'none';
+        document.getElementById('phase3-detective-message').style.display = 'none';
+        document.getElementById('phase3-assassin-message').style.display = 'none';
+        
+        // Hide saved message if it exists from a previous round
+        const savedMsg = document.getElementById('phase3-saved-message');
+        if (savedMsg) {
+            savedMsg.style.display = 'none';
+        }
+        
+        // Update status
+        if (data && data.players) {
+            document.getElementById('phase3-done-total').textContent = data.players.length;
+        }
+        document.getElementById('phase3-done-count').textContent = data.doneCount || 0;
+        
+        // Bind button event (remove old listener first)
+        const btn = document.getElementById('btn-phase3-done');
+        if (btn) {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', () => this.markPhase3Done());
+            
+            // Check if already done (reconnection or switching players)
+            if (data && data.amDone) {
+                this.phase3Done = true;
+                newBtn.disabled = true;
+                newBtn.textContent = "✓ Done";
+                document.getElementById('phase3-done-hint').textContent = 'Waiting for other players...';
+            } else {
+                this.phase3Done = false;
+                newBtn.disabled = false;
+                newBtn.textContent = "I'm Done";
+                document.getElementById('phase3-done-hint').textContent = 'Click when ready to move to voting';
+            }
+        }
+    }
+
+    markPhase3Done() {
+        if (this.phase3Done) {
+            console.warn('Already marked done for Phase 3, ignoring duplicate click');
+            return;
+        }
+        
+        console.log('Marking player done for Phase 3:', {
+            playerName: this.playerName,
+            role: this.role,
+            isTestGame: this.isTestGame,
+            testPlayerId: this.currentTestPlayerId,
+            gameCode: this.gameCode
+        });
+        
+        this.phase3Done = true;
+        const btn = document.getElementById('btn-phase3-done');
+        btn.disabled = true;
+        btn.textContent = "✓ Done";
+        document.getElementById('phase3-done-hint').textContent = 'Waiting for other players...';
+        
+        const msg = {
+            action: 'playerDonePhase3'
+        };
+        console.log('Sending Phase 3 done message:', msg);
+        console.log('Is test game:', this.isTestGame);
+        console.log('Current test player ID:', this.currentTestPlayerId);
+        console.log('Game code:', this.gameCode);
+        this.sendMessage(msg);
+    }
+
+    onPhase3DoneUpdate(data) {
+        console.log('Received Phase 3 done update:', data);
+        const countEl = document.getElementById('phase3-done-count');
+        const totalEl = document.getElementById('phase3-done-total');
+        if (countEl) countEl.textContent = data.doneCount;
+        if (totalEl) totalEl.textContent = data.totalPlayers;
+    }
+
+    sendPhase3Ready() {
+        this.ws.send(JSON.stringify({
+            action: 'playerReadyPhase3'
+        }));
+    }
+
+    // ==================== PHASE 1: DELIBERATIONS ====================
+
+    initPhase1(state) {
+        this.phaseState = state;
+        this.role = state.role;
+        
+        // Set isHost if provided in state
+        if (state.isHost !== undefined) {
+            console.log('initPhase1: Setting isHost from state:', state.isHost);
+            this.isHost = state.isHost;
+        } else {
+            console.log('initPhase1: isHost not in state, current isHost:', this.isHost);
+        }
+        
+        // Set role badge
+        const badge = document.getElementById('phase-role-badge');
+        badge.textContent = state.role;
+        badge.className = 'role-badge ' + state.role.toLowerCase().replace(' ', '-');
+
+        // Hide all role views first
+        document.getElementById('syndicate-view').style.display = 'none';
+        document.getElementById('detective-view').style.display = 'none';
+        document.getElementById('bystander-view').style.display = 'none';
+        document.getElementById('bodyguard-view').style.display = 'none';
+
+        // Update game notes
+        this.updateGameNotes(state.gameNotes);
+
+        // Show appropriate view based on role
+        switch (state.role) {
+            case 'Syndicate':
+                this.initSyndicateView(state);
+                break;
+            case 'Detective':
+                this.initDetectiveView(state);
+                break;
+            case 'Body Guard':
+                this.initBodyGuardView(state);
+                break;
+            default: // Bystander, Eye Witness
+                this.initBystanderView(state);
+                break;
+        }
+
+        // Initialize "I'm Done" section
+        this.initImDoneSection(state);
+    }
+
+    initImDoneSection(state) {
+        this.playerDone = false;
+        
+        // Set total players (only count alive players)
+        const alivePlayers = state.players.filter(p => p.alive !== false);
+        document.getElementById('done-total').textContent = alivePlayers.length;
+        document.getElementById('done-count').textContent = state.doneCount || 0;
+        
+        // Bind button event (remove old listener first)
+        const btn = document.getElementById('btn-im-done');
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', () => this.markDone());
+        
+        // Check if already done (reconnection case)
+        if (state.amDone) {
+            this.playerDone = true;
+            newBtn.disabled = true;
+            newBtn.textContent = "✓ Done";
+            document.getElementById('done-hint').textContent = 'Waiting for other players...';
+        } else {
+            this.checkActionsComplete();
+        }
+    }
+
+    checkActionsComplete() {
+        let complete = false;
+        const hint = document.getElementById('done-hint');
+        
+        switch (this.role) {
+            case 'Syndicate':
+                // Syndicate is done when voting is complete (target/assassin determined)
+                // OR when they've locked in (waiting for server resolution)
+                complete = this.syndicateState?.complete === true || this.syndicateState?.lockedIn === true;
+                if (!complete) {
+                    hint.textContent = 'Lock in your choice to enable';
+                }
+                break;
+                
+            case 'Detective':
+                // Detective is done when investigation is locked in
+                complete = this.detectiveState?.lockedIn === true;
+                if (!complete) {
+                    hint.textContent = 'Lock in your investigation to enable';
+                }
+                break;
+                
+            case 'Body Guard':
+                // Body Guard is done when both protection and bystander vote are made
+                const isProtecting = this.bodyGuardState?.protecting !== null && this.bodyGuardState?.protecting !== undefined;
+                const hasVoted = this.bodyGuardState?.bystanderVote !== null && this.bodyGuardState?.bystanderVote !== undefined;
+                complete = isProtecting && hasVoted;
+                if (!complete) {
+                    if (!isProtecting && !hasVoted) {
+                        hint.textContent = 'Choose someone to protect and make your selection';
+                    } else if (!isProtecting) {
+                        hint.textContent = 'Choose someone to protect';
+                    } else {
+                        hint.textContent = 'Make your anonymous selection';
+                    }
+                }
+                break;
+                
+            default: // Bystander, Eye Witness
+                // Bystander is done when they've voted
+                complete = this.bystanderState?.myVote !== null && this.bystanderState?.myVote !== undefined;
+                if (!complete) {
+                    hint.textContent = 'Make your selection to enable';
+                }
+                break;
+        }
+        
+        const btn = document.getElementById('btn-im-done');
+        if (complete && !this.playerDone) {
+            btn.disabled = false;
+            hint.textContent = 'Click when you\'re ready to proceed';
+        }
+        
+        return complete;
+    }
+
+    markDone() {
+        if (this.playerDone) {
+            console.warn('Already marked done, ignoring duplicate click');
+            return;
+        }
+        
+        console.log('Marking player done:', {
+            playerName: this.playerName,
+            role: this.role,
+            isTestGame: this.isTestGame,
+            testPlayerId: this.currentTestPlayerId,
+            gameCode: this.gameCode
+        });
+        
+        this.playerDone = true;
+        const btn = document.getElementById('btn-im-done');
+        btn.disabled = true;
+        btn.textContent = "✓ Done";
+        document.getElementById('done-hint').textContent = 'Waiting for other players...';
+        
+        this.sendMessage({
+            action: 'playerDone'
+        });
+    }
+
+    onPlayerDoneUpdate(data) {
+        console.log('Received playerDoneUpdate:', data);
+        const countEl = document.getElementById('done-count');
+        const totalEl = document.getElementById('done-total');
+        console.log('Elements found:', { countEl, totalEl });
+        if (countEl) countEl.textContent = data.doneCount;
+        if (totalEl) totalEl.textContent = data.totalPlayers;
+    }
+
+    onPlayerReadyUpdate(data) {
+        console.log('Received playerReadyUpdate:', data);
+        const countEl = document.getElementById('phase2-ready-count');
+        const totalEl = document.getElementById('phase2-ready-total');
+        console.log('Phase 2 ready elements:', { countEl, totalEl });
+        if (countEl) countEl.textContent = data.readyCount;
+        if (totalEl) totalEl.textContent = data.totalPlayers;
+    }
+
+    onPhase2Start(data) {
+        console.log('Phase 2 starting', data);
+        console.log('onPhase2Start: this.isHost =', this.isHost);
+        
+        // If eliminated, ignore phase 2 start - stay on elimination screen
+        if (this.isEliminated) {
+            console.log('Player is eliminated, ignoring phase2Start');
+            return;
+        }
+        
+        document.getElementById('phase-screen').style.display = 'none';
+        document.getElementById('phase2-screen').style.display = 'block';
+        
+        this.initPhase2Screen(data);
+    }
+
+    onPhase3Start(data) {
+        console.log('Phase 3 started with data:', data);
+        console.log('Data keys:', Object.keys(data));
+        console.log('Phase 3 starting', data);
+        console.log('Phase 3 players:', data.players);
+        console.log('Phase 3 doneCount:', data.doneCount);
+        this.phase3Done = false;
+        
+        // Check if current player is the victim (was assassinated in Phase 2)
+        const myId = this.getMyPlayerId();
+        if (data.victimId && myId === data.victimId && !data.victimSaved) {
+            console.log('Current player is the victim. Showing elimination screen.');
+            this.isEliminated = true;
+            this.eliminationData = {
+                verdict: 'ASSASSINATED',
+                role: this.role || 'Unknown',
+                playerName: this.playerName
+            };
+            document.getElementById('phase2-screen').style.display = 'none';
+            document.getElementById('phase3-screen').style.display = 'none';
+            this.showEliminationScreen(this.eliminationData);
+            return;
+        } else if (data.victimId && myId === data.victimId && data.victimSaved) {
+            console.log('Current player was targeted but SAVED by bodyguard!');
+            // Show a message that they were saved
+            this.showSavedByBodyguardMessage();
+        }
+        
+        document.getElementById('phase2-screen').style.display = 'none';
+        document.getElementById('phase3-screen').style.display = 'block';
+        this.initPhase3Screen(data);
+        
+        // Show special role messages for Phase 3
+        console.log('Checking for role messages:');
+        console.log('  eyewitnessData:', data.eyewitnessData);
+        console.log('  detectiveData:', data.detectiveData);
+        console.log('  assassinData:', data.assassinData);
+        
+        if (data.eyewitnessData) {
+            console.log('Displaying eyewitness message');
+            this.showEyewitnessMessagePhase3(data.eyewitnessData);
+        }
+        if (data.detectiveData) {
+            console.log('Displaying detective message');
+            this.showDetectiveMessagePhase3(data.detectiveData);
+        }
+        if (data.assassinData) {
+            console.log('Displaying assassin message');
+            this.showAssassinWarningPhase3(data.assassinData);
+        }
+    }
+
+    showSavedByBodyguardMessage() {
+        // Create or show a message that the player was saved
+        const phase3Screen = document.getElementById('phase3-screen');
+        let savedMsg = document.getElementById('phase3-saved-message');
+        
+        if (!savedMsg) {
+            savedMsg = document.createElement('div');
+            savedMsg.id = 'phase3-saved-message';
+            savedMsg.style.cssText = 'background: rgba(78, 205, 196, 0.2); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: center;';
+            savedMsg.innerHTML = `
+                <h3 style="color: #4ecdc4; margin-top: 0;">🛡️ YOU WERE SAVED!</h3>
+                <p style="margin: 10px 0;">Someone tried to assassinate you last night, but a mysterious guardian intervened and saved your life!</p>
+                <p style="font-style: italic; color: #888;">You narrowly escaped death. Be more careful who you trust...</p>
+            `;
+            
+            // Insert at the beginning of messages container or after phase header
+            const messagesContainer = document.getElementById('phase3-messages-container');
+            if (messagesContainer) {
+                messagesContainer.insertBefore(savedMsg, messagesContainer.firstChild);
+            } else {
+                const phaseHeader = phase3Screen.querySelector('.phase-header');
+                if (phaseHeader) {
+                    phaseHeader.after(savedMsg);
+                }
+            }
+        } else {
+            savedMsg.style.display = 'block';
+        }
+    }
+
+    showEyewitnessMessagePhase3(eyeData) {
+        console.log('showEyewitnessMessagePhase3 called with:', eyeData);
+        const messageDiv = document.getElementById('phase3-eyewitness-message');
+        const detailsDiv = document.getElementById('eyewitness-details');
+        
+        if (!messageDiv) {
+            console.error('phase3-eyewitness-message element not found!');
+            return;
+        }
+        if (!detailsDiv) {
+            console.error('eyewitness-details element not found!');
+            return;
+        }
+        
+        // Update header based on whether victim was saved
+        const headerEl = messageDiv.querySelector('h3');
+        if (headerEl) {
+            headerEl.textContent = eyeData.victimSaved 
+                ? '🔍 YOU WITNESSED THE ASSASSINATION ATTEMPT'
+                : '🔍 YOU WITNESSED THE ASSASSINATION';
+        }
+        
+        const victimStatus = eyeData.victimSaved ? `${eyeData.victimName} (saved!)` : eyeData.victimName;
+        const assassinLabel = eyeData.victimSaved ? 'Would-be Assassin' : 'Assassin';
+        const victimLabel = eyeData.victimSaved ? 'Intended Victim' : 'Victim';
+        
+        detailsDiv.innerHTML = `
+            <strong>${assassinLabel}:</strong> ${eyeData.assassinName}<br>
+            <strong>${victimLabel}:</strong> ${victimStatus}<br><br>
+            <strong>Your Secret Signal:</strong> "<span style="color: #4ecdc4; font-weight: bold;">${eyeData.keyword}</span>"<br>
+            <em>Use this word or gesture subtly during discussions to hint at the truth.</em>
+        `;
+        messageDiv.style.display = 'block';
+        console.log('Eyewitness message displayed');
+    }
+    
+    showDetectiveMessagePhase3(detectiveData) {
+        console.log('showDetectiveMessagePhase3 called with:', detectiveData);
+        const messageDiv = document.getElementById('phase3-detective-message');
+        const detailsDiv = document.getElementById('detective-details');
+        
+        if (!messageDiv) {
+            console.error('phase3-detective-message element not found!');
+            return;
+        }
+        if (!detailsDiv) {
+            console.error('detective-details element not found!');
+            return;
+        }
+        
+        let investigationHtml = '';
+        
+        // Check if there are investigation results
+        if (detectiveData.investigationResults) {
+            const results = detectiveData.investigationResults;
+            const levelColor = results.level === 'Low' ? '#4ecdc4' : 
+                              results.level === 'High' ? '#ff6b6b' : 
+                              results.level === 'Medium' ? '#f4d03f' : '#888';
+            
+            investigationHtml = `
+                <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${levelColor};">
+                    <h4 style="margin: 0 0 10px 0; color: #fff;">📋 Investigation Results: ${results.targetName}</h4>
+                    <div style="font-size: 18px; font-weight: bold; color: ${levelColor}; margin-bottom: 10px;">
+                        Suspicion Level: ${results.level}
+                    </div>
+                    <p style="margin: 0; color: #ccc; font-size: 14px;">${results.details}</p>
+                    ${results.reasons && results.reasons.length > 0 ? `
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #aaa; font-size: 13px;">
+                            ${results.reasons.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        detailsDiv.innerHTML = `
+            ${investigationHtml}
+            <strong>Listen for the signal:</strong> "<span style="color: #4ecdc4; font-weight: bold;">${detectiveData.keyword}</span>"<br><br>
+            <em>If you hear this word or see a related gesture during discussions, you may have found the Eye Witness who knows the truth about the assassination.</em>
+        `;
+        messageDiv.style.display = 'block';
+        console.log('Detective message displayed');
+    }
+    
+    showAssassinWarningPhase3(assassinData) {
+        console.log('showAssassinWarningPhase3 called with:', assassinData);
+        const messageDiv = document.getElementById('phase3-assassin-message');
+        const detailsDiv = document.getElementById('assassin-details');
+        
+        if (!messageDiv) {
+            console.error('phase3-assassin-message element not found!');
+            return;
+        }
+        if (!detailsDiv) {
+            console.error('assassin-details element not found!');
+            return;
+        }
+        
+        detailsDiv.innerHTML = `
+            <strong>Someone saw you commit the assassination.</strong><br><br>
+            Watch carefully during the discussion for who might be revealing your identity. Be strategic in what you say and who you accuse.
+        `;
+        messageDiv.style.display = 'block';
+        console.log('Assassin message displayed');
+    }
+
+    // ==================== PHASE 4: VOTING ====================
+    
+    onPhase4Start(data) {
+        console.log('Phase 4 starting', data);
+        this.phase4Voted = false;
+        
+        // Hide all other screens
+        document.getElementById('phase3-screen').style.display = 'none';
+        document.getElementById('phase4-screen').style.display = 'block';
+        
+        this.initPhase4Screen(data);
+    }
+    
+    initPhase4Screen(data) {
+        console.log('initPhase4Screen called with data:', data);
+        
+        // Build player grid for voting (alive players, excluding self)
+        const grid = document.getElementById('vote-player-grid');
+        grid.innerHTML = '';
+        
+        const myId = this.getMyPlayerId();
+        const players = data.players || [];
+        const hasVoted = data.amVoted || false;
+        
+        // Set state
+        this.phase4Voted = hasVoted;
+        
+        players.forEach((player, index) => {
+            if (!player.alive) return; // Skip dead players
+            if (player.id === myId) return; // Can't vote for yourself
+            
+            const card = document.createElement('div');
+            card.className = 'player-select-card';
+            card.dataset.playerId = player.id;
+            card.innerHTML = `
+                <span class="player-icon">${this.getPlayerIcon(index)}</span>
+                <span class="player-name">${this.escapeHtml(player.name)}</span>
+            `;
+            
+            if (hasVoted) {
+                // Already voted - disable clicking
+                card.style.pointerEvents = 'none';
+                card.style.opacity = '0.6';
+            } else {
+                card.addEventListener('click', () => this.castVote(player.id, player.name));
+            }
+            grid.appendChild(card);
+        });
+        
+        // Update vote status
+        document.getElementById('phase4-vote-total').textContent = data.alivePlayers || players.filter(p => p.alive).length;
+        document.getElementById('phase4-vote-count').textContent = data.voteCount || 0;
+        
+        // Show message if already voted
+        if (hasVoted) {
+            const statusEl = document.getElementById('phase4-vote-status');
+            statusEl.innerHTML = `<p>✓ You have voted. Waiting for others...</p>
+                <span id="phase4-vote-count">${data.voteCount || 0}</span>/<span id="phase4-vote-total">${data.alivePlayers || 0}</span> players have voted`;
+        }
+    }
+    
+    castVote(playerId, playerName) {
+        if (this.phase4Voted) {
+            console.warn('Already voted, ignoring duplicate click');
+            return;
+        }
+        
+        console.log('Casting vote for:', playerId, playerName);
+        this.phase4Voted = true;
+        
+        // Highlight selected player
+        const cards = document.querySelectorAll('#vote-player-grid .player-select-card');
+        cards.forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+            card.style.pointerEvents = 'none'; // Disable further clicks
+        });
+        
+        this.sendMessage({
+            action: 'castVote',
+            targetId: playerId
+        });
+    }
+    
+    onPhase4VoteUpdate(data) {
+        console.log('Received Phase 4 vote update:', data);
+        const countEl = document.getElementById('phase4-vote-count');
+        const totalEl = document.getElementById('phase4-vote-total');
+        if (countEl) countEl.textContent = data.voteCount;
+        if (totalEl) totalEl.textContent = data.totalPlayers;
+    }
+
+    // ==================== PHASE 5: TRIAL ====================
+    
+    onPhase5Start(data) {
+        console.log('Phase 5 starting', data);
+        this.phase5Voted = false;
+        
+        // Hide all other screens
+        document.getElementById('phase4-screen').style.display = 'none';
+        document.getElementById('phase5-screen').style.display = 'block';
+        
+        this.initPhase5Screen(data);
+    }
+    
+    initPhase5Screen(data) {
+        console.log('initPhase5Screen called with data:', data);
+        
+        const hasVoted = data.amVoted || false;
+        this.phase5Voted = hasVoted;
+        
+        // Show accused player info
+        const accusedInfo = document.getElementById('accused-player-info');
+        accusedInfo.innerHTML = `<h2>👤 ${data.accusedName}</h2>`;
+        
+        // Update vote counts
+        document.getElementById('guilty-count').textContent = data.guiltyCount || 0;
+        document.getElementById('not-guilty-count').textContent = data.notGuiltyCount || 0;
+        
+        // Bind buttons (remove old listeners)
+        const guiltyBtn = document.getElementById('btn-guilty');
+        const notGuiltyBtn = document.getElementById('btn-not-guilty');
+        
+        const newGuiltyBtn = guiltyBtn.cloneNode(true);
+        guiltyBtn.parentNode.replaceChild(newGuiltyBtn, guiltyBtn);
+        
+        const newNotGuiltyBtn = notGuiltyBtn.cloneNode(true);
+        notGuiltyBtn.parentNode.replaceChild(newNotGuiltyBtn, notGuiltyBtn);
+        
+        newGuiltyBtn.addEventListener('click', () => this.castTrialVote('guilty'));
+        newNotGuiltyBtn.addEventListener('click', () => this.castTrialVote('not-guilty'));
+        
+        // Check if already voted or reset
+        if (hasVoted) {
+            newGuiltyBtn.disabled = true;
+            newNotGuiltyBtn.disabled = true;
+        } else {
+            newGuiltyBtn.disabled = false;
+            newNotGuiltyBtn.disabled = false;
+            // Remove any selected class
+            newGuiltyBtn.classList.remove('selected');
+            newNotGuiltyBtn.classList.remove('selected');
+        }
+    }
+    
+    castTrialVote(vote) {
+        if (this.phase5Voted) {
+            console.warn('Already voted in trial, ignoring duplicate click');
+            return;
+        }
+        
+        console.log('Casting trial vote:', vote);
+        this.phase5Voted = true;
+        
+        // Disable buttons
+        document.getElementById('btn-guilty').disabled = true;
+        document.getElementById('btn-not-guilty').disabled = true;
+        
+        // Highlight chosen option
+        if (vote === 'guilty') {
+            document.getElementById('btn-guilty').classList.add('selected');
+        } else {
+            document.getElementById('btn-not-guilty').classList.add('selected');
+        }
+        
+        this.sendMessage({
+            action: 'castTrialVote',
+            vote: vote
+        });
+    }
+    
+    onPhase5VoteUpdate(data) {
+        console.log('Received Phase 5 vote update:', data);
+        document.getElementById('guilty-count').textContent = data.guiltyCount || 0;
+        document.getElementById('not-guilty-count').textContent = data.notGuiltyCount || 0;
+    }
+    
+    onPlayerEliminated(data) {
+        console.log('Player eliminated:', data);
+        
+        const myId = this.getMyPlayerId();
+        
+        // Only mark as eliminated if verdict is GUILTY
+        if (data.verdict === 'GUILTY') {
+            // Check if this is the current player
+            if (data.playerId === myId) {
+                // Mark as eliminated and store the data
+                this.isEliminated = true;
+                this.eliminationData = data;
+                
+                // Show elimination screen for this player
+                this.showEliminationScreen(data);
+            } else {
+                // For other players, just track it
+                // They will see it in the next phase
+                console.log(`${data.playerName} has been eliminated.`);
+            }
+        }
+    }
+    
+    onTrialVerdict(data) {
+        // Player was found NOT GUILTY - they remain in the game
+        console.log(`Trial verdict: ${data.playerName} found ${data.verdict}`);
+        
+        if (data.verdict === 'NOT GUILTY') {
+            // Show a message to all players about the not guilty verdict
+            this.showNotification(`⚖️ ${data.playerName} has been found NOT GUILTY and remains in the game!`, 'info');
+            
+            // Show a brief overlay message
+            this.showVerdictOverlay(data.playerName, 'NOT GUILTY');
+        }
+        // Game will continue to next round via onNextRoundStart
+    }
+    
+    showVerdictOverlay(playerName, verdict) {
+        // Create an overlay to show the verdict
+        const overlay = document.createElement('div');
+        overlay.id = 'verdict-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        `;
+        
+        const isGuilty = verdict === 'GUILTY';
+        const icon = isGuilty ? '⚖️' : '🔓';
+        const color = isGuilty ? '#e94560' : '#4ecdc4';
+        
+        overlay.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <div style="font-size: 80px; margin-bottom: 20px;">${icon}</div>
+                <h1 style="color: ${color}; font-size: 2.5rem; margin-bottom: 20px; font-family: 'Cinzel', serif;">
+                    ${verdict}
+                </h1>
+                <p style="font-size: 1.5rem; color: #f5f5f5; margin-bottom: 10px;">
+                    ${this.escapeHtml(playerName)}
+                </p>
+                <p style="font-size: 1.1rem; color: #888;">
+                    ${isGuilty ? 'has been found guilty and removed from the game' : 'has been found innocent and remains in the game'}
+                </p>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, 500);
+        }, 3000);
+    }
+    
+    showEliminationScreen(data) {
+        // Hide all game screens
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.style.display = 'none';
+        });
+        
+        document.getElementById('eliminated-screen').style.display = 'block';
+        
+        // Set the title and reason based on verdict
+        const title = document.getElementById('eliminated-title');
+        const reason = document.getElementById('eliminated-reason');
+        const roleEl = document.getElementById('eliminated-role');
+        
+        if (data.verdict === 'GUILTY') {
+            title.textContent = '⚖️ You Have Been Found Guilty';
+            reason.textContent = 'You have been imprisoned and removed from the game.';
+        } else if (data.verdict === 'ASSASSINATED') {
+            title.textContent = '🔪 You Have Been Assassinated';
+            reason.textContent = 'You did not survive the night.';
+            
+            // Special message for eliminated hosts
+            if (data.isHostAssassinated) {
+                const hostMessage = document.getElementById('eliminated-host-message');
+                if (hostMessage) {
+                    hostMessage.style.display = 'block';
+                    hostMessage.innerHTML = '<p style="font-size: 16px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #fff;"><strong>📋 Important:</strong> Since you are the host, you will still need to read the murder stories for the remaining rounds. Please keep your device open and ready to read each story when prompted.</p>';
+                } else {
+                    // Create the message if it doesn't exist
+                    const messageEl = document.createElement('div');
+                    messageEl.id = 'eliminated-host-message';
+                    messageEl.style.cssText = 'margin-top: 20px; padding-top: 20px; border-top: 2px solid #fff;';
+                    messageEl.innerHTML = '<p style="font-size: 16px;"><strong>📋 Important:</strong> Since you are the host, you will still need to read the murder stories for the remaining rounds. Please keep your device open and ready to read each story when prompted.</p>';
+                    document.getElementById('eliminated-screen').appendChild(messageEl);
+                }
+            }
+        }
+        
+        roleEl.textContent = data.role;
+    }
+    
+    onNextRoundStart(data) {
+        console.log('Next round starting', data);
+        
+        // If player is eliminated, don't transition - they stay on elimination screen
+        if (this.isEliminated) {
+            console.log('Player is eliminated, staying on elimination screen');
+            return;
+        }
+        
+        // Reset state for new round
+        this.playerDone = false;
+        this.phase3Done = false;
+        this.phase4Voted = false;
+        this.phase5Voted = false;
+        
+        // Hide eliminated screen if showing
+        document.getElementById('eliminated-screen').style.display = 'none';
+        
+        // Hide all phase screens
+        document.getElementById('phase5-screen').style.display = 'none';
+        document.getElementById('phase4-screen').style.display = 'none';
+        document.getElementById('phase3-screen').style.display = 'none';
+        document.getElementById('phase2-screen').style.display = 'none';
+        document.getElementById('phase-screen').style.display = 'block';
+        
+        // Initialize Phase 1
+        this.initPhase1(data.phaseState);
+    }
+
+    onGameEnd(data) {
+        console.log('Game has ended', data);
+        
+        // Hide all game phase screens
+        document.getElementById('phase-screen').style.display = 'none';
+        document.getElementById('phase2-screen').style.display = 'none';
+        document.getElementById('phase3-screen').style.display = 'none';
+        document.getElementById('phase4-screen').style.display = 'none';
+        document.getElementById('phase5-screen').style.display = 'none';
+        document.getElementById('eliminated-screen').style.display = 'none';
+        
+        // Show game over screen
+        const gameOverScreen = document.getElementById('game-over-screen');
+        gameOverScreen.style.display = 'flex';
+        
+        // Update winner title (the h3 element)
+        const winnerTitle = document.getElementById('game-over-winner');
+        const winnerColor = data.winner === 'Syndicate' ? '#ff6b6b' : '#4ecdc4';
+        if (data.winner === 'Syndicate') {
+            winnerTitle.innerHTML = `<span style="color: ${winnerColor}">🔪 The Syndicate Wins!</span>`;
+        } else {
+            winnerTitle.innerHTML = `<span style="color: ${winnerColor}">🎉 The Innocents Win!</span>`;
+        }
+        
+        // Update results message
+        const resultMessage = document.querySelector('.game-over-message');
+        resultMessage.textContent = data.message || '';
+        
+        // Show your role
+        const roleReveal = document.getElementById('your-role-reveal');
+        if (roleReveal) {
+            roleReveal.textContent = this.role || 'Unknown';
+        }
+        
+        // Build player results table
+        this.buildPlayerResultsTable(data.playerResults || []);
+        
+        // Show/hide Play Again button based on host status
+        const playAgainBtn = document.getElementById('btn-play-again');
+        if (playAgainBtn) {
+            if (this.isHost) {
+                playAgainBtn.style.display = 'inline-block';
+                // Remove old listener and add new one
+                const newBtn = playAgainBtn.cloneNode(true);
+                playAgainBtn.parentNode.replaceChild(newBtn, playAgainBtn);
+                newBtn.addEventListener('click', () => this.playAgain());
+            } else {
+                playAgainBtn.style.display = 'none';
+            }
+        }
+    }
+    
+    buildPlayerResultsTable(playerResults) {
+        const tbody = document.getElementById('player-results-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        playerResults.forEach(player => {
+            const row = document.createElement('tr');
+            
+            // Determine role class for styling
+            const roleClass = player.role === 'Syndicate' ? 'role-syndicate' : 'role-innocent';
+            const statusClass = player.alive ? 'status-alive' : 'status-dead';
+            const statusText = player.alive ? 'Alive' : 'Eliminated';
+            
+            // Determine suspicion class
+            let suspicionClass = 'suspicion-na';
+            if (player.suspicion === 'Very Suspicious') {
+                suspicionClass = 'suspicion-very-high';
+            } else if (player.suspicion === 'Suspicious') {
+                suspicionClass = 'suspicion-high';
+            } else if (player.suspicion === 'Moderate') {
+                suspicionClass = 'suspicion-medium';
+            } else if (player.suspicion === 'Low') {
+                suspicionClass = 'suspicion-low';
+            } else if (player.suspicion === 'Clear') {
+                suspicionClass = 'suspicion-clear';
+            }
+            
+            row.innerHTML = `
+                <td>${this.escapeHtml(player.name)}</td>
+                <td class="${roleClass}">${player.role}</td>
+                <td class="${statusClass}">${statusText}</td>
+                <td class="${suspicionClass}">${player.suspicion}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    playAgain() {
+        console.log('Host clicked Play Again');
+        this.ws.send(JSON.stringify({
+            action: 'playAgain'
+        }));
+    }
+    
+    onPlayAgain(data) {
+        console.log('Play Again - returning to lobby', data);
+        
+        // Reset all local state
+        this.isEliminated = false;
+        this.eliminationData = null;
+        this.phase3Done = false;
+        this.phase4Voted = false;
+        this.phase5Voted = false;
+        this.isReady = false;
+        this.startGameInProgress = false;
+        this.syndicateState = null;
+        this.detectiveState = null;
+        this.bystanderState = null;
+        this.bodyGuardState = null;
+        this.playerDone = false;
+        this.phase2Ready = false;
+        this.caseNotes = {};
+        this.selectedCaseNotesPlayer = null;
+        this.role = null;
+        
+        // Update host status
+        this.isHost = data.isHost;
+        console.log('isHost set to:', this.isHost);
+        
+        // Hide all screens (with null checks)
+        const screens = [
+            'game-over-screen',
+            'role-screen', 
+            'phase1-screen',
+            'phase2-screen',
+            'phase3-screen',
+            'phase4-screen',
+            'phase5-screen',
+            'eliminated-screen'
+        ];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        // Show lobby screen
+        const lobbyScreen = document.getElementById('lobby-screen');
+        if (lobbyScreen) lobbyScreen.style.display = 'block';
+        
+        const gameCodeDisplay = document.getElementById('game-code-display');
+        if (gameCodeDisplay) gameCodeDisplay.textContent = data.gameCode;
+        
+        // Update player list
+        this.updatePlayerList(data.players);
+        
+        // Show/hide host controls and guest message based on host status
+        const hostControls = document.getElementById('host-controls');
+        const guestMessage = document.getElementById('guest-message');
+        const startBtn = document.getElementById('btn-start-game');
+        const startHint = document.getElementById('start-hint');
+        
+        if (data.isHost) {
+            if (hostControls) hostControls.style.display = 'block';
+            if (guestMessage) guestMessage.style.display = 'none';
+            if (startBtn) {
+                startBtn.style.display = 'block';
+                startBtn.textContent = 'START GAME';
+                // Check if enough players to enable start button
+                const playerCount = data.players ? data.players.length : 0;
+                startBtn.disabled = playerCount < 5;
+            }
+            if (startHint) {
+                const playerCount = data.players ? data.players.length : 0;
+                startHint.textContent = playerCount < 5 
+                    ? `Need at least 5 players to start (${playerCount}/5)` 
+                    : 'Ready to start!';
+            }
+        } else {
+            if (hostControls) hostControls.style.display = 'none';
+            if (guestMessage) guestMessage.style.display = 'block';
+        }
+        
+        // Show leave game button
+        const leaveBtn = document.getElementById('btn-leave-game');
+        if (leaveBtn) {
+            leaveBtn.style.display = 'inline-block';
+        }
+        
+        console.log('Returned to lobby. isHost:', data.isHost, 'hostControls visible:', hostControls?.style.display);
+    }
+
+    onLeftGame(data) {
+        console.log('Left game:', data);
+        alert(data.message || 'You have left the game');
+        
+        // Reset to initial state
+        this.resetToInitialState();
+    }
+
+    onRemovedFromGame(data) {
+        console.log('Removed from game:', data);
+        alert(data.message || 'You have been removed from the game');
+        
+        // Reset to initial state
+        this.resetToInitialState();
+    }
+
+    resetToInitialState() {
+        // Reset all state
+        this.gameCode = null;
+        this.playerName = null;
+        this.isHost = false;
+        this.role = null;
+        this.isReady = false;
+        this.isEliminated = false;
+        
+        // Hide all screens
+        const screens = [
+            'lobby-screen',
+            'role-screen',
+            'phase1-screen',
+            'phase2-screen',
+            'phase3-screen',
+            'phase4-screen',
+            'phase5-screen',
+            'game-over-screen',
+            'eliminated-screen'
+        ];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        // Show home screen
+        const homeScreen = document.getElementById('home-screen');
+        if (homeScreen) homeScreen.style.display = 'block';
+        
+        // Clear inputs
+        const nameInput = document.getElementById('player-name');
+        if (nameInput) nameInput.value = '';
+        const codeInput = document.getElementById('join-code');
+        if (codeInput) codeInput.value = '';
+    }
+
+    leaveGame() {
+        console.log('leaveGame() called');
+        console.log('WebSocket state:', this.ws ? this.ws.readyState : 'null');
+        
+        if (!confirm('Are you sure you want to leave the game?')) {
+            console.log('User cancelled leave');
+            return;
+        }
+        
+        console.log('Sending leaveGame message');
+        this.sendMessage({
+            action: 'leaveGame'
+        });
+    }
+
+    removePlayer(playerId) {
+        if (!confirm('Are you sure you want to remove this player?')) {
+            return;
+        }
+        
+        this.sendMessage({
+            action: 'removePlayer',
+            targetId: playerId
+        });
+    }
+
+    onGameNoteAdded(data) {
+        const list = document.getElementById('game-notes-list');
+        const li = document.createElement('li');
+        li.textContent = data.note;
+        list.appendChild(li);
+    }
+
+    updateGameNotes(notes) {
+        const list = document.getElementById('game-notes-list');
+        list.innerHTML = '';
+        (notes || []).forEach(note => {
+            const li = document.createElement('li');
+            li.textContent = note;
+            list.appendChild(li);
+        });
+    }
+
+    // ---- Syndicate Functions ----
+    initSyndicateView(state) {
+        document.getElementById('syndicate-view').style.display = 'block';
+        
+        this.syndicateState = state.syndicateData || {};
+        this.syndicateIds = state.syndicateData?.syndicateIds || [];
+        
+        // Filter out self, other syndicates, and dead players
+        const myId = this.getMyPlayerId();
+        const eligiblePlayers = state.players.filter(p => 
+            p.id !== myId && !this.syndicateIds.includes(p.id) && (p.alive !== false)
+        );
+        
+        this.buildPlayerGrid('syndicate-player-grid', eligiblePlayers, 'syndicate', false);
+        this.updateSyndicateStage();
+        this.updateSyndicateRecommendations();
+        this.bindSyndicateEvents();
+        
+        // If already locked in, show the locked status
+        if (this.syndicateState.lockedIn) {
+            document.getElementById('btn-syndicate-lock').disabled = true;
+            document.getElementById('btn-syndicate-lock').textContent = '✓ Locked In';
+            document.getElementById('syndicate-lock-status').textContent = 'Waiting for other Syndicate members...';
+        } else if (this.syndicateState.myRecommendation) {
+            // Recommendation selected but not locked in
+            document.getElementById('btn-syndicate-lock').disabled = false;
+            document.getElementById('syndicate-lock-status').textContent = 'Ready to lock in your choice';
+        }
+        
+        // If syndicate is complete (target failed or assassin chosen), mark as complete
+        if (this.syndicateState.complete) {
+            this.checkActionsComplete();
+        }
+    }
+
+    updateSyndicateStage() {
+        const stage = this.syndicateState.stage || 'target';
+        const titleEl = document.getElementById('syndicate-stage-title');
+        const descEl = document.getElementById('syndicate-stage-desc');
+
+        if (stage === 'target') {
+            titleEl.textContent = 'Choose Your Target';
+            descEl.textContent = 'Select a player to eliminate. You can see your fellow Syndicate members\' choices.';
+        } else {
+            titleEl.textContent = 'Choose the Assassin';
+            descEl.textContent = 'Select which Syndicate member will carry out the hit.';
+            // Rebuild grid for assassin selection (show all syndicates including self)
+            const syndicatePlayers = this.phaseState.players.filter(p => 
+                this.syndicateIds.includes(p.id)
+            );
+            this.buildPlayerGrid('syndicate-player-grid', syndicatePlayers, 'syndicate-assassin', false);
+        }
+
+        this.updateSyndicateRecommendations();
+    }
+
+    bindSyndicateEvents() {
+        document.getElementById('btn-syndicate-lock').addEventListener('click', () => {
+            this.syndicateLockIn();
+        });
+    }
+
+    syndicateSelectPlayer(playerId) {
+        if (this.syndicateState.lockedIn) return;
+
+        this.syndicateState.myRecommendation = playerId;
+        
+        // Update UI
+        document.querySelectorAll('#syndicate-player-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+        });
+
+        // Enable lock button
+        document.getElementById('btn-syndicate-lock').disabled = false;
+        document.getElementById('syndicate-lock-status').textContent = 'Ready to lock in your choice';
+
+        // Send to server
+        this.sendMessage({
+            action: 'syndicateRecommend',
+            targetId: playerId
+        });
+    }
+
+    syndicateLockIn() {
+        if (!this.syndicateState.myRecommendation) return;
+
+        this.sendMessage({
+            action: 'syndicateLockIn'
+        });
+
+        this.syndicateState.lockedIn = true;
+        document.getElementById('btn-syndicate-lock').disabled = true;
+        document.getElementById('btn-syndicate-lock').textContent = '✓ Locked In';
+        document.getElementById('syndicate-lock-status').textContent = 'Waiting for other Syndicate members...';
+    }
+
+    updateSyndicateRecommendations() {
+        const data = this.syndicateState;
+        const list = document.getElementById('syndicate-recommendations-list');
+        list.innerHTML = '';
+
+        if (data.recommendations && data.recommendations.recommendations) {
+            // Build a map of targetId -> array of voter names
+            const votersByTarget = {};
+            data.recommendations.recommendations.forEach(rec => {
+                if (!votersByTarget[rec.targetId]) {
+                    votersByTarget[rec.targetId] = [];
+                }
+                votersByTarget[rec.targetId].push(rec.voterName);
+                
+                // Also add to the list display
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="voter">${this.escapeHtml(rec.voterName)}</span> → ${this.escapeHtml(rec.targetName)}`;
+                list.appendChild(li);
+            });
+
+            // Update vote counts and voter tags on player cards
+            const voteCounts = data.recommendations.voteCounts || {};
+            document.querySelectorAll('#syndicate-player-grid .player-select-card').forEach(card => {
+                const playerId = card.dataset.playerId;
+                const count = voteCounts[playerId] || 0;
+                const countEl = card.querySelector('.vote-count');
+                
+                // Update vote count badge
+                if (count > 1) {
+                    card.classList.add('has-votes');
+                    countEl.textContent = count;
+                } else {
+                    card.classList.remove('has-votes');
+                    countEl.textContent = '0';
+                }
+
+                // Highlight recommended players
+                if (count > 0) {
+                    card.classList.add('recommended');
+                } else {
+                    card.classList.remove('recommended');
+                }
+
+                // Add/update voter name tags
+                let tagsContainer = card.querySelector('.voter-tags');
+                if (!tagsContainer) {
+                    tagsContainer = document.createElement('div');
+                    tagsContainer.className = 'voter-tags';
+                    card.appendChild(tagsContainer);
+                }
+                
+                const voters = votersByTarget[playerId] || [];
+                tagsContainer.innerHTML = voters.map(name => 
+                    `<span class="voter-tag">${this.escapeHtml(name)}</span>`
+                ).join('');
+            });
+        }
+    }
+
+    onSyndicateRecommendationsUpdate(data) {
+        if (!this.syndicateState) return;
+        
+        this.syndicateState.recommendations = data.recommendations;
+        this.syndicateState.stage = data.stage;
+        this.updateSyndicateRecommendations();
+    }
+
+    onSyndicateLockInUpdate(data) {
+        // Update lock-in status display if needed
+        const status = document.getElementById('syndicate-lock-status');
+        if (status && data.lockedInCount < data.totalSyndicates) {
+            status.textContent = `${data.lockedInCount}/${data.totalSyndicates} Syndicate members locked in`;
+        }
+    }
+
+    onSyndicateTargetChosen(data) {
+        if (!this.syndicateState) return;
+        
+        // Update state to assassin stage
+        this.syndicateState.stage = 'assassin';
+        this.syndicateState.target = data.targetId;
+        this.syndicateState.myRecommendation = null;
+        this.syndicateState.lockedIn = false;
+        this.syndicateState.recommendations = { recommendations: [], voteCounts: {}, lockedIn: [] };
+        
+        // Reset lock button
+        const lockBtn = document.getElementById('btn-syndicate-lock');
+        lockBtn.disabled = true;
+        lockBtn.textContent = 'Lock In';
+        
+        // Show message
+        document.getElementById('syndicate-lock-status').textContent = data.message;
+        
+        // Rebuild the grid for assassin selection
+        this.updateSyndicateStage();
+    }
+
+    onSyndicateTie(data) {
+        if (!this.syndicateState) return;
+        
+        // Reset for revote
+        this.syndicateState.myRecommendation = null;
+        this.syndicateState.lockedIn = false;
+        this.syndicateState.recommendations = { recommendations: [], voteCounts: {}, lockedIn: [] };
+        
+        // Reset lock button
+        const lockBtn = document.getElementById('btn-syndicate-lock');
+        lockBtn.disabled = true;
+        lockBtn.textContent = 'Lock In';
+        
+        // Show tie message
+        document.getElementById('syndicate-lock-status').textContent = data.message;
+        
+        // Clear selections
+        document.querySelectorAll('#syndicate-player-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected', 'recommended');
+            const tagsContainer = card.querySelector('.voter-tags');
+            if (tagsContainer) tagsContainer.innerHTML = '';
+        });
+        
+        this.updateSyndicateRecommendations();
+    }
+
+    onSyndicateTargetFailed(data) {
+        if (!this.syndicateState) return;
+        
+        // Show failure message
+        document.getElementById('syndicate-lock-status').textContent = data.message;
+        
+        // Disable further interaction
+        const lockBtn = document.getElementById('btn-syndicate-lock');
+        lockBtn.disabled = true;
+        lockBtn.textContent = 'No Target';
+        
+        // Mark as done
+        this.syndicateState.complete = true;
+        this.checkActionsComplete();
+    }
+
+    onSyndicateAssassinChosen(data) {
+        if (!this.syndicateState) return;
+        
+        // Show success message
+        document.getElementById('syndicate-lock-status').textContent = data.message;
+        
+        // Disable further interaction
+        const lockBtn = document.getElementById('btn-syndicate-lock');
+        lockBtn.disabled = true;
+        lockBtn.textContent = 'Assassin Chosen';
+        
+        // Mark as done
+        this.syndicateState.complete = true;
+        this.syndicateState.assassin = data.assassinId;
+        this.checkActionsComplete();
+    }
+
+    // ---- Detective Functions ----
+    initDetectiveView(state) {
+        document.getElementById('detective-view').style.display = 'block';
+        
+        this.detectiveState = state.detectiveData || {};
+        this.currentRound = state.round || 1;
+        
+        // Filter out dead players for investigation
+        const alivePlayers = state.players.filter(p => p.alive !== false);
+        
+        // Check if investigation is allowed (Round 2+)
+        const canInvestigate = this.detectiveState.canInvestigate || this.currentRound >= 2;
+        
+        const round1Message = document.getElementById('detective-round1-message');
+        const playerGrid = document.getElementById('detective-player-grid');
+        const instructions = document.getElementById('detective-instructions');
+        
+        if (!canInvestigate) {
+            // Round 1 - disable investigation, only show case notes
+            if (round1Message) round1Message.style.display = 'block';
+            if (playerGrid) playerGrid.style.display = 'none';
+            if (instructions) instructions.style.display = 'none';
+            document.getElementById('btn-detective-lock').style.display = 'none';
+            document.getElementById('detective-lock-status').textContent = 'Click "I\'m Done" when ready to proceed';
+            
+            // Auto-mark detective as ready since they can't do anything in Round 1
+            this.detectiveState.lockedIn = true;
+        } else {
+            // Round 2+ - enable investigation
+            if (round1Message) round1Message.style.display = 'none';
+            if (playerGrid) playerGrid.style.display = 'grid';
+            if (instructions) instructions.style.display = 'block';
+            this.buildPlayerGrid('detective-player-grid', alivePlayers, 'detective', false);
+            document.getElementById('btn-detective-lock').style.display = 'inline-block';
+            
+            // If already locked in, show the locked status
+            if (this.detectiveState.lockedIn && this.detectiveState.investigation) {
+                const targetPlayer = alivePlayers.find(p => p.id === this.detectiveState.investigation);
+                document.getElementById('btn-detective-lock').disabled = true;
+                document.getElementById('btn-detective-lock').textContent = '✓ Investigation Locked';
+                document.getElementById('detective-lock-status').textContent = `Investigating: ${targetPlayer ? this.escapeHtml(targetPlayer.name) : 'Unknown'}. Results will be revealed later...`;
+            } else if (this.detectiveState.investigation) {
+                // Investigation selected but not locked in
+                document.getElementById('btn-detective-lock').disabled = false;
+                document.getElementById('detective-lock-status').textContent = 'Ready to lock in investigation';
+            } else {
+                document.getElementById('detective-lock-status').textContent = 'Select a player to investigate';
+            }
+        }
+        
+        this.bindDetectiveEvents();
+        this.initCaseNotes(state);
+    }
+
+    bindDetectiveEvents() {
+        document.getElementById('btn-detective-lock').addEventListener('click', () => {
+            this.detectiveLockIn();
+        });
+
+        // Tag buttons are now bound in bindCaseNotesEvents()
+    }
+
+    detectiveSelectPlayer(playerId) {
+        if (this.detectiveState.lockedIn) return;
+
+        this.detectiveState.investigation = playerId;
+
+        document.querySelectorAll('#detective-player-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+        });
+
+        document.getElementById('btn-detective-lock').disabled = false;
+        document.getElementById('detective-lock-status').textContent = 'Ready to lock in investigation';
+
+        this.sendMessage({
+            action: 'detectiveInvestigate',
+            targetId: playerId
+        });
+    }
+
+    detectiveLockIn() {
+        if (!this.detectiveState.investigation) return;
+
+        this.sendMessage({
+            action: 'detectiveLockIn'
+        });
+
+        this.detectiveState.lockedIn = true;
+        const targetPlayer = this.phaseState.players.find(p => p.id === this.detectiveState.investigation);
+        document.getElementById('btn-detective-lock').disabled = true;
+        document.getElementById('btn-detective-lock').textContent = '✓ Investigation Locked';
+        document.getElementById('detective-lock-status').textContent = `Investigating: ${targetPlayer ? this.escapeHtml(targetPlayer.name) : 'Unknown'}. Results will be revealed later...`;
+        this.checkActionsComplete();
+    }
+
+    initCaseNotes(state) {
+        this.caseNotes = state.detectiveData.caseNotes || {};
+        const caseNotesPlayers = state.detectiveData.caseNotesPlayers || state.players;
+        const availableRoles = state.detectiveData.availableRoles || [];
+        
+        // Hide tag buttons for roles not in the game
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            const tag = btn.dataset.tag;
+            btn.style.display = availableRoles.includes(tag) ? 'block' : 'none';
+        });
+        
+        this.renderCaseNotesGrid(caseNotesPlayers);
+        this.bindCaseNotesEvents();
+    }
+
+    renderCaseNotesGrid(players) {
+        const grid = document.getElementById('case-notes-grid');
+        grid.innerHTML = '';
+
+        players.forEach(player => {
+            if (player.id === this.getMyPlayerId()) return; // Don't include self
+
+            const card = document.createElement('div');
+            card.className = 'case-note-card';
+            card.dataset.playerId = player.id;
+
+            const notes = this.caseNotes[player.id] || [];
+            const tagsHtml = notes.length 
+                ? notes.map(tag => `<span class="tag">${tag} <button class="tag-remove" data-tag="${tag}">✕</button></span>`).join('')
+                : '<span class="no-tags">No tags</span>';
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <h4>${this.escapeHtml(player.name)}</h4>
+                </div>
+                <div class="card-tags">
+                    ${tagsHtml}
+                </div>
+            `;
+
+            card.addEventListener('click', () => this.selectCaseNotesPlayer(player.id, card));
+
+            grid.appendChild(card);
+        });
+    }
+
+    selectCaseNotesPlayer(playerId, cardEl) {
+        // Remove previous selection
+        document.querySelectorAll('.case-note-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Select new card
+        if (cardEl) {
+            cardEl.classList.add('selected');
+        }
+
+        this.selectedCaseNotesPlayer = playerId;
+        const player = this.phaseState.players.find(p => p.id === playerId);
+
+        // Show tags panel
+        const tagsSection = document.getElementById('case-notes-tags');
+        tagsSection.style.display = 'block';
+        document.getElementById('selected-player-name').textContent = player ? this.escapeHtml(player.name) : 'Player';
+
+        // Update tag button states
+        const playerNotes = this.caseNotes[playerId] || [];
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            btn.classList.toggle('active', playerNotes.includes(btn.dataset.tag));
+        });
+    }
+
+    bindCaseNotesEvents() {
+        // Prevent duplicate event listeners by using a flag
+        if (this.caseNotesEventsBound) return;
+        this.caseNotesEventsBound = true;
+
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.toggleCaseNoteTag(btn.dataset.tag);
+            });
+        });
+
+        // Remove tag button handlers
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tag-remove')) {
+                const tag = e.target.dataset.tag;
+                this.removeTagFromPlayer(this.selectedCaseNotesPlayer, tag);
+            }
+        });
+    }
+
+    toggleCaseNoteTag(tag) {
+        if (!this.selectedCaseNotesPlayer) return;
+
+        const playerId = this.selectedCaseNotesPlayer;
+        if (!this.caseNotes[playerId]) {
+            this.caseNotes[playerId] = [];
+        }
+
+        const index = this.caseNotes[playerId].indexOf(tag);
+        if (index > -1) {
+            this.caseNotes[playerId].splice(index, 1);
+        } else {
+            this.caseNotes[playerId].push(tag);
+        }
+
+        // Update button state
+        document.querySelector(`.tag-btn[data-tag="${tag}"]`).classList.toggle('active');
+
+        // Send to server
+        this.sendMessage({
+            action: 'updateCaseNotes',
+            targetId: playerId,
+            notes: this.caseNotes[playerId]
+        });
+
+        this.updateCaseNoteCard(playerId);
+    }
+
+    removeTagFromPlayer(playerId, tag) {
+        if (!this.caseNotes[playerId]) return;
+
+        const index = this.caseNotes[playerId].indexOf(tag);
+        if (index > -1) {
+            this.caseNotes[playerId].splice(index, 1);
+        }
+
+        // Send to server
+        this.sendMessage({
+            action: 'updateCaseNotes',
+            targetId: playerId,
+            notes: this.caseNotes[playerId]
+        });
+
+        this.updateCaseNoteCard(playerId);
+        
+        // Update tag buttons
+        const playerNotes = this.caseNotes[playerId] || [];
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            btn.classList.toggle('active', playerNotes.includes(btn.dataset.tag));
+        });
+    }
+
+    updateCaseNoteCard(playerId) {
+        const card = document.querySelector(`.case-note-card[data-player-id="${playerId}"]`);
+        if (!card) return;
+
+        const notes = this.caseNotes[playerId] || [];
+        const tagsHtml = notes.length 
+            ? notes.map(tag => `<span class="tag">${tag} <button class="tag-remove" data-tag="${tag}">✕</button></span>`).join('')
+            : '<span class="no-tags">No tags</span>';
+
+        card.querySelector('.card-tags').innerHTML = tagsHtml;
+    }
+
+    // ---- Bystander Functions ----
+    initBystanderView(state) {
+        document.getElementById('bystander-view').style.display = 'block';
+        
+        this.bystanderState = state.bystanderData || {};
+        
+        // Filter out dead players
+        const alivePlayers = state.players.filter(p => p.alive !== false);
+        this.buildPlayerGrid('bystander-player-grid', alivePlayers, 'bystander', false);
+        
+        // If already voted, show the selection status
+        if (this.bystanderState.myVote) {
+            const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
+            if (player) {
+                const statusEl = document.getElementById('bystander-selection-status');
+                statusEl.className = 'selection-status confirmed';
+                statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+            }
+        }
+    }
+
+    bystanderSelectPlayer(playerId) {
+        this.bystanderState.myVote = playerId;
+
+        document.querySelectorAll('#bystander-player-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+        });
+
+        const statusEl = document.getElementById('bystander-selection-status');
+        const player = this.phaseState.players.find(p => p.id === playerId);
+        statusEl.className = 'selection-status confirmed';
+        statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+
+        this.sendMessage({
+            action: 'bystanderSelect',
+            targetId: playerId
+        });
+        
+        this.checkActionsComplete();
+    }
+
+    // ---- Body Guard Functions ----
+    initBodyGuardView(state) {
+        document.getElementById('bodyguard-view').style.display = 'block';
+        
+        this.bodyGuardState = state.bodyGuardData || {};
+        this.bystanderState = state.bystanderData || {};
+        
+        // Filter out dead players
+        const alivePlayers = state.players.filter(p => p.alive !== false);
+        
+        this.buildPlayerGrid('bodyguard-player-grid', alivePlayers, 'bodyguard', false);
+        this.buildPlayerGrid('bodyguard-bystander-grid', alivePlayers, 'bodyguard-bystander', false);
+        
+        // If already protecting, show the protection status
+        if (this.bodyGuardState.protecting) {
+            const player = alivePlayers.find(p => p.id === this.bodyGuardState.protecting);
+            if (player) {
+                const statusEl = document.getElementById('bodyguard-protection-status');
+                statusEl.className = 'protection-status confirmed';
+                statusEl.innerHTML = `<p>🛡️ Protecting ${this.escapeHtml(player.name)}</p>`;
+            }
+        }
+        
+        // If already voted in bystander selection, show the selection status
+        if (this.bystanderState.myVote) {
+            const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
+            if (player) {
+                const statusEl = document.getElementById('bodyguard-bystander-status');
+                statusEl.className = 'selection-status confirmed';
+                statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+            }
+        }
+    }
+
+    bodyGuardProtect(playerId) {
+        this.bodyGuardState.protecting = playerId;
+
+        document.querySelectorAll('#bodyguard-player-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+        });
+
+        const statusEl = document.getElementById('bodyguard-protection-status');
+        const player = this.phaseState.players.find(p => p.id === playerId);
+        statusEl.className = 'protection-status confirmed';
+        statusEl.innerHTML = `<p>🛡️ Protecting ${this.escapeHtml(player.name)}</p>`;
+
+        this.sendMessage({
+            action: 'bodyGuardProtect',
+            targetId: playerId
+        });
+        
+        this.checkActionsComplete();
+    }
+
+    bodyGuardBystanderSelect(playerId) {
+        this.bodyGuardState.bystanderVote = playerId;
+
+        document.querySelectorAll('#bodyguard-bystander-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+        });
+
+        const statusEl = document.getElementById('bodyguard-bystander-status');
+        const player = this.phaseState.players.find(p => p.id === playerId);
+        statusEl.className = 'selection-status confirmed';
+        statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+
+        this.sendMessage({
+            action: 'bystanderSelect',
+            targetId: playerId
+        });
+        
+        this.checkActionsComplete();
+    }
+
+    // ---- Helper Functions ----
+    buildPlayerGrid(containerId, players, type, excludeSyndicates = false) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        const myId = this.getMyPlayerId();
+
+        players.forEach((player, index) => {
+            // Skip self for most selections, but allow for assassin voting
+            const isSelf = player.id === myId;
+            const allowSelfSelection = type === 'syndicate-assassin';
+            
+            // Completely skip self card unless it's assassin selection
+            if (isSelf && !allowSelfSelection) {
+                return;
+            }
+            
+            const card = document.createElement('div');
+            card.className = 'player-select-card';
+            card.dataset.playerId = player.id;
+            
+            // Mark previously selected cards
+            let isSelected = false;
+            switch (type) {
+                case 'syndicate':
+                case 'syndicate-assassin':
+                    isSelected = this.syndicateState?.myRecommendation === player.id;
+                    break;
+                case 'bystander':
+                    isSelected = this.bystanderState?.myVote === player.id;
+                    break;
+                case 'bodyguard':
+                    isSelected = this.bodyGuardState?.protecting === player.id;
+                    break;
+                case 'bodyguard-bystander':
+                    isSelected = this.bystanderState?.myVote === player.id;
+                    break;
+                case 'detective':
+                    isSelected = this.detectiveState?.investigation === player.id;
+                    break;
+            }
+            
+            if (isSelected) {
+                card.classList.add('selected');
+            }
+
+            card.innerHTML = `
+                <span class="player-icon">${this.getPlayerIcon(index)}</span>
+                <span class="player-name">${this.escapeHtml(player.name)}</span>
+                <span class="vote-count">0</span>
+            `;
+
+            card.addEventListener('click', () => {
+                this.handlePlayerSelect(type, player.id);
+            });
+
+            container.appendChild(card);
+        });
+    }
+
+    handlePlayerSelect(type, playerId) {
+        switch (type) {
+            case 'syndicate':
+            case 'syndicate-assassin':
+                this.syndicateSelectPlayer(playerId);
+                break;
+            case 'detective':
+                this.detectiveSelectPlayer(playerId);
+                break;
+            case 'bystander':
+                this.bystanderSelectPlayer(playerId);
+                break;
+            case 'bodyguard':
+                this.bodyGuardProtect(playerId);
+                break;
+            case 'bodyguard-bystander':
+                this.bodyGuardBystanderSelect(playerId);
+                break;
+        }
+    }
+
+    getMyPlayerId() {
+        // For test games, use the current test player ID
+        if (this.isTestGame && this.currentTestPlayerId) {
+            return this.currentTestPlayerId;
+        }
+        
+        // Find our player ID from the players list
+        if (this.phaseState && this.phaseState.players) {
+            const myPlayer = this.phaseState.players.find(p => p.name === this.playerName);
+            return myPlayer ? myPlayer.id : null;
+        }
+        return null;
+    }
+
+    getRoleInfo(role) {
+        const roles = {
+            'Syndicate': {
+                title: 'Syndicate Member',
+                description: 'You are part of a secret Syndicate seeking to eliminate a target. Work with your fellow members to coordinate your strategy.',
+                abilities: [
+                    'See your fellow Syndicate members',
+                    'Vote on and recommend assassination targets',
+                    'Coordinate your team strategy'
+                ],
+                winCondition: 'Eliminate your target or be the last team standing'
+            },
+            'Detective': {
+                title: 'Detective',
+                description: 'You are investigating a mysterious crime. Use your investigative skills to uncover the truth and identify the culprits.',
+                abilities: [
+                    'Investigate one player per phase',
+                    'Take detailed case notes',
+                    'Build a profile of suspects'
+                ],
+                winCondition: 'Identify and eliminate the Syndicate'
+            },
+            'Body Guard': {
+                title: 'Body Guard',
+                description: 'You are tasked with protecting someone from the Syndicate\'s reach. Choose wisely who to protect.',
+                abilities: [
+                    'Protect one player per phase',
+                    'Participate in anonymous voting',
+                    'Prevent assassination'
+                ],
+                winCondition: 'Keep your protected target alive and eliminate the Syndicate'
+            },
+            'Eye Witness': {
+                title: 'Eye Witness',
+                description: 'You witnessed something important. Use your knowledge to help identify the truth.',
+                abilities: [
+                    'Identify one player\'s role during the game',
+                    'Participate in anonymous voting'
+                ],
+                winCondition: 'Identify the Syndicate and survive'
+            },
+            'Bystander': {
+                title: 'Bystander',
+                description: 'You are an innocent bystander drawn into this mystery. Try to stay alive and help eliminate the real threat.',
+                abilities: [
+                    'Vote anonymously on suspects',
+                    'Listen carefully to discussions'
+                ],
+                winCondition: 'Survive and help eliminate the Syndicate'
+            }
+        };
+
+        return roles[role] || {
+            title: role,
+            description: 'Unknown role',
+            abilities: [],
+            winCondition: 'Unknown'
+        };
+    }
+    onReconnected(data) {
+        this.reconnecting = false;
+        this.updateConnectionStatus('connected');
+        
+        this.gameCode = data.gameCode;
+        this.playerName = data.playerName;
+        this.isHost = data.isHost;
+        this.players = data.players;
+
+        console.log('Reconnected to game', data.gameCode, 'as', data.playerName);
+
+        // Restore game state based on status
+        if (data.gameStatus === 'lobby') {
+            // Back to lobby
+            document.getElementById('display-game-code').textContent = data.gameCode;
+            this.updatePlayerList(data.players);
+
+            if (data.isHost) {
+                document.getElementById('host-controls').style.display = 'block';
+                document.getElementById('guest-message').style.display = 'none';
+            } else {
+                document.getElementById('host-controls').style.display = 'none';
+                document.getElementById('guest-message').style.display = 'block';
+            }
+
+            this.showScreen('lobby-screen');
+        } else if (data.gameStatus === 'playing' && data.role) {
+            // Restore to role screen
+            this.role = data.role;
+            this.isReady = data.isReady;
+
+            // Ensure roleDescription exists
+            if (!data.roleDescription) {
+                console.warn('Missing roleDescription in reconnected data, using fallback');
+                data.roleDescription = {
+                    title: data.role,
+                    description: 'Role restored',
+                    abilities: [],
+                    winCondition: 'Eliminate Syndicate' 
+                };
+            }
+
+            // Set role display
+            const roleEl = document.getElementById('player-role');
+            roleEl.textContent = data.roleDescription.title;
+            roleEl.className = 'role-name ' + data.role.toLowerCase().replace(' ', '-');
+
+            document.getElementById('role-description').textContent = data.roleDescription.description;
+
+            // Set abilities
+            const abilitiesList = document.getElementById('role-abilities-list');
+            abilitiesList.innerHTML = '';
+            (data.roleDescription.abilities || []).forEach(ability => {
+                const li = document.createElement('li');
+                li.textContent = ability;
+                abilitiesList.appendChild(li);
+            });
+
+            document.getElementById('role-win-condition').textContent = data.roleDescription.winCondition || '';
+
+            // Show teammates for Syndicate
+            const teammatesSection = document.getElementById('teammates-section');
+            const teammatesList = document.getElementById('teammates-list');
+
+            if (data.role === 'Syndicate' && data.teammates && data.teammates.length > 0) {
+                teammatesSection.style.display = 'block';
+                teammatesList.innerHTML = '';
+                data.teammates.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    teammatesList.appendChild(li);
+                });
+            } else {
+                teammatesSection.style.display = 'none';
+            }
+
+            // Update ready button state
+            const readyBtn = document.getElementById('btn-ready');
+            if (data.isReady) {
+                readyBtn.disabled = true;
+                readyBtn.textContent = '✓ Ready!';
+            } else {
+                readyBtn.disabled = false;
+                readyBtn.textContent = "I'm Ready";
+            }
+
+            document.getElementById('ready-count').textContent = data.readyCount;
+            document.getElementById('ready-total').textContent = data.totalPlayers;
+
+            this.showScreen('role-screen');
+        } else if (data.gameStatus && data.gameStatus.startsWith('phase')) {
+            // Restore to phase screen
+            this.role = data.role;
+            document.getElementById('current-phase').textContent = data.phase || 1;
+            this.showScreen('phase-screen');
+        }
+
+        this.showNotification(`Welcome back, ${data.playerName}!`);
+    }
+
+    onReconnectFailed(data) {
+        this.reconnecting = false;
+        this.updateConnectionStatus('connected');
+        this.clearSession();
+        console.log('Reconnect failed:', data.message);
+        // Stay on home screen for new game
+        this.showScreen('home-screen');
+    }
+
+    onPlayerDisconnected(data) {
+        this.updatePlayerList(data.players);
+        this.showNotification(`${data.playerName} disconnected`);
+    }
+
+    onPlayerReconnected(data) {
+        this.updatePlayerList(data.players);
+        this.showNotification(`${data.playerName} reconnected`);
+    }
+
+    showNotification(message) {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById('game-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'game-notification';
+            notification.className = 'game-notification';
+            document.body.appendChild(notification);
+        }
+
+        notification.textContent = message;
+        notification.classList.add('show');
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    }
+
+    updatePlayerList(players) {
+        this.players = players;
+        const listEl = document.getElementById('player-list');
+        const countEl = document.getElementById('player-count');
+
+        if (!listEl || !countEl) {
+            console.warn('Player list or count element not found');
+            return;
+        }
+
+        listEl.innerHTML = '';
+
+        players.forEach((player, index) => {
+            const li = document.createElement('li');
+            const isDisconnected = player.connected === false;
+            const isMe = player.name === this.playerName;
+            const canRemove = this.isHost && !player.isHost && !isMe;
+            
+            li.className = isDisconnected ? 'disconnected' : '';
+            li.innerHTML = `
+                <span class="player-icon">${this.getPlayerIcon(index)}</span>
+                <span class="player-name">${this.escapeHtml(player.name)}${isDisconnected ? ' <span class="disconnected-badge">⚡ Reconnecting...</span>' : ''}</span>
+                ${player.isHost ? '<span class="host-badge">Host</span>' : ''}
+                ${canRemove ? `<button class="btn-remove-player" data-player-id="${player.id}" title="Remove player">✕</button>` : ''}
+            `;
+            listEl.appendChild(li);
+        });
+
+        // Bind remove button events
+        listEl.querySelectorAll('.btn-remove-player').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const playerId = btn.dataset.playerId;
+                this.removePlayer(playerId);
+            });
+        });
+
+        const count = players.length;
+        countEl.textContent = `(${count}/5 minimum)`;
+
+        this.updateStartButton();
+    }
+
+    updateStartButton() {
+        if (!this.isHost) return;
+
+        const startBtn = document.getElementById('btn-start-game');
+        const hintEl = document.getElementById('start-hint');
+        const count = this.players.length;
+
+        if (count >= 5) {
+            startBtn.disabled = false;
+            hintEl.textContent = `Ready to start with ${count} players!`;
+        } else {
+            startBtn.disabled = true;
+            hintEl.textContent = `Need ${5 - count} more player${5 - count !== 1 ? 's' : ''} to start`;
+        }
+    }
+
+    handleError(message) {
+        console.error('Game error:', message);
+        // Show error in the appropriate screen
+        const currentScreen = document.querySelector('.screen.active');
+
+        if (currentScreen.id === 'create-screen') {
+            this.showError('create-error', message);
+        } else if (currentScreen.id === 'join-screen') {
+            this.showError('join-error', message);
+        } else if (currentScreen.id === 'lobby-screen') {
+            this.showError('lobby-error', message);
+        } else {
+            // Show as notification if on another screen
+            this.showNotification(message);
+        }
+    }
+
+    // Utility Functions
+    getPlayerIcon(index) {
+        const icons = ['🎭', '🎩', '🕵️', '👤', '🎯', '🔮', '⚔️', '🛡️', '💀', '👁️'];
+        return icons[index % icons.length];
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize game when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.game = new Game();
+});

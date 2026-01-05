@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Syndicates</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Home Screen -->
+        <div id="home-screen" class="screen active">
+            <div class="logo">
+                <h1>THE SECRET</h1>
+                <h2>SYNDICATES</h2>
+            </div>
+            <div class="tagline">Trust No One. Suspect Everyone.</div>
+            <div class="button-group">
+                <button id="btn-create-game" class="btn btn-primary">Create Game</button>
+                <button id="btn-join-game" class="btn btn-secondary">Join Game</button>
+            </div>
+            <button id="btn-how-to-play" class="btn-link">How to Play</button>
+        </div>
+
+        <!-- How to Play Screen -->
+        <div id="how-to-play-screen" class="screen">
+            <button class="btn-back" id="btn-back-how-to-play">&larr; Back</button>
+            <div class="how-to-play-content">
+                <h2>How to Play</h2>
+                
+                <section class="htp-section">
+                    <h3>🎯 Objective</h3>
+                    <p>Secret Syndicates is a social deduction game where players are secretly assigned roles. The <strong>Syndicate</strong> members work in the shadows to eliminate innocent citizens, while the <strong>Town</strong> (everyone else) must identify and vote out the Syndicate before it's too late.</p>
+                </section>
+
+                <section class="htp-section">
+                    <h3>👥 Roles</h3>
+                    
+                    <div class="role-card syndicate">
+                        <h4>🔴 Syndicate Member</h4>
+                        <p class="role-team">Team: Syndicate</p>
+                        <p>You are part of the secret criminal organization. Your goal is to eliminate all innocent citizens without being discovered.</p>
+                        <ul>
+                            <li>Vote each night to select an assassin and target</li>
+                            <li>Know the identity of your fellow Syndicate members</li>
+                            <li>Blend in during the day and mislead investigations</li>
+                        </ul>
+                        <p class="win-condition">Win: Eliminate enough players until Syndicate equals or outnumbers the Town</p>
+                    </div>
+
+                    <div class="role-card town">
+                        <h4>🔵 Detective</h4>
+                        <p class="role-team">Team: Town</p>
+                        <p>You are a skilled investigator working to expose the Syndicate. Use your abilities wisely to uncover the truth.</p>
+                        <ul>
+                            <li>Receive a secret keyword each round to communicate with the Eye Witness</li>
+                            <li>Share your findings during day discussions</li>
+                            <li>Lead the town to vote out Syndicate members</li>
+                        </ul>
+                        <p class="win-condition">Win: Eliminate all Syndicate members</p>
+                    </div>
+
+                    <div class="role-card town">
+                        <h4>🔵 Innocent Bystander</h4>
+                        <p class="role-team">Team: Town</p>
+                        <p>You are an ordinary citizen caught in the crossfire. Stay vigilant and help identify the Syndicate through observation and deduction.</p>
+                        <ul>
+                            <li>Vote during the day to eliminate suspected Syndicate members</li>
+                            <li>Observe player behavior and discussions</li>
+                            <li>Form alliances with other players</li>
+                        </ul>
+                        <p class="win-condition">Win: Survive and help eliminate all Syndicate members</p>
+                    </div>
+
+                    <div class="role-card optional">
+                        <h4>🟡 Eye Witness <span class="optional-badge">Optional</span></h4>
+                        <p class="role-team">Team: Town</p>
+                        <p>You witnessed a crime and caught a glimpse of the underworld. You see who commits the assassination each round.</p>
+                        <ul>
+                            <li>Learn the assassin's identity and their victim each round</li>
+                            <li>Receive a keyword to secretly signal the Detective</li>
+                            <li>Vote during the day like other citizens</li>
+                        </ul>
+                        <p class="win-condition">Win: Survive and help eliminate all Syndicate members</p>
+                    </div>
+
+                    <div class="role-card optional">
+                        <h4>🟡 Body Guard <span class="optional-badge">Optional</span></h4>
+                        <p class="role-team">Team: Town</p>
+                        <p>You are a professional protector. Each night, you can choose one player to shield from harm.</p>
+                        <ul>
+                            <li>Protect one player each night from elimination</li>
+                            <li>Cannot protect yourself</li>
+                            <li>Cannot protect the same player two nights in a row</li>
+                        </ul>
+                        <p class="win-condition">Win: Survive and help eliminate all Syndicate members</p>
+                    </div>
+                </section>
+
+                <section class="htp-section">
+                    <h3>🎮 Game Phases</h3>
+                    
+                    <div class="phase-card">
+                        <h4>Phase 1: Night Phase</h4>
+                        <p>The city sleeps, but evil never rests...</p>
+                        <ul>
+                            <li><strong>Syndicate:</strong> Vote to choose who will be the assassin, then vote for their target</li>
+                            <li><strong>Body Guard:</strong> Choose a player to protect (if enabled)</li>
+                            <li><strong>Detective:</strong> Receives their secret keyword for the round</li>
+                            <li><strong>Others:</strong> Wait for the night to pass</li>
+                        </ul>
+                    </div>
+
+                    <div class="phase-card">
+                        <h4>Phase 2: News Report</h4>
+                        <p>The morning news breaks with the night's events...</p>
+                        <ul>
+                            <li>A news story reveals who was assassinated (or saved)</li>
+                            <li><strong>Eye Witness:</strong> Learns the assassin's identity and receives the keyword</li>
+                            <li>All players prepare for the discussion</li>
+                        </ul>
+                    </div>
+
+                    <div class="phase-card">
+                        <h4>Phase 3: Group Discussion</h4>
+                        <p>The town gathers to discuss the crime...</p>
+                        <ul>
+                            <li>Players discuss who they suspect</li>
+                            <li>Share information (or spread misinformation!)</li>
+                            <li>The Eye Witness may try to signal the Detective using the keyword</li>
+                            <li>Syndicate members should deflect suspicion</li>
+                        </ul>
+                    </div>
+
+                    <div class="phase-card">
+                        <h4>Phase 4: Accusation Vote</h4>
+                        <p>Time to point fingers...</p>
+                        <ul>
+                            <li>Each player votes for who they think is Syndicate</li>
+                            <li>The player with the most votes goes on trial</li>
+                            <li>If there's a tie, a random player from the tied votes is selected</li>
+                        </ul>
+                    </div>
+
+                    <div class="phase-card">
+                        <h4>Phase 5: Trial Vote</h4>
+                        <p>The accused faces judgment...</p>
+                        <ul>
+                            <li>Players vote <strong>Guilty</strong> or <strong>Not Guilty</strong></li>
+                            <li>Majority Guilty = Player is eliminated</li>
+                            <li>Majority Not Guilty or Tie = Player survives</li>
+                            <li>The eliminated player's role is revealed</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="htp-section">
+                    <h3>🏆 Victory Conditions</h3>
+                    <div class="victory-card syndicate-victory">
+                        <h4>Syndicate Wins</h4>
+                        <p>When the number of living Syndicate members equals or exceeds the number of living Town members.</p>
+                    </div>
+                    <div class="victory-card town-victory">
+                        <h4>Town Wins</h4>
+                        <p>When all Syndicate members have been eliminated.</p>
+                    </div>
+                </section>
+
+                <section class="htp-section">
+                    <h3>📋 Game Setup</h3>
+                    <ul class="setup-list">
+                        <li><strong>Minimum Players:</strong> 5</li>
+                        <li><strong>Syndicate Count:</strong> 1 per 3 players (rounded down)</li>
+                        <li><strong>Detective Count:</strong> 1 per 4 players (rounded down)</li>
+                        <li><strong>Optional Roles:</strong> Eye Witness and Body Guard can be enabled by the host</li>
+                        <li><strong>Remaining Players:</strong> Become Innocent Bystanders</li>
+                    </ul>
+                </section>
+
+                <section class="htp-section">
+                    <h3>💡 Tips for Playing</h3>
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <h4>As Town</h4>
+                            <ul>
+                                <li>Pay attention to who defends whom</li>
+                                <li>Watch for inconsistent stories</li>
+                                <li>Don't reveal your role too early</li>
+                                <li>Trust your instincts but verify with evidence</li>
+                            </ul>
+                        </div>
+                        <div class="tip-card">
+                            <h4>As Syndicate</h4>
+                            <ul>
+                                <li>Blend in with the Town</li>
+                                <li>Don't always defend your teammates</li>
+                                <li>Create reasonable doubt</li>
+                                <li>Coordinate your votes subtly</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <button id="btn-close-how-to-play" class="btn btn-primary">Got It!</button>
+            </div>
+        </div>
+
+        <!-- Create Game Screen -->
+        <div id="create-screen" class="screen">
+            <button class="btn-back" id="btn-back-create">&larr; Back</button>
+            <h2>Create New Game</h2>
+            <div class="form-group">
+                <label for="create-player-name">Your Name</label>
+                <input type="text" id="create-player-name" placeholder="Enter your name" maxlength="20">
+            </div>
+            <div class="settings-section">
+                <h3>Optional Roles</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="opt-eye-witness">
+                        <span class="checkmark"></span>
+                        Eye Witness
+                        <span class="role-desc">Can identify one player's role per game</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="opt-body-guard">
+                        <span class="checkmark"></span>
+                        Body Guard
+                        <span class="role-desc">Can protect one player each night</span>
+                    </label>
+                </div>
+            </div>
+            <button id="btn-create-lobby" class="btn btn-primary">Create Lobby</button>
+            <div id="create-error" class="error-message"></div>
+        </div>
+
+        <!-- Join Game Screen -->
+        <div id="join-screen" class="screen">
+            <button class="btn-back" id="btn-back-join">&larr; Back</button>
+            <h2>Join Game</h2>
+            <div class="form-group">
+                <label for="join-player-name">Your Name</label>
+                <input type="text" id="join-player-name" placeholder="Enter your name" maxlength="20">
+            </div>
+            <div class="form-group">
+                <label for="join-game-code">Game Code</label>
+                <input type="text" id="join-game-code" placeholder="Enter 4-letter code" maxlength="4">
+            </div>
+            <button id="btn-join-lobby" class="btn btn-primary">Join Lobby</button>
+            <div id="join-error" class="error-message"></div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <h2>Game Lobby</h2>
+            <div class="game-code-display">
+                <span class="label">Game Code</span>
+                <span id="display-game-code" class="code">----</span>
+            </div>
+            <div class="player-list-section">
+                <h3>Players <span id="player-count">(0/5 minimum)</span></h3>
+                <ul id="player-list" class="player-list"></ul>
+            </div>
+            <div id="host-controls" class="host-controls">
+                <button id="btn-start-game" class="btn btn-primary btn-start" disabled>
+                    Start Game
+                </button>
+                <p class="start-hint" id="start-hint">Need at least 5 players to start</p>
+            </div>
+            <div id="guest-message" class="guest-message" style="display: none;">
+                <p>Waiting for the host to start the game...</p>
+            </div>
+            <div class="lobby-actions">
+                <button id="btn-leave-game" class="btn btn-secondary btn-leave" onclick="game.leaveGame()">
+                    Leave Game
+                </button>
+            </div>
+            <div id="lobby-error" class="error-message"></div>
+        </div>
+
+        <!-- Role Intro Screen -->
+        <div id="role-screen" class="screen">
+            <div class="role-intro-container">
+                <div class="role-reveal-header">
+                    <p class="reveal-label">Your Secret Role</p>
+                    <h1 id="player-role" class="role-name">Loading...</h1>
+                </div>
+                
+                <div class="role-card">
+                    <p id="role-description" class="role-description"></p>
+                    
+                    <div class="role-abilities">
+                        <h3>Your Abilities</h3>
+                        <ul id="role-abilities-list"></ul>
+                    </div>
+                    
+                    <div class="role-objective">
+                        <h3>Win Condition</h3>
+                        <p id="role-win-condition"></p>
+                    </div>
+
+                    <div id="teammates-section" class="teammates-section" style="display: none;">
+                        <h3>Your Fellow Syndicate Members</h3>
+                        <ul id="teammates-list"></ul>
+                    </div>
+                </div>
+
+                <div class="ready-section">
+                    <p class="ready-warning">⚠️ Memorize your role before continuing</p>
+                    <button id="btn-ready" class="btn btn-primary btn-ready">I'm Ready</button>
+                    <div class="ready-status">
+                        <span id="ready-count">0</span> / <span id="ready-total">0</span> players ready
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase 1 Screen - Deliberations -->
+        <div id="phase-screen" class="screen">
+            <div class="phase-header">
+                <h2>Phase <span id="current-phase">1</span>: <span id="phase-name">Deliberations</span></h2>
+                <div class="role-badge" id="phase-role-badge">Loading...</div>
+            </div>
+
+            <!-- Game Notes (visible to all) -->
+            <div class="game-notes-section" id="game-notes-section">
+                <h3>📜 Game Notes</h3>
+                <ul id="game-notes-list"></ul>
+            </div>
+
+            <!-- Syndicate View -->
+            <div id="syndicate-view" class="role-view" style="display: none;">
+                <div class="syndicate-stage" id="syndicate-stage-info">
+                    <h3 id="syndicate-stage-title">Choose Your Target</h3>
+                    <p id="syndicate-stage-desc">Select a player to eliminate. You can see your fellow Syndicate members' choices.</p>
+                </div>
+
+                <div class="player-selection-grid" id="syndicate-player-grid"></div>
+
+                <div class="syndicate-votes" id="syndicate-votes-display">
+                    <h4>Syndicate Recommendations</h4>
+                    <ul id="syndicate-recommendations-list"></ul>
+                </div>
+
+                <div class="lock-in-section">
+                    <button id="btn-syndicate-lock" class="btn btn-primary" disabled>Lock It In</button>
+                    <p class="lock-status" id="syndicate-lock-status">Select a player first</p>
+                </div>
+
+                <div class="syndicate-result" id="syndicate-result" style="display: none;">
+                    <p id="syndicate-result-message"></p>
+                </div>
+            </div>
+
+            <!-- Detective View -->
+            <div id="detective-view" class="role-view" style="display: none;">
+                <div class="detective-section">
+                    <h3>🔍 Investigation</h3>
+                    <p id="detective-instructions">Choose a player to investigate. Results will be revealed in a later phase.</p>
+                    
+                    <div id="detective-round1-message" style="display: none; text-align: center; padding: 20px; color: #888; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px;">
+                        <p style="margin: 0 0 10px 0;"><strong>Investigation not available in Round 1</strong></p>
+                        <p style="font-size: 14px; margin: 0;">You can use your case notes to track suspicions.<br>Investigation will be available from Round 2 onwards.</p>
+                    </div>
+                    <div class="player-selection-grid" id="detective-player-grid"></div>
+                    
+                    <div class="lock-in-section">
+                        <button id="btn-detective-lock" class="btn btn-primary" disabled>Lock In Investigation</button>
+                        <p class="lock-status" id="detective-lock-status">Select a player to investigate</p>
+                    </div>
+                </div>
+
+                <div class="case-notes-section">
+                    <h3>📝 Case Notes</h3>
+                    <p>Click on a player card to select them, then click role tags to add notes.</p>
+                    
+                    <div class="case-notes-grid" id="case-notes-grid"></div>
+
+                    <div class="case-notes-tags" id="case-notes-tags" style="display: none;">
+                        <h4>Add Tags to <span id="selected-player-name">Player</span></h4>
+                        <div class="tag-buttons">
+                            <button class="tag-btn" data-tag="Syndicate">Syndicate</button>
+                            <button class="tag-btn" data-tag="Detective">Detective</button>
+                            <button class="tag-btn" data-tag="Bystander">Bystander</button>
+                            <button class="tag-btn" data-tag="Eye Witness">Eye Witness</button>
+                            <button class="tag-btn" data-tag="Body Guard">Body Guard</button>
+                            <button class="tag-btn tag-innocent" data-tag="Innocent">Innocent</button>
+                            <button class="tag-btn tag-suspicious" data-tag="Suspicious">Suspicious</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bystander View (also used by Eye Witness) -->
+            <div id="bystander-view" class="role-view" style="display: none;">
+                <div class="bystander-section">
+                    <h3>👁️ Anonymous Selection</h3>
+                    <p>Select the player you suspect most. If the majority selects a Syndicate member, a rumor will surface...</p>
+                    
+                    <div class="player-selection-grid" id="bystander-player-grid"></div>
+                    
+                    <div class="selection-status" id="bystander-selection-status">
+                        <p>Click on a player to make your selection</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Guard View -->
+            <div id="bodyguard-view" class="role-view" style="display: none;">
+                <div class="bodyguard-section">
+                    <h3>🛡️ Protection</h3>
+                    <p>Choose a player to protect tonight. They will be safe from elimination.</p>
+                    
+                    <div class="player-selection-grid" id="bodyguard-player-grid"></div>
+                    
+                    <div class="protection-status" id="bodyguard-protection-status">
+                        <p>Select a player to protect</p>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- Body Guard also gets bystander voting -->
+                <div class="bystander-section">
+                    <h3>👁️ Anonymous Selection</h3>
+                    <p>You may also participate in the anonymous selection.</p>
+                    
+                    <div class="player-selection-grid" id="bodyguard-bystander-grid"></div>
+                    
+                    <div class="selection-status" id="bodyguard-bystander-status">
+                        <p>Click on a player to make your selection</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Waiting indicator -->
+            <div class="phase-waiting" id="phase-waiting">
+                <p>⏳ Waiting for other players to complete their actions...</p>
+            </div>
+
+            <!-- I'm Done Button -->
+            <div class="im-done-section" id="im-done-section">
+                <div class="done-status" id="done-status">
+                    <span id="done-count">0</span>/<span id="done-total">0</span> players ready for next phase
+                </div>
+                <button id="btn-im-done" class="btn btn-success" disabled>I'm Done</button>
+                <p class="done-hint" id="done-hint">Complete your actions to enable this button</p>
+            </div>
+        </div>
+
+        <!-- Phase 2 Screen - The Murder -->
+        <div id="phase2-screen" class="screen">
+            <div class="phase-header">
+                <h2>Phase 2: The Murder</h2>
+            </div>
+
+            <!-- Murder Story View (for all players) -->
+            <div id="murder-view" class="murder-view" style="display: none;">
+                <div class="murder-story-container">
+                    <h3>🔪 The Murder Story</h3>
+                    <div class="murder-story" id="murder-story">
+                        <!-- Murder story will be populated here -->
+                    </div>
+                    <p class="story-hint">Listen carefully to the murder story...</p>
+                </div>
+
+                <!-- I'm Ready Button -->
+                <div class="im-done-section" id="phase2-ready-section">
+                    <div class="done-status" id="phase2-ready-status">
+                        <span id="phase2-ready-count">0</span>/<span id="phase2-ready-total">0</span> players ready for Phase 3
+                    </div>
+                    <button id="btn-phase2-ready" class="btn btn-success">I'm Ready</button>
+                    <p class="done-hint" id="phase2-ready-hint">Click when ready to proceed to the discussion phase</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase 3: Group Discussion -->
+        <div id="phase3-screen" class="screen" style="display: none;">
+            <div class="phase-header">
+                <h2>Phase 3: Group Discussion</h2>
+            </div>
+            
+            <!-- Special Role Messages -->
+            <div id="phase3-messages-container" style="margin-bottom: 20px;">
+                <!-- Eyewitness message will appear here -->
+                <div id="phase3-eyewitness-message" style="display: none; background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h3 style="color: #e94560; margin-top: 0;">🔍 YOU WITNESSED THE ASSASSINATION</h3>
+                    <p id="eyewitness-details" style="margin: 10px 0; font-size: 14px;"></p>
+                </div>
+                
+                <!-- Detective message will appear here -->
+                <div id="phase3-detective-message" style="display: none; background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE'S CLUE</h3>
+                    <p id="detective-details" style="margin: 10px 0; font-size: 14px;"></p>
+                </div>
+                
+                <!-- Assassin message will appear here -->
+                <div id="phase3-assassin-message" style="display: none; background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h3 style="color: #e94560; margin-top: 0;">⚠️ YOU WERE WITNESSED</h3>
+                    <p id="assassin-details" style="margin: 10px 0; font-size: 14px;"></p>
+                </div>
+            </div>
+            
+            <div class="discussion-container">
+                <h3>💬 Discuss What You Know</h3>
+                <p>Everyone, discuss what you know about the murder. Be careful who you trust!</p>
+            </div>
+
+            <!-- I'm Done Button -->
+            <div class="im-done-section" id="phase3-done-section">
+                <div class="done-status" id="phase3-done-status">
+                    <span id="phase3-done-count">0</span>/<span id="phase3-done-total">0</span> players ready to vote
+                </div>
+                <button id="btn-phase3-done" class="btn btn-success">I'm Done</button>
+                <p class="done-hint" id="phase3-done-hint">Click when ready to move to voting</p>
+            </div>
+        </div>
+
+        <!-- Phase 4: Voting -->
+        <div id="phase4-screen" class="screen" style="display: none;">
+            <div class="phase-header">
+                <h2>Phase 4: The Vote</h2>
+            </div>
+            
+            <div class="vote-container">
+                <h3>🗳️ Vote to Arrest</h3>
+                <p>Click on a player to cast your vote. Who is the Syndicate?</p>
+                
+                <div class="player-selection-grid" id="vote-player-grid">
+                    <!-- Players will be added here -->
+                </div>
+
+                <div class="vote-status" id="phase4-vote-status">
+                    <span id="phase4-vote-count">0</span>/<span id="phase4-vote-total">0</span> players have voted
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase 5: Trial -->
+        <div id="phase5-screen" class="screen" style="display: none;">
+            <div class="phase-header">
+                <h2>Phase 5: The Trial</h2>
+            </div>
+            
+            <div class="trial-container">
+                <h3>⚖️ Is the Accused Guilty?</h3>
+                <div class="accused-player" id="accused-player-info">
+                    <!-- Accused player name will go here -->
+                </div>
+                <p>Vote on the guilt of the accused. Majority rules.</p>
+
+                <div class="trial-buttons">
+                    <button id="btn-guilty" class="btn btn-danger">Guilty</button>
+                    <button id="btn-not-guilty" class="btn btn-success">Not Guilty</button>
+                </div>
+
+                <div class="trial-status" id="phase5-trial-status">
+                    <div class="vote-tally">
+                        <p>Guilty: <span id="guilty-count">0</span></p>
+                        <p>Not Guilty: <span id="not-guilty-count">0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Eliminated Screen -->
+        <div id="eliminated-screen" class="screen" style="display: none;">
+            <div class="eliminated-container">
+                <div class="eliminated-message">
+                    <h2 id="eliminated-title">You Have Been Eliminated</h2>
+                    <p id="eliminated-reason">You were found guilty and imprisoned.</p>
+                </div>
+                <div class="game-info">
+                    <p>The game continues without you.</p>
+                    <p>Your role was: <span id="eliminated-role" class="role-badge">Unknown</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen" style="display: none;">
+            <div class="game-over-container">
+                <h2 class="game-over-title">Game Over</h2>
+                <h3 id="game-over-winner">The Innocents Have Won!</h3>
+                
+                <div class="results-container">
+                    <div class="results-section">
+                        <h4>Final Results</h4>
+                        <p class="game-over-message">All Syndicates have been imprisoned.</p>
+                    </div>
+                    
+                    <div class="results-section">
+                        <h4>Your Role Was</h4>
+                        <p class="role-reveal" id="your-role-reveal">Detective</p>
+                    </div>
+                    
+                    <div class="results-section player-results-section">
+                        <h4>All Players</h4>
+                        <table class="player-results-table" id="player-results-table">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Suspicion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="player-results-body">
+                                <!-- Player results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <button id="btn-play-again" class="btn btn-primary">Play Again</button>
+            </div>
+        </div>
+
+        <!-- Test Mode Player Switcher -->
+        <div id="test-player-switcher" class="test-player-switcher" style="display: none;">
+            <label for="test-player-select">Playing as:</label>
+            <select id="test-player-select"></select>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="connection-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Disconnected</span>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
