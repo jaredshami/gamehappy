@@ -917,6 +917,14 @@ class Game {
         document.getElementById('ready-total').textContent = data.totalPlayers;
     }
 
+    updateReadyStatus(playerCount, totalPlayers) {
+        const readyCountEl = document.getElementById('ready-count');
+        const readyTotalEl = document.getElementById('ready-total');
+        
+        if (readyCountEl) readyCountEl.textContent = playerCount;
+        if (readyTotalEl) readyTotalEl.textContent = totalPlayers;
+    }
+
     onPhaseStart(data) {
         console.log('onPhaseStart received:', data);
         document.getElementById('current-phase').textContent = data.phase;
