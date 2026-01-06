@@ -437,6 +437,16 @@ io.on('connection', (socket) => {
                       round: pGameState.currentRound
                     });
                     console.log(`[${game.gameCode}] Sent verdict elimination event to ${pToken}`);
+                    
+                    // IMPORTANT: Still send phase-start so eliminated players can watch next round
+                    const phaseData = {
+                      phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : phaseResult.phase === 'trial' ? 3 : phaseResult.phase === 'accusation' ? 4 : phaseResult.phase === 'verdict' ? 5 : 1,
+                      phaseState: pGameState,
+                      phaseName: phaseName
+                    };
+                    
+                    playerSocket.emit('on-phase-start', phaseData);
+                    console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to ELIMINATED player ${pToken}`);
                   } else {
                     // Send phase start to alive players
                     const phaseData = {
