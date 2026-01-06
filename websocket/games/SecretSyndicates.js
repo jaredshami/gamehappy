@@ -186,6 +186,8 @@ class SecretSyndicates extends GameManager {
                     const victim = this.players.get(this.lastMurderTarget);
                     if (victim) {
                         this.lastVictim = victim;
+                        // Add to eliminated when advancing to murder phase
+                        this.eliminatedPlayers.add(this.lastMurderTarget);
                         console.log(`[${this.gameCode}] Victim set to: ${victim.name}`);
                         // Generate the story once for this phase
                         this.currentPhaseStory = this.getMurderStory();
@@ -203,6 +205,7 @@ class SecretSyndicates extends GameManager {
                         this.currentPhaseStory = this.getMurderStory();
                     }
                 }
+                this.playersReady.clear();
                 break;
             case 'murder':
                 this.currentPhase = 'trial';
@@ -292,14 +295,10 @@ class SecretSyndicates extends GameManager {
         if (target) {
             this.lastMurderTarget = target;
             this.lastMurderAssassin = this.findAssassinForTarget(target);
-            this.eliminatedPlayers.add(target);
         }
 
-        // Move to murder phase
-        this.currentPhase = 'murder';
         this.nightVotes.clear();
         this.nightVotesLocked.clear();
-        this.playersReady.clear();
 
         return { success: true, target: target, assassin: this.lastMurderAssassin };
     }
