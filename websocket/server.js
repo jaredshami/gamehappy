@@ -377,6 +377,10 @@ io.on('connection', (socket) => {
                   }
                 }
               }
+              
+              // Clear elimination trackers after sending events
+              game.murderEliminatedPlayer = null;
+              game.verdictEliminatedPlayer = null;
             }
           }
         } else if (eventName === 'trial-vote') {
@@ -453,6 +457,10 @@ io.on('connection', (socket) => {
                   }
                 }
               }
+              
+              // Clear elimination trackers after sending events
+              game.murderEliminatedPlayer = null;
+              game.verdictEliminatedPlayer = null;
             }
           }
         }
