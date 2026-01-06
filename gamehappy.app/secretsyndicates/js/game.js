@@ -1302,11 +1302,13 @@ class Game {
             document.body.appendChild(overlay);
         }
         
+        const warningText = assassinData && assassinData.warning ? assassinData.warning : 'You performed the assassination. Be careful - someone may have witnessed you!';
+        
         overlay.innerHTML = `
             <div style="background: #1a1a2e; border: 3px solid #e94560; padding: 30px; max-width: 600px; border-radius: 10px; color: #fff; text-align: center;">
                 <h2 style="color: #e94560; font-size: 28px; margin-bottom: 20px; animation: pulse 1.5s infinite;">⚠️ WARNING ⚠️</h2>
                 <div style="background: rgba(233, 69, 96, 0.2); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e94560;">
-                    <p style="font-size: 14px; white-space: pre-wrap; line-height: 1.8;">${assassinData.warning}</p>
+                    <p style="font-size: 14px; white-space: pre-wrap; line-height: 1.8;">${warningText}</p>
                 </div>
                 <button id="btn-acknowledge-assassin" class="btn btn-danger" style="font-size: 16px; padding: 12px 30px;">I Understand the Risk</button>
             </div>

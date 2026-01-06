@@ -543,11 +543,12 @@ class SecretSyndicates extends GameManager {
                 };
             }
             
-            // Check if player is detective
+            // Check if player is detective (only show special info if eyewitness is enabled)
             gameState.isDetective = playerRole === 'Detective';
-            if (gameState.isDetective) {
+            if (gameState.isDetective && this.settings.enableEyeWitness) {
                 gameState.detectiveData = {
-                    clue: this.getDetectiveClue()
+                    keyword: 'Look for hesitation',
+                    hint: 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.'
                 };
             }
             
@@ -555,7 +556,7 @@ class SecretSyndicates extends GameManager {
             gameState.isAssassin = playerRole === 'Syndicate';
             if (gameState.isAssassin) {
                 gameState.assassinData = {
-                    message: 'You performed the assassination. Be careful - someone may have witnessed you!'
+                    warning: 'You performed the assassination. Be careful - someone may have witnessed you!'
                 };
             }
         }
