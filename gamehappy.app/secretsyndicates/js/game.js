@@ -2596,6 +2596,8 @@ class Game {
     initSyndicateView(state) {
         try {
             console.log('initSyndicateView: Starting');
+            console.log('initSyndicateView: state.players:', state.players);
+            console.log('initSyndicateView: state.players details:', state.players.map(p => ({id: p.id, name: p.name, alive: p.alive})));
             
             const view = document.getElementById('syndicate-view');
             if (!view) {
@@ -2621,6 +2623,7 @@ class Game {
                 p.id !== myId && !this.syndicateIds.includes(p.id) && (p.alive !== false)
             );
             console.log('initSyndicateView: eligiblePlayers =', eligiblePlayers.length);
+            console.log('initSyndicateView: eligiblePlayers:', eligiblePlayers.map(p => ({id: p.id, name: p.name})));
             
             this.buildPlayerGrid('syndicate-player-grid', eligiblePlayers, 'syndicate', false);
             this.updateSyndicateStage();
@@ -3170,6 +3173,8 @@ class Game {
     initBystanderView(state) {
         try {
             console.log('initBystanderView: Starting');
+            console.log('initBystanderView: state.players:', state.players);
+            console.log('initBystanderView: state.players details:', state.players.map(p => ({id: p.id, name: p.name, alive: p.alive})));
             
             const view = document.getElementById('bystander-view');
             if (!view) {
@@ -3187,6 +3192,7 @@ class Game {
             // Filter out dead players
             const alivePlayers = state.players.filter(p => p.alive !== false);
             console.log('initBystanderView: alivePlayers count =', alivePlayers.length);
+            console.log('initBystanderView: alivePlayers:', alivePlayers.map(p => ({id: p.id, name: p.name})));
             
             this.buildPlayerGrid('bystander-player-grid', alivePlayers, 'bystander', false);
             
