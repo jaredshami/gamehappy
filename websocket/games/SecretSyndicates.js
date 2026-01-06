@@ -565,7 +565,6 @@ class SecretSyndicates extends GameManager {
             } else if (gameState.isAssassin) {
                 console.log(`[${this.gameCode}] NOT sending assassin data (eyewitness disabled)`);
             }
-            }
         }
 
         return gameState;
