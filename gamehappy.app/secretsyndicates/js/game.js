@@ -157,6 +157,11 @@ class Game {
                 this.onPhaseStart(data);
             });
 
+            this.socket.on('all-players-done', (data) => {
+                console.log('All players done, advancing to next phase:', data);
+                // Server will handle phase advancement, just wait for next on-phase-start event
+            });
+
             this.socket.on('player-left', (data) => {
                 console.log('Player left:', data);
                 this.updateLobby(data.game);

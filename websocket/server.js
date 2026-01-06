@@ -222,6 +222,16 @@ io.on('connection', (socket) => {
           eventResult: result
         });
 
+        // Check if all players are done and advance phase if so
+        if (eventName === 'player-done' && game.allPlayersDone && game.allPlayersDone()) {
+          console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase`);
+          // TODO: Implement phase advancement logic here
+          // For now, just broadcast that all players are done
+          io.to(`game-${game.gameCode}`).emit('all-players-done', {
+            message: 'All players are done! Advancing to next phase...'
+          });
+        }
+
         if (typeof callback === 'function') callback({ success: true, result });
       } else {
         if (typeof callback === 'function') callback({ success: false, message: result.message });
