@@ -1044,6 +1044,11 @@ class Game {
             if (phase2CountEl) {
                 phase2CountEl.textContent = gameState.doneCount;
             }
+            // Update phase 3 counter
+            const phase3CountEl = document.getElementById('phase3-done-count');
+            if (phase3CountEl) {
+                phase3CountEl.textContent = gameState.doneCount;
+            }
         }
         // Auto-mark as done if actions are complete
         if (!this.playerDone && eventResult && eventResult.doneCount !== undefined) {

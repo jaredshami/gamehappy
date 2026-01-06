@@ -227,9 +227,9 @@ io.on('connection', (socket) => {
         console.log(`[${game.gameCode}] Checking phase advancement: eventName=${eventName}, has allPlayersDone=${typeof game.allPlayersDone}`);
         if (eventName === 'player-done') {
           const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
-          console.log(`[${game.gameCode}] player-done check: allPlayersDone=${allDone}`);
+          console.log(`[${game.gameCode}] player-done check: allPlayersDone=${allDone}, currentPhase=${game.currentPhase}`);
           if (allDone) {
-            console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase`);
+            console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase from ${game.currentPhase}`);
             
             // Advance the phase
             const phaseResult = game.advancePhase();
