@@ -3159,7 +3159,6 @@ class Game {
                         statusEl.className = 'selection-status confirmed';
                         statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
                     }
-                    }
                 }
             }
             console.log('initBystanderView: completed successfully');
