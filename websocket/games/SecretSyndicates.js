@@ -689,6 +689,51 @@ class SecretSyndicates extends GameManager {
             gameState.notGuiltyVotes = Array.from(this.trialVotes.values()).filter(v => v === 'notguilty').length;
         }
 
+        // Add night phase (phase 1) data
+        if (this.currentPhase === 'night') {
+            // Add syndicate data
+            if (playerRole === 'Syndicate') {
+                gameState.syndicateData = {
+                    syndicateIds: this.getSyndicateMembers().map(m => m.id || m.token),
+                    stage: 'target',
+                    recommendations: { recommendations: [], voteCounts: {}, lockedIn: [] },
+                    myRecommendation: null,
+                    lockedIn: false,
+                    complete: false
+                };
+            }
+
+            // Add detective data
+            if (playerRole === 'Detective') {
+                gameState.detectiveData = {
+                    investigation: null,
+                    lockedIn: false,
+                    canInvestigate: this.currentRound >= 2,
+                    caseNotes: {},
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: ['Syndicate', 'Eye Witness', 'Bystander', 'Body Guard']
+                };
+            }
+
+            // Add body guard data
+            if (playerRole === 'Body Guard') {
+                gameState.bodyGuardData = {
+                    protecting: null,
+                    bystanderVote: null
+                };
+            }
+
+            // Add bystander data (for non-syndicate, non-detective, non-bodyguard roles)
+            if (playerRole !== 'Syndicate' && playerRole !== 'Detective' && playerRole !== 'Body Guard') {
+                gameState.bystanderData = {
+                    myVote: null
+                };
+            }
+
+            // Add game notes
+            gameState.gameNotes = [];
+        }
+
         return gameState;
     }
 
