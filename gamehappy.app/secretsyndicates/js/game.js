@@ -157,6 +157,16 @@ class Game {
                 this.onPhaseStart(data);
             });
 
+            this.socket.on('phase4-vote-update', (data) => {
+                console.log('Phase 4 vote update received:', data);
+                this.onPhase4VoteUpdate(data);
+            });
+
+            this.socket.on('phase5-vote-update', (data) => {
+                console.log('Phase 5 vote update received:', data);
+                this.onPhase5VoteUpdate(data);
+            });
+
             this.socket.on('all-players-done', (data) => {
                 console.log('All players done, advancing to next phase:', data);
                 // Server will handle phase advancement, just wait for next on-phase-start event
@@ -1047,6 +1057,8 @@ class Game {
             this.showScreen('phase3-screen');
         } else if (data.phase === 4) {
             this.onPhase4Start(phaseState);
+        } else if (data.phase === 5) {
+            this.onPhase5Start(phaseState);
         } else {
             console.warn('onPhaseStart: Unhandled phase or missing phaseState', data);
         }

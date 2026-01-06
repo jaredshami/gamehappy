@@ -376,9 +376,19 @@ io.on('connection', (socket) => {
           // Trial vote (guilty/not guilty in phase 5)
           const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
           const trialVotes = game.trialVotes ? game.trialVotes.size : 0;
-          const allVoted = alivePlayers.length > 0 && trialVotes === alivePlayers.length;
+          const guiltyVotes = game.trialVotes ? Array.from(game.trialVotes.values()).filter(v => v === 'guilty').length : 0;
           
-          console.log(`[${game.gameCode}] trial-vote received: ${trialVotes}/${alivePlayers.length} voted on verdict`);
+          // Broadcast vote counts to all players
+          io.sockets.emit('phase5-vote-update', {
+            guiltyCount: guiltyVotes,
+            notGuiltyCount: trialVotes - guiltyVotes,
+            totalVotes: trialVotes,
+            totalPlayers: alivePlayers.length
+          });
+          console.log(`[${game.gameCode}] trial-vote: ${guiltyVotes} guilty, ${trialVotes - guiltyVotes} not guilty out of ${alivePlayers.length}`);
+          
+          const allVoted = alivePlayers.length > 0 && trialVotes === alivePlayers.length;
+          console.log(`[${game.gameCode}] trial-vote check: votes=${trialVotes}, alivePlayers=${alivePlayers.length}, allVoted=${allVoted}`);
           
           if (allVoted) {
             console.log(`[${game.gameCode}] ALL PLAYERS VOTED ON VERDICT! Advancing to next phase from ${game.currentPhase}`);
