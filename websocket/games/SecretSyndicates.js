@@ -700,7 +700,7 @@ class SecretSyndicates extends GameManager {
             // Add syndicate data
             if (playerRole === 'Syndicate') {
                 gameState.syndicateData = {
-                    syndicateIds: this.getSyndicateMembers().map(m => m.id || m.token),
+                    syndicateIds: this.getSyndicateMembers().map(m => m.token),
                     stage: 'target',
                     recommendations: { recommendations: [], voteCounts: {}, lockedIn: [] },
                     myRecommendation: null,
