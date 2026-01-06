@@ -366,6 +366,11 @@ class Game {
                 eventName: 'trial-vote',
                 payload: { vote: data.vote }
             });
+        } else if (data.action === 'castVote') {
+            this.socket.emit('game-event', {
+                eventName: 'accusation-vote',
+                payload: { target: data.targetId }
+            });
         }
     }
 

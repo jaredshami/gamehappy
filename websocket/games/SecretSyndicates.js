@@ -35,8 +35,8 @@ class SecretSyndicates extends GameManager {
         this.trialAccused = null;
         this.trialVotes = new Map(); // playerToken -> guilty/notguilty
 
-        // Eliminated players
-        this.eliminatedPlayers = new Set();
+        // Accusation phase (phase 4)
+        this.accusationVotes = new Map(); // playerToken -> targetToken
 
         // Phase readiness
         this.playersReady = new Set();
@@ -366,6 +366,21 @@ class SecretSyndicates extends GameManager {
         return { success: true };
     }
 
+    accusationVote(playerToken, targetToken) {
+        if (this.eliminatedPlayers.has(playerToken)) {
+            return { success: false, message: 'Eliminated players cannot vote' };
+        }
+
+        // Validate target is a real alive player
+        if (!this.players.has(targetToken) || this.eliminatedPlayers.has(targetToken)) {
+            return { success: false, message: 'Invalid target' };
+        }
+
+        this.accusationVotes.set(playerToken, targetToken);
+        console.log(`[${this.gameCode}] Accusation vote recorded: ${playerToken} -> ${targetToken}, total votes: ${this.accusationVotes.size}`);
+        return { success: true, voteCount: this.accusationVotes.size };
+    }
+
     /**
      * Execute trial
      */
@@ -570,6 +585,11 @@ class SecretSyndicates extends GameManager {
             }
         }
 
+        // Add accusation phase data
+        if (this.currentPhase === 'accusation') {
+            gameState.voteCount = this.accusationVotes.size;
+        }
+
         return gameState;
     }
 
@@ -624,6 +644,8 @@ class SecretSyndicates extends GameManager {
                 return this.dayVote(playerToken, data.target);
             case 'trial-vote':
                 return this.trialVote(playerToken, data.vote);
+            case 'accusation-vote':
+                return this.accusationVote(playerToken, data.target);
             case 'player-ready':
                 this.setPlayerReady(playerToken);
                 return { success: true };
