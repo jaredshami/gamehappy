@@ -283,6 +283,68 @@ io.on('connection', (socket) => {
               }
             }
           }
+        } else if (eventName === 'accusation-vote') {
+          // Check if all alive players have voted
+          const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+          const accusationVotes = game.accusationVotes ? game.accusationVotes.size : 0;
+          const allVoted = alivePlayers.length > 0 && accusationVotes === alivePlayers.length;
+          console.log(`[${game.gameCode}] accusation-vote check: votes=${accusationVotes}, alivePlayers=${alivePlayers.length}, allVoted=${allVoted}`);
+          
+          if (allVoted) {
+            console.log(`[${game.gameCode}] ALL PLAYERS VOTED! Advancing to next phase from ${game.currentPhase}`);
+            
+            // Advance the phase
+            const phaseResult = game.advancePhase();
+            if (phaseResult.success) {
+              console.log(`[${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
+              
+              // Send on-phase-start event to each player with their individual gameState
+              for (const [socketId, playerSocket] of io.sockets.sockets) {
+                const pToken = playerSocket.handshake.query.token || socketId;
+                
+                if (game.hasPlayer(pToken)) {
+                  const pGameState = gameServer.getGameStateForPlayer(pToken);
+                  const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
+                                   phaseResult.phase === 'murder' ? 'Murder Discovery' :
+                                   phaseResult.phase === 'trial' ? 'Trial Phase' : 
+                                   phaseResult.phase === 'accusation' ? 'Accusation Vote' : phaseResult.phase;
+                  
+                  // Check if this player is eliminated
+                  if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
+                    // Send elimination event to eliminated players
+                    let reason = 'You were eliminated.';
+                    let verdict = 'ELIMINATED';
+                    // Use previousPhase to determine elimination reason
+                    if (phaseResult.previousPhase === 'night') {
+                      // Eliminated during night phase = assassinated
+                      reason = 'You were assassinated by the Syndicate.';
+                      verdict = 'ASSASSINATED';
+                    } else if (phaseResult.previousPhase === 'accusation') {
+                      // Eliminated during accusation phase = voted out
+                      reason = 'You were voted guilty and arrested.';
+                      verdict = 'GUILTY';
+                    }
+                    playerSocket.emit('player-eliminated', {
+                      playerName: pGameState.players.find(p => p.token === pToken)?.name || 'Unknown',
+                      role: pGameState.playerRole,
+                      reason: reason,
+                      verdict: verdict,
+                      round: pGameState.currentRound
+                    });
+                    console.log(`[${game.gameCode}] Sent elimination event to ${pToken}`);
+                  } else {
+                    // Send phase start to alive players
+                    playerSocket.emit('on-phase-start', {
+                      phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : phaseResult.phase === 'trial' ? 3 : 4,
+                      phaseState: pGameState,
+                      phaseName: phaseName
+                    });
+                    console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${pToken}`);
+                  }
+                }
+              }
+            }
+          }
         }
 
         if (typeof callback === 'function') callback({ success: true, result });
