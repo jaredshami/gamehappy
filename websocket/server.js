@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
   socket.on('create-game', (data, callback) => {
     try {
       const { gameType, playerName, settings } = data;
-      console.log(`Creating game: ${gameType} for player: ${playerName}`);
+      console.log(`Creating game: ${gameType} for player: ${playerName}, socket token: ${playerToken}, socket.id: ${socket.id}`);
 
       const result = gameServer.createGame(gameType, playerToken, playerName);
       
@@ -87,7 +87,7 @@ io.on('connection', (socket) => {
   socket.on('join-game', (data, callback) => {
     try {
       const { gameCode, playerName } = data;
-      console.log(`Player ${playerName} joining game: ${gameCode}`);
+      console.log(`Player ${playerName} joining game: ${gameCode}, socket token: ${playerToken}, socket.id: ${socket.id}`);
 
       const result = gameServer.joinGame(gameCode, playerToken, playerName);
       
@@ -525,7 +525,28 @@ io.on('connection', (socket) => {
   socket.on('rejoin-game', (data) => {
     try {
       const { gameCode, playerToken: clientToken } = data;
-      console.log(`Player attempting rejoin: gameCode=${gameCode}, token=${clientToken}`);
+      console.log(`Player attempting rejoin: gameCode=${gameCode}, clientToken=${clientToken}`);
+
+      // Check if game exists
+      const game = gameServer.games.get(gameCode);
+      if (!game) {
+        console.log(`Game ${gameCode} not found`);
+        socket.emit('rejoin-rejected', { message: 'Game not found' });
+        return;
+      }
+
+      // Debug: log all players in the game
+      console.log(`Game ${gameCode} has players: ${Array.from(game.players.keys()).join(', ')}`);
+      console.log(`Checking if game has player: ${clientToken}`);
+      
+      // Check if player is in the game
+      if (!game.hasPlayer(clientToken)) {
+        console.log(`Player ${clientToken} NOT found in game ${gameCode}`);
+        socket.emit('rejoin-rejected', { message: 'Player not in game' });
+        return;
+      }
+      
+      console.log(`Player ${clientToken} found in game ${gameCode}`);
 
       // Check if game exists
       const game = gameServer.games.get(gameCode);
