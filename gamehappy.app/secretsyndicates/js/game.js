@@ -213,8 +213,14 @@ class Game {
 
             this.socket.on('player-eliminated', (data) => {
                 console.log('Player eliminated event received:', data);
-                this.isEliminated = true;
-                this.showEliminationScreen(data);
+                // Only process elimination event if not already eliminated
+                if (!this.isEliminated) {
+                    this.isEliminated = true;
+                    this.eliminationData = data;
+                    this.showEliminationScreen(data);
+                } else {
+                    console.log('Already eliminated, ignoring redundant elimination event');
+                }
             });
 
             this.socket.on('disconnect', () => {
