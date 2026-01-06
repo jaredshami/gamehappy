@@ -1047,6 +1047,11 @@ class Game {
         
         if (data.phase === 1 && phaseState) {
             console.log('onPhaseStart Phase 1 - phaseState.isHost:', phaseState.isHost);
+            // Hide all phase screens
+            document.getElementById('phase2-screen').style.display = 'none';
+            document.getElementById('phase3-screen').style.display = 'none';
+            document.getElementById('phase4-screen').style.display = 'none';
+            document.getElementById('phase5-screen').style.display = 'none';
             this.initPhase1(phaseState);
             this.showScreen('phase-screen');
         } else if (data.phase === 2) {
@@ -1478,6 +1483,16 @@ class Game {
     initPhase1(state) {
         this.phaseState = state;
         this.role = state.role;
+        
+        // Reset phase-specific states for new round
+        this.phase4Voted = false;
+        this.phase5Voted = false;
+        
+        // Update round display
+        const roundEl = document.getElementById('current-round');
+        if (roundEl) {
+            roundEl.textContent = state.round || 1;
+        }
         
         // Set isHost if provided in state
         if (state.isHost !== undefined) {
