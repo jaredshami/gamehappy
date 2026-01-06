@@ -406,34 +406,13 @@ class Game {
         try {
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.remove('active');
+                screen.style.display = 'none';
             });
             const targetScreen = document.getElementById(screenId);
             if (targetScreen) {
                 targetScreen.classList.add('active');
+                targetScreen.style.display = 'block';  // Force display block
                 console.log('Screen changed to:', screenId);
-                
-                // If showing phase-screen, ensure at least one role view is visible
-                if (screenId === 'phase-screen') {
-                    // Wait a tick for DOM to settle
-                    setTimeout(() => {
-                        const synView = document.getElementById('syndicate-view');
-                        const detView = document.getElementById('detective-view');
-                        const bysView = document.getElementById('bystander-view');
-                        const bgView = document.getElementById('bodyguard-view');
-                        
-                        console.log('Phase screen content check:');
-                        console.log('syndicate-view:', {display: synView?.style.display, children: synView?.children.length});
-                        console.log('detective-view:', {display: detView?.style.display, children: detView?.children.length});
-                        console.log('bystander-view:', {display: bysView?.style.display, children: bysView?.children.length});
-                        console.log('bodyguard-view:', {display: bgView?.style.display, children: bgView?.children.length});
-                        
-                        // Ensure at least one view is visible
-                        const visibleView = [synView, detView, bysView, bgView].find(v => v && v.style.display === 'block');
-                        if (!visibleView) {
-                            console.error('ERROR: No role view is visible in phase-screen!');
-                        }
-                    }, 0);
-                }
             } else {
                 console.error('Screen not found:', screenId);
             }
