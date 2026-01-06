@@ -411,6 +411,18 @@ class Game {
             if (targetScreen) {
                 targetScreen.classList.add('active');
                 console.log('Screen changed to:', screenId);
+                // Log all visible children to debug what's showing
+                if (screenId === 'phase-screen') {
+                    console.log('Phase screen content:');
+                    const synView = document.getElementById('syndicate-view');
+                    const detView = document.getElementById('detective-view');
+                    const bysView = document.getElementById('bystander-view');
+                    const bgView = document.getElementById('bodyguard-view');
+                    console.log('syndicate-view display:', synView ? synView.style.display : 'NOT FOUND');
+                    console.log('detective-view display:', detView ? detView.style.display : 'NOT FOUND');
+                    console.log('bystander-view display:', bysView ? bysView.style.display : 'NOT FOUND');
+                    console.log('bodyguard-view display:', bgView ? bgView.style.display : 'NOT FOUND');
+                }
             } else {
                 console.error('Screen not found:', screenId);
             }
@@ -2590,7 +2602,10 @@ class Game {
                 console.error('syndicate-view element not found!');
                 return;
             }
+            console.log('initSyndicateView: Before setting display, view.style.display:', view.style.display);
             view.style.display = 'block';
+            console.log('initSyndicateView: After setting display, view.style.display:', view.style.display);
+            console.log('initSyndicateView: view element:', view);
             
             console.log('initSyndicateView: syndicateData =', state.syndicateData);
             this.syndicateState = state.syndicateData || {};
