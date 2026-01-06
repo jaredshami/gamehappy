@@ -550,14 +550,21 @@ class SecretSyndicates extends GameManager {
                     keyword: 'Look for hesitation',
                     hint: 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.'
                 };
+                console.log(`[${this.gameCode}] Sending detective data (eyewitness enabled)`);
+            } else if (gameState.isDetective) {
+                console.log(`[${this.gameCode}] NOT sending detective data (eyewitness disabled)`);
             }
             
-            // Check if player is syndicate/assassin
+            // Check if player is syndicate/assassin (only show special warning if eyewitness is enabled)
             gameState.isAssassin = playerRole === 'Syndicate';
-            if (gameState.isAssassin) {
+            if (gameState.isAssassin && this.settings.enableEyeWitness) {
                 gameState.assassinData = {
                     warning: 'You performed the assassination. Be careful - someone may have witnessed you!'
                 };
+                console.log(`[${this.gameCode}] Sending assassin data (eyewitness enabled)`);
+            } else if (gameState.isAssassin) {
+                console.log(`[${this.gameCode}] NOT sending assassin data (eyewitness disabled)`);
+            }
             }
         }
 
