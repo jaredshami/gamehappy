@@ -535,7 +535,7 @@ io.on('connection', (socket) => {
       }
 
       // Check if player is in the game
-      if (!game.hasPlayer(playerToken)) {
+      if (!game.hasPlayer(clientToken)) {
         socket.emit('rejoin-rejected', { message: 'Player not in game' });
         return;
       }
@@ -543,9 +543,9 @@ io.on('connection', (socket) => {
       // Rejoin successful - add socket to game room
       socket.join(`game-${gameCode}`);
       
-      const gameState = gameServer.getGameStateForPlayer(playerToken);
+      const gameState = gameServer.getGameStateForPlayer(clientToken);
       
-      console.log(`Player ${playerToken} rejoined game ${gameCode}`);
+      console.log(`Player ${clientToken} rejoined game ${gameCode}`);
       socket.emit('rejoin-accepted', {
         gameCode,
         game: gameServer.getGameLobbyInfo(gameCode),
@@ -554,8 +554,8 @@ io.on('connection', (socket) => {
 
       // Notify other players that player reconnected
       io.to(`game-${gameCode}`).emit('player-reconnected', {
-        playerToken,
-        playerName: game.getPlayer(playerToken).name,
+        playerToken: clientToken,
+        playerName: game.getPlayer(clientToken).name,
         game: gameServer.getGameLobbyInfo(gameCode)
       });
     } catch (err) {
