@@ -25,6 +25,7 @@ class SecretSyndicates extends GameManager {
         // Murder phase
         this.lastMurderTarget = null;
         this.lastMurderAssassin = null;
+        this.lastVictim = null;  // The victim object
 
         // Voting phase
         this.dayVotes = new Map(); // playerToken -> votedFor
@@ -174,6 +175,14 @@ class SecretSyndicates extends GameManager {
         switch (this.currentPhase) {
             case 'night':
                 this.currentPhase = 'murder';
+                // Set the victim when transitioning to murder phase
+                if (this.lastMurderTarget) {
+                    const victim = this.players.get(this.lastMurderTarget);
+                    if (victim) {
+                        this.lastVictim = victim;
+                        this.eliminatedPlayers.add(this.lastMurderTarget);
+                    }
+                }
                 break;
             case 'murder':
                 this.currentPhase = 'trial';
@@ -480,7 +489,7 @@ class SecretSyndicates extends GameManager {
             joinedAt: p.joinedAt
         }));
         
-        return {
+        const gameState = {
             gameCode: this.gameCode,
             gameType: this.gameType,
             gameState: this.gameState,
@@ -498,6 +507,58 @@ class SecretSyndicates extends GameManager {
             totalPlayers: this.getPlayerCount(),
             alivePlayerCount: alivePlayersWithStatus.length
         };
+
+        // Add phase-specific data
+        if (this.currentPhase === 'murder') {
+            // Phase 2: Murder Discovery - include story and role-specific data
+            gameState.murderStory = this.getMurderStory();
+            
+            // Check if player is eyewitness
+            gameState.isEyewitness = playerRole === 'Eye Witness';
+            if (gameState.isEyewitness) {
+                gameState.eyewitnessData = {
+                    message: 'You witnessed the assassination! You know who did it.'
+                };
+            }
+            
+            // Check if player is detective
+            gameState.isDetective = playerRole === 'Detective';
+            if (gameState.isDetective) {
+                gameState.detectiveData = {
+                    clue: this.getDetectiveClue()
+                };
+            }
+            
+            // Check if player is syndicate/assassin
+            gameState.isAssassin = playerRole === 'Syndicate';
+            if (gameState.isAssassin) {
+                gameState.assassinData = {
+                    message: 'You performed the assassination. Be careful - someone may have witnessed you!'
+                };
+            }
+        }
+
+        return gameState;
+    }
+
+    /**
+     * Generate murder story (which player was assassinated)
+     */
+    getMurderStory() {
+        if (this.lastVictim) {
+            return `Last night, ${this.lastVictim.name} was assassinated by the Syndicate.`;
+        }
+        return 'Last night, someone was assassinated by the Syndicate.';
+    }
+
+    /**
+     * Generate detective clue
+     */
+    getDetectiveClue() {
+        if (this.lastVictim) {
+            return `The victim was ${this.lastVictim.name}. You may investigate someone to learn their alignment.`;
+        }
+        return 'Someone was assassinated. You may investigate someone to learn their alignment.';
     }
 
     /**
