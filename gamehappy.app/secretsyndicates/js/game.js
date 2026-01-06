@@ -980,8 +980,11 @@ class Game {
 
     onPhaseStart(data) {
         console.log('onPhaseStart received:', data);
-        console.log('onPhaseStart phase:', data.phase, 'phaseName:', data.phaseName);
-        console.log('onPhaseStart phaseState:', data.phaseState);
+        console.log('onPhaseStart phase:', data.phase, 'type:', typeof data.phase);
+        console.log('onPhaseStart phaseName:', data.phaseName);
+        console.log('onPhaseStart phaseState:', data.phaseState, 'type:', typeof data.phaseState);
+        console.log('onPhaseStart condition check: data.phase === 1?', data.phase === 1, 'data.phaseState?', !!data.phaseState);
+        
         document.getElementById('current-phase').textContent = data.phase;
         document.getElementById('phase-name').textContent = data.phaseName || '';
         
