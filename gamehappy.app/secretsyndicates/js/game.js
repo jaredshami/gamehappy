@@ -1507,59 +1507,81 @@ class Game {
     // ==================== PHASE 1: DELIBERATIONS ====================
 
     initPhase1(state) {
-        this.phaseState = state;
-        this.role = state.role;
-        
-        // Reset phase-specific states for new round
-        this.phase4Voted = false;
-        this.phase5Voted = false;
-        
-        // Update round display
-        const roundEl = document.getElementById('current-round');
-        if (roundEl) {
-            roundEl.textContent = state.round || 1;
+        try {
+            console.log('initPhase1 starting with role:', state.role);
+            this.phaseState = state;
+            this.role = state.role;
+            
+            // Reset phase-specific states for new round
+            this.phase4Voted = false;
+            this.phase5Voted = false;
+            
+            // Update round display
+            const roundEl = document.getElementById('current-round');
+            if (roundEl) {
+                roundEl.textContent = state.round || 1;
+            }
+            
+            // Set isHost if provided in state
+            if (state.isHost !== undefined) {
+                console.log('initPhase1: Setting isHost from state:', state.isHost);
+                this.isHost = state.isHost;
+            } else {
+                console.log('initPhase1: isHost not in state, current isHost:', this.isHost);
+            }
+            
+            // Set role badge
+            const badge = document.getElementById('phase-role-badge');
+            if (!badge) {
+                console.error('phase-role-badge element not found!');
+                return;
+            }
+            badge.textContent = state.role;
+            badge.className = 'role-badge ' + state.role.toLowerCase().replace(' ', '-');
+
+            // Hide all role views first
+            const synView = document.getElementById('syndicate-view');
+            const detView = document.getElementById('detective-view');
+            const bysView = document.getElementById('bystander-view');
+            const bgView = document.getElementById('bodyguard-view');
+            
+            if (synView) synView.style.display = 'none';
+            if (detView) detView.style.display = 'none';
+            if (bysView) bysView.style.display = 'none';
+            if (bgView) bgView.style.display = 'none';
+
+            // Update game notes
+            this.updateGameNotes(state.gameNotes);
+
+            // Show appropriate view based on role
+            console.log('initPhase1: About to init role view for:', state.role);
+            switch (state.role) {
+                case 'Syndicate':
+                    console.log('initPhase1: Calling initSyndicateView with state:', state);
+                    this.initSyndicateView(state);
+                    break;
+                case 'Detective':
+                    console.log('initPhase1: Calling initDetectiveView');
+                    this.initDetectiveView(state);
+                    break;
+                case 'Body Guard':
+                    console.log('initPhase1: Calling initBodyGuardView');
+                    this.initBodyGuardView(state);
+                    break;
+                default: // Bystander, Eye Witness
+                    console.log('initPhase1: Calling initBystanderView');
+                    this.initBystanderView(state);
+                    break;
+            }
+
+            // Initialize "I'm Done" section
+            console.log('initPhase1: Calling initImDoneSection');
+            this.initImDoneSection(state);
+            console.log('initPhase1: completed successfully');
+        } catch (error) {
+            console.error('ERROR in initPhase1:', error);
+            console.error('Stack:', error.stack);
         }
-        
-        // Set isHost if provided in state
-        if (state.isHost !== undefined) {
-            console.log('initPhase1: Setting isHost from state:', state.isHost);
-            this.isHost = state.isHost;
-        } else {
-            console.log('initPhase1: isHost not in state, current isHost:', this.isHost);
-        }
-        
-        // Set role badge
-        const badge = document.getElementById('phase-role-badge');
-        badge.textContent = state.role;
-        badge.className = 'role-badge ' + state.role.toLowerCase().replace(' ', '-');
-
-        // Hide all role views first
-        document.getElementById('syndicate-view').style.display = 'none';
-        document.getElementById('detective-view').style.display = 'none';
-        document.getElementById('bystander-view').style.display = 'none';
-        document.getElementById('bodyguard-view').style.display = 'none';
-
-        // Update game notes
-        this.updateGameNotes(state.gameNotes);
-
-        // Show appropriate view based on role
-        switch (state.role) {
-            case 'Syndicate':
-                this.initSyndicateView(state);
-                break;
-            case 'Detective':
-                this.initDetectiveView(state);
-                break;
-            case 'Body Guard':
-                this.initBodyGuardView(state);
-                break;
-            default: // Bystander, Eye Witness
-                this.initBystanderView(state);
-                break;
-        }
-
-        // Initialize "I'm Done" section
-        this.initImDoneSection(state);
     }
 
     initImDoneSection(state) {
@@ -2516,36 +2538,68 @@ class Game {
 
     // ---- Syndicate Functions ----
     initSyndicateView(state) {
-        document.getElementById('syndicate-view').style.display = 'block';
-        
-        this.syndicateState = state.syndicateData || {};
-        this.syndicateIds = state.syndicateData?.syndicateIds || [];
-        
-        // Filter out self, other syndicates, and dead players
-        const myId = this.getMyPlayerId();
-        const eligiblePlayers = state.players.filter(p => 
-            p.id !== myId && !this.syndicateIds.includes(p.id) && (p.alive !== false)
-        );
-        
-        this.buildPlayerGrid('syndicate-player-grid', eligiblePlayers, 'syndicate', false);
-        this.updateSyndicateStage();
-        this.updateSyndicateRecommendations();
-        this.bindSyndicateEvents();
-        
-        // If already locked in, show the locked status
-        if (this.syndicateState.lockedIn) {
-            document.getElementById('btn-syndicate-lock').disabled = true;
-            document.getElementById('btn-syndicate-lock').textContent = '✓ Locked In';
-            document.getElementById('syndicate-lock-status').textContent = 'Waiting for other Syndicate members...';
-        } else if (this.syndicateState.myRecommendation) {
-            // Recommendation selected but not locked in
-            document.getElementById('btn-syndicate-lock').disabled = false;
-            document.getElementById('syndicate-lock-status').textContent = 'Ready to lock in your choice';
-        }
-        
-        // If syndicate is complete (target failed or assassin chosen), mark as complete
-        if (this.syndicateState.complete) {
-            this.checkActionsComplete();
+        try {
+            console.log('initSyndicateView: Starting');
+            
+            const view = document.getElementById('syndicate-view');
+            if (!view) {
+                console.error('syndicate-view element not found!');
+                return;
+            }
+            view.style.display = 'block';
+            
+            console.log('initSyndicateView: syndicateData =', state.syndicateData);
+            this.syndicateState = state.syndicateData || {};
+            this.syndicateIds = state.syndicateData?.syndicateIds || [];
+            
+            console.log('initSyndicateView: syndicateIds =', this.syndicateIds);
+            
+            // Filter out self, other syndicates, and dead players
+            const myId = this.getMyPlayerId();
+            console.log('initSyndicateView: myId =', myId);
+            
+            const eligiblePlayers = state.players.filter(p => 
+                p.id !== myId && !this.syndicateIds.includes(p.id) && (p.alive !== false)
+            );
+            console.log('initSyndicateView: eligiblePlayers =', eligiblePlayers.length);
+            
+            this.buildPlayerGrid('syndicate-player-grid', eligiblePlayers, 'syndicate', false);
+            this.updateSyndicateStage();
+            this.updateSyndicateRecommendations();
+            this.bindSyndicateEvents();
+            
+            // If already locked in, show the locked status
+            if (this.syndicateState.lockedIn) {
+                const lockBtn = document.getElementById('btn-syndicate-lock');
+                const lockStatus = document.getElementById('syndicate-lock-status');
+                if (lockBtn) {
+                    lockBtn.disabled = true;
+                    lockBtn.textContent = '✓ Locked In';
+                }
+                if (lockStatus) {
+                    lockStatus.textContent = 'Waiting for other Syndicate members...';
+                }
+            } else if (this.syndicateState.myRecommendation) {
+                // Recommendation selected but not locked in
+                const lockBtn = document.getElementById('btn-syndicate-lock');
+                const lockStatus = document.getElementById('syndicate-lock-status');
+                if (lockBtn) {
+                    lockBtn.disabled = false;
+                }
+                if (lockStatus) {
+                    lockStatus.textContent = 'Ready to lock in your choice';
+                }
+            }
+            
+            // If syndicate is complete (target failed or assassin chosen), mark as complete
+            if (this.syndicateState.complete) {
+                this.checkActionsComplete();
+            }
+            console.log('initSyndicateView: completed successfully');
+        } catch (error) {
+            console.error('ERROR in initSyndicateView:', error);
+            console.error('Stack:', error.stack);
+            console.error('state.syndicateData:', state.syndicateData);
         }
     }
 
@@ -2774,56 +2828,82 @@ class Game {
 
     // ---- Detective Functions ----
     initDetectiveView(state) {
-        document.getElementById('detective-view').style.display = 'block';
-        
-        this.detectiveState = state.detectiveData || {};
-        this.currentRound = state.round || 1;
-        
-        // Filter out dead players for investigation
-        const alivePlayers = state.players.filter(p => p.alive !== false);
-        
-        // Check if investigation is allowed (Round 2+)
-        const canInvestigate = this.detectiveState.canInvestigate || this.currentRound >= 2;
-        
-        const round1Message = document.getElementById('detective-round1-message');
-        const playerGrid = document.getElementById('detective-player-grid');
-        const instructions = document.getElementById('detective-instructions');
-        
-        if (!canInvestigate) {
-            // Round 1 - disable investigation, only show case notes
-            if (round1Message) round1Message.style.display = 'block';
-            if (playerGrid) playerGrid.style.display = 'none';
-            if (instructions) instructions.style.display = 'none';
-            document.getElementById('btn-detective-lock').style.display = 'none';
-            document.getElementById('detective-lock-status').textContent = 'Click "I\'m Done" when ready to proceed';
+        try {
+            console.log('initDetectiveView: Starting');
             
-            // Auto-mark detective as ready since they can't do anything in Round 1
-            this.detectiveState.lockedIn = true;
-        } else {
-            // Round 2+ - enable investigation
-            if (round1Message) round1Message.style.display = 'none';
-            if (playerGrid) playerGrid.style.display = 'grid';
-            if (instructions) instructions.style.display = 'block';
-            this.buildPlayerGrid('detective-player-grid', alivePlayers, 'detective', false);
-            document.getElementById('btn-detective-lock').style.display = 'inline-block';
-            
-            // If already locked in, show the locked status
-            if (this.detectiveState.lockedIn && this.detectiveState.investigation) {
-                const targetPlayer = alivePlayers.find(p => p.id === this.detectiveState.investigation);
-                document.getElementById('btn-detective-lock').disabled = true;
-                document.getElementById('btn-detective-lock').textContent = '✓ Investigation Locked';
-                document.getElementById('detective-lock-status').textContent = `Investigating: ${targetPlayer ? this.escapeHtml(targetPlayer.name) : 'Unknown'}. Results will be revealed later...`;
-            } else if (this.detectiveState.investigation) {
-                // Investigation selected but not locked in
-                document.getElementById('btn-detective-lock').disabled = false;
-                document.getElementById('detective-lock-status').textContent = 'Ready to lock in investigation';
-            } else {
-                document.getElementById('detective-lock-status').textContent = 'Select a player to investigate';
+            const view = document.getElementById('detective-view');
+            if (!view) {
+                console.error('detective-view element not found!');
+                return;
             }
+            view.style.display = 'block';
+            
+            console.log('initDetectiveView: detectiveData =', state.detectiveData);
+            this.detectiveState = state.detectiveData || {};
+            this.currentRound = state.round || 1;
+            
+            // Filter out dead players for investigation
+            const alivePlayers = state.players.filter(p => p.alive !== false);
+            console.log('initDetectiveView: alivePlayers count =', alivePlayers.length);
+            
+            // Check if investigation is allowed (Round 2+)
+            const canInvestigate = this.detectiveState.canInvestigate || this.currentRound >= 2;
+            
+            const round1Message = document.getElementById('detective-round1-message');
+            const playerGrid = document.getElementById('detective-player-grid');
+            const instructions = document.getElementById('detective-instructions');
+            
+            if (!canInvestigate) {
+                // Round 1 - disable investigation, only show case notes
+                if (round1Message) round1Message.style.display = 'block';
+                if (playerGrid) playerGrid.style.display = 'none';
+                if (instructions) instructions.style.display = 'none';
+                const lockBtn = document.getElementById('btn-detective-lock');
+                if (lockBtn) lockBtn.style.display = 'none';
+                const lockStatus = document.getElementById('detective-lock-status');
+                if (lockStatus) lockStatus.textContent = 'Click "I\'m Done" when ready to proceed';
+                
+                // Auto-mark detective as ready since they can't do anything in Round 1
+                this.detectiveState.lockedIn = true;
+            } else {
+                // Round 2+ - enable investigation
+                if (round1Message) round1Message.style.display = 'none';
+                if (playerGrid) playerGrid.style.display = 'grid';
+                if (instructions) instructions.style.display = 'block';
+                this.buildPlayerGrid('detective-player-grid', alivePlayers, 'detective', false);
+                const lockBtn = document.getElementById('btn-detective-lock');
+                if (lockBtn) lockBtn.style.display = 'inline-block';
+                
+                // If already locked in, show the locked status
+                if (this.detectiveState.lockedIn && this.detectiveState.investigation) {
+                    const targetPlayer = alivePlayers.find(p => p.id === this.detectiveState.investigation);
+                    if (lockBtn) {
+                        lockBtn.disabled = true;
+                        lockBtn.textContent = '✓ Investigation Locked';
+                    }
+                    const lockStatus = document.getElementById('detective-lock-status');
+                    if (lockStatus) {
+                        lockStatus.textContent = `Investigating: ${targetPlayer ? this.escapeHtml(targetPlayer.name) : 'Unknown'}. Results will be revealed later...`;
+                    }
+                } else if (this.detectiveState.investigation) {
+                    // Investigation selected but not locked in
+                    if (lockBtn) lockBtn.disabled = false;
+                    const lockStatus = document.getElementById('detective-lock-status');
+                    if (lockStatus) lockStatus.textContent = 'Ready to lock in investigation';
+                } else {
+                    const lockStatus = document.getElementById('detective-lock-status');
+                    if (lockStatus) lockStatus.textContent = 'Select a player to investigate';
+                }
+            }
+            
+            this.bindDetectiveEvents();
+            this.initCaseNotes(state);
+            console.log('initDetectiveView: completed successfully');
+        } catch (error) {
+            console.error('ERROR in initDetectiveView:', error);
+            console.error('Stack:', error.stack);
+            console.error('state.detectiveData:', state.detectiveData);
         }
-        
-        this.bindDetectiveEvents();
-        this.initCaseNotes(state);
     }
 
     bindDetectiveEvents() {
@@ -3029,22 +3109,41 @@ class Game {
 
     // ---- Bystander Functions ----
     initBystanderView(state) {
-        document.getElementById('bystander-view').style.display = 'block';
-        
-        this.bystanderState = state.bystanderData || {};
-        
-        // Filter out dead players
-        const alivePlayers = state.players.filter(p => p.alive !== false);
-        this.buildPlayerGrid('bystander-player-grid', alivePlayers, 'bystander', false);
-        
-        // If already voted, show the selection status
-        if (this.bystanderState.myVote) {
-            const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
-            if (player) {
-                const statusEl = document.getElementById('bystander-selection-status');
-                statusEl.className = 'selection-status confirmed';
-                statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+        try {
+            console.log('initBystanderView: Starting');
+            
+            const view = document.getElementById('bystander-view');
+            if (!view) {
+                console.error('bystander-view element not found!');
+                return;
             }
+            view.style.display = 'block';
+            
+            console.log('initBystanderView: bystanderData =', state.bystanderData);
+            this.bystanderState = state.bystanderData || {};
+            
+            // Filter out dead players
+            const alivePlayers = state.players.filter(p => p.alive !== false);
+            console.log('initBystanderView: alivePlayers count =', alivePlayers.length);
+            
+            this.buildPlayerGrid('bystander-player-grid', alivePlayers, 'bystander', false);
+            
+            // If already voted, show the selection status
+            if (this.bystanderState.myVote) {
+                const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
+                if (player) {
+                    const statusEl = document.getElementById('bystander-selection-status');
+                    if (statusEl) {
+                        statusEl.className = 'selection-status confirmed';
+                        statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+                    }
+                }
+            }
+            console.log('initBystanderView: completed successfully');
+        } catch (error) {
+            console.error('ERROR in initBystanderView:', error);
+            console.error('Stack:', error.stack);
+            console.error('state.bystanderData:', state.bystanderData);
         }
     }
 
@@ -3073,35 +3172,58 @@ class Game {
 
     // ---- Body Guard Functions ----
     initBodyGuardView(state) {
-        document.getElementById('bodyguard-view').style.display = 'block';
-        
-        this.bodyGuardState = state.bodyGuardData || {};
-        this.bystanderState = state.bystanderData || {};
-        
-        // Filter out dead players
-        const alivePlayers = state.players.filter(p => p.alive !== false);
-        
-        this.buildPlayerGrid('bodyguard-player-grid', alivePlayers, 'bodyguard', false);
-        this.buildPlayerGrid('bodyguard-bystander-grid', alivePlayers, 'bodyguard-bystander', false);
-        
-        // If already protecting, show the protection status
-        if (this.bodyGuardState.protecting) {
-            const player = alivePlayers.find(p => p.id === this.bodyGuardState.protecting);
-            if (player) {
-                const statusEl = document.getElementById('bodyguard-protection-status');
-                statusEl.className = 'protection-status confirmed';
-                statusEl.innerHTML = `<p>🛡️ Protecting ${this.escapeHtml(player.name)}</p>`;
+        try {
+            console.log('initBodyGuardView: Starting');
+            
+            const view = document.getElementById('bodyguard-view');
+            if (!view) {
+                console.error('bodyguard-view element not found!');
+                return;
             }
-        }
-        
-        // If already voted in bystander selection, show the selection status
-        if (this.bystanderState.myVote) {
-            const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
-            if (player) {
-                const statusEl = document.getElementById('bodyguard-bystander-status');
-                statusEl.className = 'selection-status confirmed';
-                statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+            view.style.display = 'block';
+            
+            console.log('initBodyGuardView: bodyGuardData =', state.bodyGuardData);
+            console.log('initBodyGuardView: bystanderData =', state.bystanderData);
+            
+            this.bodyGuardState = state.bodyGuardData || {};
+            this.bystanderState = state.bystanderData || {};
+            
+            // Filter out dead players
+            const alivePlayers = state.players.filter(p => p.alive !== false);
+            console.log('initBodyGuardView: alivePlayers count =', alivePlayers.length);
+            
+            this.buildPlayerGrid('bodyguard-player-grid', alivePlayers, 'bodyguard', false);
+            this.buildPlayerGrid('bodyguard-bystander-grid', alivePlayers, 'bodyguard-bystander', false);
+            
+            // If already protecting, show the protection status
+            if (this.bodyGuardState.protecting) {
+                const player = alivePlayers.find(p => p.id === this.bodyGuardState.protecting);
+                if (player) {
+                    const statusEl = document.getElementById('bodyguard-protection-status');
+                    if (statusEl) {
+                        statusEl.className = 'protection-status confirmed';
+                        statusEl.innerHTML = `<p>🛡️ Protecting ${this.escapeHtml(player.name)}</p>`;
+                    }
+                }
             }
+            
+            // If already voted in bystander selection, show the selection status
+            if (this.bystanderState.myVote) {
+                const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
+                if (player) {
+                    const statusEl = document.getElementById('bodyguard-bystander-status');
+                    if (statusEl) {
+                        statusEl.className = 'selection-status confirmed';
+                        statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+                    }
+                }
+            }
+            console.log('initBodyGuardView: completed successfully');
+        } catch (error) {
+            console.error('ERROR in initBodyGuardView:', error);
+            console.error('Stack:', error.stack);
+            console.error('state.bodyGuardData:', state.bodyGuardData);
+            console.error('state.bystanderData:', state.bystanderData);
         }
     }
 
