@@ -3161,7 +3161,10 @@ class Game {
                 console.error('bystander-view element not found!');
                 return;
             }
+            console.log('initBystanderView: Setting bystander-view display to block, current display:', view.style.display);
             view.style.display = 'block';
+            console.log('initBystanderView: After setting display, view.style.display:', view.style.display);
+            console.log('initBystanderView: view DOM element:', view);
             
             console.log('initBystanderView: bystanderData =', state.bystanderData);
             this.bystanderState = state.bystanderData || {};
@@ -3325,9 +3328,16 @@ class Game {
 
     // ---- Helper Functions ----
     buildPlayerGrid(containerId, players, type, excludeSyndicates = false) {
+        console.log('buildPlayerGrid called with:', {containerId, playersCount: players.length, type});
         const container = document.getElementById(containerId);
+        if (!container) {
+            console.error('Container not found:', containerId);
+            return;
+        }
+        console.log('Container found:', container);
         container.innerHTML = '';
         const myId = this.getMyPlayerId();
+        console.log('myId:', myId);
 
         players.forEach((player, index) => {
             // Skip self for most selections, but allow for assassin voting
@@ -3380,6 +3390,7 @@ class Game {
 
             container.appendChild(card);
         });
+        console.log('buildPlayerGrid completed:', {containerId, childrenCount: container.children.length});
     }
 
     handlePlayerSelect(type, playerId) {
