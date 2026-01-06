@@ -397,13 +397,18 @@ class SecretSyndicates extends GameManager {
      * Get game state for player
      */
     getGameStateForPlayer(playerToken) {
+        const playerRole = this.getPlayerRole(playerToken);
+        const player = this.players.get(playerToken);
+        
         return {
             gameCode: this.gameCode,
             gameType: this.gameType,
             gameState: this.gameState,
             currentPhase: this.currentPhase,
             currentRound: this.currentRound,
-            playerRole: this.getPlayerRole(playerToken),
+            playerRole: playerRole,
+            role: playerRole,  // Alias for client compatibility
+            isHost: player && player.isHost ? true : false,
             players: this.getPlayers(),
             alivePlayers: this.getAlivePlayers(),
             eliminated: Array.from(this.eliminatedPlayers),
