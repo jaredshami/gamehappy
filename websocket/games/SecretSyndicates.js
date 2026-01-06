@@ -402,11 +402,14 @@ class SecretSyndicates extends GameManager {
             return { success: false, message: 'Eliminated players cannot vote' };
         }
 
-        if (!['guilty', 'notguilty'].includes(vote)) {
+        // Normalize vote value (accept both 'not-guilty' and 'notguilty')
+        const normalizedVote = vote.toLowerCase().replace('-', '');
+        
+        if (!['guilty', 'notguilty'].includes(normalizedVote)) {
             return { success: false, message: 'Invalid vote' };
         }
 
-        this.trialVotes.set(playerToken, vote);
+        this.trialVotes.set(playerToken, normalizedVote);
         return { success: true };
     }
 
