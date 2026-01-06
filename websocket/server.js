@@ -291,6 +291,10 @@ io.on('connection', (socket) => {
                   }
                 }
               }
+              
+              // Clear playersDone for the new phase
+              game.playersDone.clear();
+              console.log(`[${game.gameCode}] Cleared playersDone tracker for new phase (from player-done)`);
             }
           }
         } else if (eventName === 'accusation-vote') {
@@ -381,6 +385,10 @@ io.on('connection', (socket) => {
               // Clear elimination trackers after sending events
               game.murderEliminatedPlayer = null;
               game.verdictEliminatedPlayer = null;
+              
+              // Clear playersDone for the new phase
+              game.playersDone.clear();
+              console.log(`[${game.gameCode}] Cleared playersDone tracker for new phase (from accusation-vote)`);
             }
           }
         } else if (eventName === 'trial-vote') {
