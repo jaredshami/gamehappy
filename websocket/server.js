@@ -255,7 +255,9 @@ io.on('connection', (socket) => {
       });
 
       // Check if all players are ready - if so, emit phase-start event
+      console.log(`[${game.gameCode}] Player ready: ${playerToken}, readyCount: ${gameState.readyCount}, totalPlayers: ${gameState.totalPlayers}`);
       if (game.allPlayersReady && typeof game.allPlayersReady === 'function' && game.allPlayersReady()) {
+        console.log(`[${game.gameCode}] ALL PLAYERS READY! Broadcasting on-phase-start`);
         // All players ready - emit phase-start to trigger game flow
         const updatedGameState = gameServer.getGameStateForPlayer(playerToken);
         io.to(`game-${game.gameCode}`).emit('on-phase-start', {
@@ -263,6 +265,8 @@ io.on('connection', (socket) => {
           phaseState: updatedGameState,
           phaseName: 'Night Phase'
         });
+      } else {
+        console.log(`[${game.gameCode}] Not all players ready yet`);
       }
 
       if (typeof callback === 'function') callback({ success: true });

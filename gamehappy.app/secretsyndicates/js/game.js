@@ -980,6 +980,8 @@ class Game {
 
     onPhaseStart(data) {
         console.log('onPhaseStart received:', data);
+        console.log('onPhaseStart phase:', data.phase, 'phaseName:', data.phaseName);
+        console.log('onPhaseStart phaseState:', data.phaseState);
         document.getElementById('current-phase').textContent = data.phase;
         document.getElementById('phase-name').textContent = data.phaseName || '';
         
@@ -999,6 +1001,8 @@ class Game {
         } else if (data.phase === 3) {
             this.initPhase3Screen(data);
             this.showScreen('phase3-screen');
+        } else {
+            console.warn('onPhaseStart: Unhandled phase or missing phaseState', data);
         }
     }
 
