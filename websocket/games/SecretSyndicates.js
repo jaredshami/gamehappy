@@ -192,14 +192,15 @@ class SecretSyndicates extends GameManager {
                         console.log(`[${this.gameCode}] Murder story generated: ${this.currentPhaseStory}`);
                     }
                 } else {
-                    // Fallback: Auto-select a random alive player as victim if no target was selected
-                    const alivePlayers = this.getAlivePlayers();
-                    if (alivePlayers.length > 0) {
-                        const randomVictim = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+                    // Fallback: Auto-select a random innocent player (non-Syndicate) as victim if no target was selected
+                    const syndicateTokens = new Set(this.getSyndicateMembers().map(s => s.token));
+                    const innocentPlayers = this.getAlivePlayers().filter(p => !syndicateTokens.has(p.token));
+                    if (innocentPlayers.length > 0) {
+                        const randomVictim = innocentPlayers[Math.floor(Math.random() * innocentPlayers.length)];
                         this.lastMurderTarget = randomVictim.token;
                         this.lastVictim = randomVictim;
                         this.eliminatedPlayers.add(this.lastMurderTarget);
-                        console.log(`[${this.gameCode}] No votes, auto-selecting: ${randomVictim.name} (${randomVictim.token})`);
+                        console.log(`[${this.gameCode}] No votes, auto-selecting innocent: ${randomVictim.name} (${randomVictim.token})`);
                         this.currentPhaseStory = this.getMurderStory();
                     }
                 }
