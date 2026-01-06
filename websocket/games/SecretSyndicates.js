@@ -169,6 +169,9 @@ class SecretSyndicates extends GameManager {
      */
     advancePhase() {
         console.log(`[${this.gameCode}] advancePhase() called. Current phase: ${this.currentPhase}, playersDone: ${this.playersDone.size}, alivePlayers: ${this.getAlivePlayers().length}`);
+        
+        const previousPhase = this.currentPhase;
+        
         // Reset done tracking for the new phase
         this.playersDone.clear();
         this.playersReady.clear();
@@ -227,6 +230,7 @@ class SecretSyndicates extends GameManager {
         return {
             success: true,
             phase: this.currentPhase,
+            previousPhase: previousPhase,
             round: this.currentRound
         };
     }
