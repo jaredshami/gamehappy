@@ -246,12 +246,25 @@ io.on('connection', (socket) => {
                                    phaseResult.phase === 'murder' ? 'Murder Discovery' :
                                    phaseResult.phase === 'trial' ? 'Trial Phase' : phaseResult.phase;
                   
-                  playerSocket.emit('on-phase-start', {
-                    phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : 3,
-                    phaseState: pGameState,
-                    phaseName: phaseName
-                  });
-                  console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${pToken}`);
+                  // Check if this player is eliminated
+                  if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
+                    // Send elimination event to eliminated players
+                    playerSocket.emit('player-eliminated', {
+                      playerName: pGameState.players.find(p => p.token === pToken)?.name || 'Unknown',
+                      role: pGameState.playerRole,
+                      reason: phaseResult.phase === 'murder' ? 'You were assassinated by the Syndicate.' : 'You were voted guilty and eliminated.',
+                      round: pGameState.currentRound
+                    });
+                    console.log(`[${game.gameCode}] Sent elimination event to ${pToken}`);
+                  } else {
+                    // Send phase start to alive players
+                    playerSocket.emit('on-phase-start', {
+                      phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : 3,
+                      phaseState: pGameState,
+                      phaseName: phaseName
+                    });
+                    console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${pToken}`);
+                  }
                 }
               }
             }

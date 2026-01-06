@@ -201,6 +201,12 @@ class Game {
                 this.showScreen('home-screen');
             });
 
+            this.socket.on('player-eliminated', (data) => {
+                console.log('Player eliminated event received:', data);
+                this.isEliminated = true;
+                this.showEliminationScreen(data);
+            });
+
             this.socket.on('disconnect', () => {
                 console.log('Disconnected from server');
                 this.updateConnectionStatus('disconnected');
