@@ -1129,8 +1129,8 @@ class Game {
         // Set total players
         const totalEl = document.getElementById('phase2-ready-total');
         const countEl = document.getElementById('phase2-ready-count');
-        if (totalEl && data.players) {
-            totalEl.textContent = data.players.length;
+        if (totalEl && data.alivePlayers) {
+            totalEl.textContent = data.alivePlayers.length;
         }
         if (countEl) {
             countEl.textContent = data.doneCount || 0;
@@ -1375,8 +1375,8 @@ class Game {
         }
         
         // Update status
-        if (data && data.players) {
-            document.getElementById('phase3-done-total').textContent = data.players.length;
+        if (data && data.alivePlayers) {
+            document.getElementById('phase3-done-total').textContent = data.alivePlayers.length;
         }
         document.getElementById('phase3-done-count').textContent = data.doneCount || 0;
         
