@@ -2181,3 +2181,38 @@ h3 {
     margin-top: 20px;
     width: 100%;
 }
+
+/* Case Notes Container */
+.case-notes-container {
+    margin-top: 30px;
+    padding: 15px;
+    background: rgba(212, 175, 55, 0.1);
+    border-left: 4px solid var(--primary-gold);
+    border-radius: 5px;
+}
+
+.case-notes-container h3 {
+    color: var(--primary-gold);
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.case-notes {
+    max-height: 200px;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.case-note-item {
+    padding: 8px;
+    margin: 5px 0;
+    background: rgba(100, 100, 100, 0.2);
+    border-radius: 3px;
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+.case-note-item strong {
+    color: var(--primary-gold);
+}

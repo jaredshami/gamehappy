@@ -2023,6 +2023,27 @@ class Game {
             statusEl.innerHTML = `<p>✓ You have voted. Waiting for others...</p>
                 <span id="phase4-vote-count">${data.voteCount || 0}</span>/<span id="phase4-vote-total">${(data.alivePlayers ? data.alivePlayers.length : 0) || 0}</span> players have voted`;
         }
+        
+        // Display case notes if available (for detectives)
+        if (data.detectiveData && data.detectiveData.caseNotes && Object.keys(data.detectiveData.caseNotes).length > 0) {
+            const container = document.getElementById('phase4-case-notes-container');
+            const notesDiv = document.getElementById('phase4-case-notes');
+            container.style.display = 'block';
+            notesDiv.innerHTML = '';
+            
+            for (const [targetId, notesList] of Object.entries(data.detectiveData.caseNotes)) {
+                const targetPlayer = data.detectiveData.caseNotesPlayers.find(p => p.id === targetId);
+                const targetName = targetPlayer ? targetPlayer.name : targetId;
+                
+                const noteItem = document.createElement('div');
+                noteItem.className = 'case-note-item';
+                noteItem.innerHTML = `
+                    <strong>${this.escapeHtml(targetName)}</strong>: 
+                    ${Array.isArray(notesList) ? notesList.map(n => this.escapeHtml(n)).join(', ') : this.escapeHtml(String(notesList))}
+                `;
+                notesDiv.appendChild(noteItem);
+            }
+        }
     }
     
     castVote(playerId, playerName) {
@@ -2108,6 +2129,27 @@ class Game {
             // Remove any selected class
             newGuiltyBtn.classList.remove('selected');
             newNotGuiltyBtn.classList.remove('selected');
+        }
+        
+        // Display case notes if available (for detectives)
+        if (data.detectiveData && data.detectiveData.caseNotes && Object.keys(data.detectiveData.caseNotes).length > 0) {
+            const container = document.getElementById('phase5-case-notes-container');
+            const notesDiv = document.getElementById('phase5-case-notes');
+            container.style.display = 'block';
+            notesDiv.innerHTML = '';
+            
+            for (const [targetId, notesList] of Object.entries(data.detectiveData.caseNotes)) {
+                const targetPlayer = data.detectiveData.caseNotesPlayers.find(p => p.id === targetId);
+                const targetName = targetPlayer ? targetPlayer.name : targetId;
+                
+                const noteItem = document.createElement('div');
+                noteItem.className = 'case-note-item';
+                noteItem.innerHTML = `
+                    <strong>${this.escapeHtml(targetName)}</strong>: 
+                    ${Array.isArray(notesList) ? notesList.map(n => this.escapeHtml(n)).join(', ') : this.escapeHtml(String(notesList))}
+                `;
+                notesDiv.appendChild(noteItem);
+            }
         }
     }
     
