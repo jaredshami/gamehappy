@@ -151,6 +151,10 @@ class SecretSyndicates extends GameManager {
      */
     getSyndicateMembers() {
         const members = [];
+        // Ensure eliminatedPlayers is initialized
+        if (!this.eliminatedPlayers) {
+            this.eliminatedPlayers = new Set();
+        }
         for (const [token, role] of this.roles) {
             if (role === 'Syndicate' && !this.eliminatedPlayers.has(token)) {
                 members.push({ token, name: this.getPlayer(token).name });

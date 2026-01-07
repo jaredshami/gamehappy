@@ -711,51 +711,57 @@ app.get('/test-game', (req, res) => {
     // If startRound > 1, advance the game to that round
     if (startRound > 1 && game) {
       console.log(`[TEST] Advancing game ${gameCode} to round ${startRound}...`);
-      // Advance rounds
-      for (let round = 1; round < startRound; round++) {
-        // Simulate each phase in the round
-        // Phase: night -> murder -> trial -> accusation -> verdict
-        for (let phase = 0; phase < 5; phase++) {
-          // Auto-complete each phase
-          // Syndicate votes during night
+      // Simple round advancement: just advance the phase the correct number of times
+      // Each round is: night -> murder -> trial -> accusation -> verdict (5 phases)
+      const phasesPerRound = 5;
+      const totalPhaseAdvancements = (startRound - 1) * phasesPerRound;
+      
+      for (let i = 0; i < totalPhaseAdvancements; i++) {
+        // For each phase, we need to populate minimal data to allow advancement
+        const alivePlayers = game.getAlivePlayers();
+        
+        // Auto-fill votes based on current phase
+        if (game.currentPhase === 'night' && alivePlayers.length > 0) {
           const syndicate = game.getSyndicateMembers();
-          if (syndicate.length > 0 && game.currentPhase === 'night') {
-            if (syndicate.length > 0) {
-              const targetPlayers = game.getAlivePlayers().filter(p => !syndicate.some(s => s.token === p.token));
-              if (targetPlayers.length > 0) {
-                const randomTarget = targetPlayers[Math.floor(Math.random() * targetPlayers.length)];
-                for (const member of syndicate) {
+          if (syndicate.length > 0) {
+            const targets = alivePlayers.filter(p => !syndicate.some(s => s.token === p.token));
+            if (targets.length > 0) {
+              const randomTarget = targets[Math.floor(Math.random() * targets.length)];
+              for (const member of syndicate) {
+                if (!game.nightVotesLocked.has(member.token)) {
                   game.nightVote(member.token, randomTarget.token);
                   game.lockNightVotes(member.token);
                 }
               }
             }
           }
-          
-          // Advance phase
-          game.advancePhase();
-          
-          // Auto-vote in other phases
-          const alivePlayers = game.getAlivePlayers();
-          if (game.currentPhase === 'accusation' && alivePlayers.length > 0) {
-            for (const player of alivePlayers) {
+        }
+        
+        if (game.currentPhase === 'accusation' && alivePlayers.length > 0) {
+          // Auto-vote for accusation phase
+          for (const player of alivePlayers) {
+            if (!game.accusationVotes.has(player.token)) {
               const targets = alivePlayers.filter(p => p.token !== player.token);
               if (targets.length > 0) {
                 const randomTarget = targets[Math.floor(Math.random() * targets.length)];
                 game.accusationVote(player.token, randomTarget.token);
               }
             }
-            game.advancePhase();
-          } else if (game.currentPhase === 'verdict' && alivePlayers.length > 0) {
-            for (const player of alivePlayers) {
-              game.trialVote(player.token, Math.random() > 0.5 ? 'guilty' : 'not-guilty');
-            }
-            game.advancePhase();
           }
         }
+        
+        if (game.currentPhase === 'verdict' && alivePlayers.length > 0 && game.trialAccused) {
+          // Auto-vote for verdict phase
+          for (const player of alivePlayers) {
+            if (!game.trialVotes.has(player.token)) {
+              game.trialVote(player.token, Math.random() > 0.5 ? 'guilty' : 'not-guilty');
+            }
+          }
+        }
+        
+        // Advance to next phase
+        game.advancePhase();
       }
-      // Final advancement to night of the desired round
-      game.advancePhase();
     }
     
     console.log(`[TEST] Created game ${gameCode} with ${playerCount} players starting at round ${startRound} (eyeWitness: ${enableEyeWitness}, bodyGuard: ${enableBodyGuard})`);
