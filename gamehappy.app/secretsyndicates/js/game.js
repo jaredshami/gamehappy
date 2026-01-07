@@ -2467,6 +2467,22 @@ class Game {
         });
         maxRounds = Math.max(maxRounds, 1); // At least 1 round
 
+        // Calculate suspicion for each player (how many times they were accused)
+        const suspicionMap = {};
+        allPlayers.forEach(player => {
+            suspicionMap[player.token] = 0;
+        });
+        
+        Object.values(this.votingHistory).forEach(history => {
+            if (history.accusationVotes) {
+                history.accusationVotes.forEach(accusedToken => {
+                    if (suspicionMap.hasOwnProperty(accusedToken)) {
+                        suspicionMap[accusedToken]++;
+                    }
+                });
+            }
+        });
+
         const playerStats = allPlayers.map(player => {
             // Get this player's voting history
             const history = this.votingHistory[player.token] || { accusationVotes: [], trialVotes: [] };
@@ -2492,12 +2508,23 @@ class Game {
             // Count guilty votes
             const guiltyVotes = history.trialVotes ? history.trialVotes.filter(v => v === 'guilty').length : 0;
             
+            // Determine suspicion level
+            const suspicionCount = suspicionMap[player.token] || 0;
+            let suspicionLevel = 'low';
+            if (suspicionCount >= 3) {
+                suspicionLevel = 'high';
+            } else if (suspicionCount >= 2) {
+                suspicionLevel = 'medium';
+            }
+            
             return {
                 name: player.name,
                 role: player.role || 'Hidden',
                 alive: player.alive,
                 accusations: accusations,
-                guiltyVotes: guiltyVotes
+                guiltyVotes: guiltyVotes,
+                suspicionCount: suspicionCount,
+                suspicionLevel: suspicionLevel
             };
         });
 
@@ -2513,7 +2540,7 @@ class Game {
         const tableHTML = `
             <div class="players-stats-section">
                 <h3 style="margin-bottom: 15px;">📊 Final Results</h3>
-                <div class="table-wrapper">
+                <div class="table-wrapper-scroll">
                     <table class="players-stats-table">
                         <thead>
                             <tr>
@@ -2522,6 +2549,7 @@ class Game {
                                 <th>Status</th>
                                 ${roundHeaders.join('')}
                                 <th>Guilty Votes</th>
+                                <th>Suspicion</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2538,6 +2566,7 @@ class Game {
                                     </td>
                                     ${player.accusations.map(acc => `<td class="accusation">${acc}</td>`).join('')}
                                     <td class="guilty-votes">${player.guiltyVotes}</td>
+                                    <td class="suspicion-level ${player.suspicionLevel}">${player.suspicionCount}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
