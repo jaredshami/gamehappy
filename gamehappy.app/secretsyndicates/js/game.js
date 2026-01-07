@@ -3034,7 +3034,7 @@ class Game {
         if (!this.detectiveState.investigation) return;
 
         this.sendMessage({
-            action: 'detectiveLockIn',
+            action: 'detective-lock',
             targetToken: this.detectiveState.investigation
         });
 
