@@ -673,6 +673,7 @@ app.get('/test-game', (req, res) => {
   try {
     // Get query parameters with defaults
     const playerCount = Math.min(Math.max(parseInt(req.query.playerCount) || 5, 3), 10); // 3-10 players
+    const startRound = Math.min(Math.max(parseInt(req.query.startRound) || 1, 1), 20); // 1-20 rounds
     const enableEyeWitness = req.query.enableEyeWitness !== 'false'; // Default true
     const enableBodyGuard = req.query.enableBodyGuard !== 'false'; // Default true
     
@@ -707,7 +708,57 @@ app.get('/test-game', (req, res) => {
     // Start the game
     gameServer.startGame(gameCode, 'test-player-1');
     
-    console.log(`[TEST] Created game ${gameCode} with ${playerCount} players (eyeWitness: ${enableEyeWitness}, bodyGuard: ${enableBodyGuard})`);
+    // If startRound > 1, advance the game to that round
+    if (startRound > 1 && game) {
+      console.log(`[TEST] Advancing game ${gameCode} to round ${startRound}...`);
+      // Advance rounds
+      for (let round = 1; round < startRound; round++) {
+        // Simulate each phase in the round
+        // Phase: night -> murder -> trial -> accusation -> verdict
+        for (let phase = 0; phase < 5; phase++) {
+          // Auto-complete each phase
+          // Syndicate votes during night
+          const syndicate = game.getSyndicateMembers();
+          if (syndicate.length > 0 && game.currentPhase === 'night') {
+            if (syndicate.length > 0) {
+              const targetPlayers = game.getAlivePlayers().filter(p => !syndicate.some(s => s.token === p.token));
+              if (targetPlayers.length > 0) {
+                const randomTarget = targetPlayers[Math.floor(Math.random() * targetPlayers.length)];
+                for (const member of syndicate) {
+                  game.nightVote(member.token, randomTarget.token);
+                  game.lockNightVotes(member.token);
+                }
+              }
+            }
+          }
+          
+          // Advance phase
+          game.advancePhase();
+          
+          // Auto-vote in other phases
+          const alivePlayers = game.getAlivePlayers();
+          if (game.currentPhase === 'accusation' && alivePlayers.length > 0) {
+            for (const player of alivePlayers) {
+              const targets = alivePlayers.filter(p => p.token !== player.token);
+              if (targets.length > 0) {
+                const randomTarget = targets[Math.floor(Math.random() * targets.length)];
+                game.accusationVote(player.token, randomTarget.token);
+              }
+            }
+            game.advancePhase();
+          } else if (game.currentPhase === 'verdict' && alivePlayers.length > 0) {
+            for (const player of alivePlayers) {
+              game.trialVote(player.token, Math.random() > 0.5 ? 'guilty' : 'not-guilty');
+            }
+            game.advancePhase();
+          }
+        }
+      }
+      // Final advancement to night of the desired round
+      game.advancePhase();
+    }
+    
+    console.log(`[TEST] Created game ${gameCode} with ${playerCount} players starting at round ${startRound} (eyeWitness: ${enableEyeWitness}, bodyGuard: ${enableBodyGuard})`);
     
     // Generate player response with dynamic count
     const playerColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#A9DFBF'];

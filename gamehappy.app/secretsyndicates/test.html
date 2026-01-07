@@ -160,6 +160,12 @@
         </div>
 
         <div class="form-section">
+            <label for="startRound" class="form-label">Start at Round</label>
+            <input type="number" id="startRound" class="form-input" min="1" max="20" value="1">
+            <div class="player-count-display" id="roundDisplay">Round 1</div>
+        </div>
+
+        <div class="form-section">
             <label class="form-label">Game Roles</label>
             <div class="checkbox-group">
                 <div class="checkbox-item">
@@ -181,6 +187,8 @@
     <script>
         const playerCountInput = document.getElementById('playerCount');
         const playerCountDisplay = document.getElementById('playerCountDisplay');
+        const startRoundInput = document.getElementById('startRound');
+        const roundDisplay = document.getElementById('roundDisplay');
         const eyeWitnessCheckbox = document.getElementById('enableEyeWitness');
         const bodyGuardCheckbox = document.getElementById('enableBodyGuard');
         const startBtn = document.getElementById('startBtn');
@@ -193,6 +201,12 @@
             playerCountDisplay.textContent = count + (count === '1' ? ' player' : ' players');
         });
 
+        // Update round display
+        startRoundInput.addEventListener('change', () => {
+            const round = startRoundInput.value;
+            roundDisplay.textContent = 'Round ' + round;
+        });
+
         async function startTestGame() {
             loading.style.display = 'block';
             error.style.display = 'none';
@@ -200,12 +214,14 @@
 
             try {
                 const playerCount = parseInt(playerCountInput.value);
+                const startRound = parseInt(startRoundInput.value);
                 const enableEyeWitness = eyeWitnessCheckbox.checked;
                 const enableBodyGuard = bodyGuardCheckbox.checked;
 
                 // Create query string with settings
                 const params = new URLSearchParams({
                     playerCount,
+                    startRound,
                     enableEyeWitness,
                     enableBodyGuard
                 });
