@@ -2551,7 +2551,12 @@ class Game {
             </div>
         `;
         
-        document.body.appendChild(screen);
+        const container = document.querySelector('.container');
+        if (container) {
+            container.appendChild(screen);
+        } else {
+            document.body.appendChild(screen);
+        }
     }
     
     onNextRoundStart(data) {
