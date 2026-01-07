@@ -130,23 +130,23 @@ class Game {
 
             // ==================== INCOMING SUSPICION (votes/accusations against them) ====================
             
-            // High votes against them indicates they are a suspect
-            if (votesAgainstCount >= 2) {
-                suspicionScore += (votesAgainstCount * 15);  // +15 per accusation vote
-                reasons.push(`${votesAgainstCount} players voted to accuse them`);
+            // Being accused by other players is a major indicator
+            if (votesAgainstCount >= 1) {
+                suspicionScore += (votesAgainstCount * 20);  // +20 per accusation vote
+                reasons.push(`${votesAgainstCount} player(s) voted to accuse them`);
             }
 
             // ==================== OUTGOING SUSPICION (their voting patterns) ====================
             
-            // Voting guilty a lot could indicate they're suspicious
-            if (timesVotedGuilty >= 3) {
-                suspicionScore += (timesVotedGuilty * 10);  // +10 per guilty vote
+            // Voting guilty frequently could indicate suspicious behavior
+            if (timesVotedGuilty >= 2) {
+                suspicionScore += (timesVotedGuilty * 8);  // +8 per guilty vote
                 reasons.push(`Voted guilty ${timesVotedGuilty} times`);
             }
 
-            // High not-guilty votes suggests they're defensive or protecting someone
-            if (timesVotedNotGuilty >= 2) {
-                suspicionScore += (timesVotedNotGuilty * 5);  // +5 per not-guilty vote
+            // Voting not-guilty frequently suggests being defensive or protecting allies
+            if (timesVotedNotGuilty >= 1) {
+                suspicionScore += (timesVotedNotGuilty * 10);  // +10 per not-guilty vote (more suspicious)
                 reasons.push(`Voted not guilty ${timesVotedNotGuilty} times (defensive)`);
             }
 

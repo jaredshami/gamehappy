@@ -1012,8 +1012,7 @@ class SecretSyndicates extends GameManager {
         // Get voting history for this player - new structure uses roundVotes
         const targetHistory = this.votingHistory[targetToken] || { roundVotes: {} };
 
-        // Count how many rounds they were accused
-        let timesAccused = 0;
+        // Count their voting patterns
         let timesVotedGuilty = 0;
         let timesVotedNotGuilty = 0;
         
@@ -1028,14 +1027,10 @@ class SecretSyndicates extends GameManager {
                         timesVotedNotGuilty++;
                     }
                 }
-                // Count how many times they were accused
-                if (voteData.accused === targetToken) {
-                    timesAccused++;
-                }
             });
         }
         
-        // Also count votes AGAINST the target from other players
+        // Count votes AGAINST the target from other players
         let votesAgainstCount = 0;
         Object.entries(this.votingHistory).forEach(([voterToken, voterHistory]) => {
             if (voterToken !== targetToken && voterHistory.roundVotes) {
@@ -1047,26 +1042,28 @@ class SecretSyndicates extends GameManager {
             }
         });
 
+        console.log(`[SUSPICION] ${targetPlayer.name}: votesAgainst=${votesAgainstCount}, guiltyVotes=${timesVotedGuilty}, notGuiltyVotes=${timesVotedNotGuilty}`);
+
         // ==================== INCOMING SUSPICION (votes/accusations against them) ====================
         
-        // High votes against them indicates they are a suspect
-        if (votesAgainstCount >= 2) {
-            suspicionScore += (votesAgainstCount * 15);  // +15 per accusation vote
-            reasons.push(`${votesAgainstCount} players voted to accuse them`);
+        // Being accused by other players is a major indicator
+        // Each accusation adds significant points
+        if (votesAgainstCount >= 1) {
+            suspicionScore += (votesAgainstCount * 20);  // +20 per accusation vote
+            reasons.push(`${votesAgainstCount} player(s) voted to accuse them`);
         }
 
         // ==================== OUTGOING SUSPICION (their voting patterns) ====================
         
-        // Voting guilty a lot could indicate they're suspicious (voting with syndicate) or vigilant (voting correctly)
-        // But combined with other factors, high guilty votes is suspicious
-        if (timesVotedGuilty >= 3) {
-            suspicionScore += (timesVotedGuilty * 10);  // +10 per guilty vote
+        // Voting guilty frequently could indicate suspicious behavior
+        if (timesVotedGuilty >= 2) {
+            suspicionScore += (timesVotedGuilty * 8);  // +8 per guilty vote
             reasons.push(`Voted guilty ${timesVotedGuilty} times`);
         }
 
-        // High not-guilty votes suggests they're defensive or protecting someone
-        if (timesVotedNotGuilty >= 2) {
-            suspicionScore += (timesVotedNotGuilty * 5);  // +5 per not-guilty vote
+        // Voting not-guilty frequently suggests being defensive or protecting allies
+        if (timesVotedNotGuilty >= 1) {
+            suspicionScore += (timesVotedNotGuilty * 10);  // +10 per not-guilty vote (more suspicious)
             reasons.push(`Voted not guilty ${timesVotedNotGuilty} times (defensive)`);
         }
 
