@@ -334,21 +334,24 @@ class SecretSyndicates extends GameManager {
                     console.log(`[${this.gameCode}] VERDICT: No accused player set! Cannot eliminate.`);
                 }
                 
-                // Check win conditions only after round 2 and round 5
-                if (this.currentRound === 2 || this.currentRound === 5) {
-                    const winResult = this.checkWinConditions();
-                    if (winResult) {
-                        console.log(`[${this.gameCode}] Game ended after round ${this.currentRound}: ${winResult.winner} wins`);
-                        this.currentPhase = 'ended';
-                        return {
-                            success: true,
-                            phase: this.currentPhase,
-                            previousPhase: previousPhase,
-                            round: this.currentRound,
-                            gameEnded: true,
-                            winCondition: winResult
-                        };
-                    }
+                // Check win conditions after round 2 and round 5
+                const winResult = this.checkWinConditions();
+                
+                // End game if:
+                // 1. Win condition is met after round 2, OR
+                // 2. We've reached round 5 (final round), OR
+                // 3. Win condition is met after round 5
+                if ((this.currentRound === 2 && winResult) || this.currentRound === 5) {
+                    console.log(`[${this.gameCode}] Game ended after round ${this.currentRound}: ${winResult ? winResult.winner : 'Round limit'} wins`);
+                    this.currentPhase = 'ended';
+                    return {
+                        success: true,
+                        phase: this.currentPhase,
+                        previousPhase: previousPhase,
+                        round: this.currentRound,
+                        gameEnded: true,
+                        winCondition: winResult
+                    };
                 }
                 
                 // CRITICAL: Reset ALL round-specific state for new round
