@@ -38,6 +38,9 @@ class SecretSyndicates extends GameManager {
         // Accusation phase (phase 4)
         this.accusationVotes = new Map(); // playerToken -> targetToken
 
+        // Detective investigations
+        this.detectiveInvestigations = new Map(); // playerToken -> { targetToken, targetName, round, results: null }
+
         // Phase readiness
         this.playersReady = new Set();
         
@@ -294,6 +297,7 @@ class SecretSyndicates extends GameManager {
                 this.dayVotes.clear();
                 this.playersDone.clear();
                 this.playersReady.clear();
+                this.detectiveInvestigations.clear();  // Clear old investigations for new round
                 
                 // Clear round-specific tracking
                 this.accusedPlayer = null;
@@ -542,6 +546,7 @@ class SecretSyndicates extends GameManager {
         // Next round
         this.currentRound++;
         this.currentPhase = 'night';
+        this.detectiveInvestigations.clear();  // Clear old investigations for new round
         
         return { success: true, convicted, nextPhase: 'night' };
     }
@@ -632,6 +637,26 @@ class SecretSyndicates extends GameManager {
         return array;
     }
 
+
+    /**
+     * Build detective data object with case notes and investigation results
+     */
+    buildDetectiveData(detectiveToken, alivePlayersWithStatus) {
+        const detectiveData = {
+            caseNotes: this.detectiveCaseNotes[detectiveToken] || {},
+            caseNotesPlayers: alivePlayersWithStatus,
+            availableRoles: this.getAvailableRoles()
+        };
+
+        // Add investigation results if locked in
+        const investigation = this.detectiveInvestigations.get(detectiveToken);
+        if (investigation && investigation.results) {
+            detectiveData.investigationResults = investigation.results;
+        }
+
+        return detectiveData;
+    }
+
     /**
      * Get game state for player
      */
@@ -699,21 +724,13 @@ class SecretSyndicates extends GameManager {
             // Check if player is detective (only show special info if eyewitness is enabled)
             gameState.isDetective = playerRole === 'Detective';
             if (gameState.isDetective && this.settings.enableEyeWitness) {
-                gameState.detectiveData = {
-                    keyword: 'Look for hesitation',
-                    hint: 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.',
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
+                gameState.detectiveData.keyword = 'Look for hesitation';
+                gameState.detectiveData.hint = 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.';
                 console.log(`[${this.gameCode}] Sending detective data (eyewitness enabled)`);
             } else if (gameState.isDetective) {
                 // Add case notes even if eyewitness is disabled
-                gameState.detectiveData = {
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
                 console.log(`[${this.gameCode}] Sending case notes to detective`);
             }
             
@@ -735,11 +752,7 @@ class SecretSyndicates extends GameManager {
             
             // Add detective case notes
             if (playerRole === 'Detective') {
-                gameState.detectiveData = {
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
             }
         }
 
@@ -753,11 +766,7 @@ class SecretSyndicates extends GameManager {
             
             // Add detective case notes
             if (playerRole === 'Detective') {
-                gameState.detectiveData = {
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
             }
         }
 
@@ -765,11 +774,7 @@ class SecretSyndicates extends GameManager {
         if (this.currentPhase === 'trial') {
             // Add detective case notes for trial phase
             if (playerRole === 'Detective') {
-                gameState.detectiveData = {
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
             }
         }
 
@@ -777,11 +782,7 @@ class SecretSyndicates extends GameManager {
         if (this.currentPhase === 'discussion') {
             // Add detective case notes for discussion phase
             if (playerRole === 'Detective') {
-                gameState.detectiveData = {
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
             }
         }
 
@@ -862,6 +863,98 @@ class SecretSyndicates extends GameManager {
     }
 
     /**
+     * Calculate suspicion level based on voting patterns
+     */
+    calculateSuspicionLevel(targetToken) {
+        const targetPlayer = this.players.get(targetToken);
+        if (!targetPlayer) {
+            return { level: 'Unknown', suspicionScore: 0 };
+        }
+
+        // Check if target is syndicate member (100% suspicious)
+        if (this.roles.get(targetToken) === 'Syndicate') {
+            return { level: 'Very Suspicious', suspicionScore: 100, hint: 'They are a Syndicate member.' };
+        }
+
+        let suspicionScore = 0;
+        let reasons = [];
+
+        // Check votes AGAINST the target (day votes)
+        // Count how many players voted to eliminate this person
+        let votesAgainst = 0;
+        for (const [voter, target] of this.dayVotes) {
+            if (target === targetToken) {
+                votesAgainst++;
+            }
+        }
+
+        // Check votes FOR the target during accusations
+        // Count how many players this person accused
+        let votesFor = 0;
+        for (const [voter, target] of this.accusationVotes) {
+            if (voter === targetToken) {
+                votesFor++;
+            }
+        }
+
+        // High number of votes against suggests guilt
+        const totalPlayers = this.getAlivePlayers().length;
+        const percentVotedAgainst = totalPlayers > 0 ? (votesAgainst / totalPlayers) * 100 : 0;
+        
+        if (percentVotedAgainst >= 60) {
+            suspicionScore += 40;
+            reasons.push('Multiple players voted to eliminate them');
+        } else if (percentVotedAgainst >= 40) {
+            suspicionScore += 25;
+        } else if (percentVotedAgainst >= 20) {
+            suspicionScore += 15;
+        }
+
+        // If they accused many people, they might be trying to throw suspicion
+        if (votesFor >= 3) {
+            suspicionScore += 20;
+            reasons.push('They made multiple accusations');
+        } else if (votesFor >= 2) {
+            suspicionScore += 10;
+        }
+
+        // Determine level based on score
+        let level = 'Clear';
+        if (suspicionScore >= 80) {
+            level = 'Very Suspicious';
+        } else if (suspicionScore >= 60) {
+            level = 'Suspicious';
+        } else if (suspicionScore >= 40) {
+            level = 'Moderate';
+        } else if (suspicionScore >= 20) {
+            level = 'Low';
+        }
+
+        return { level, suspicionScore, reasons };
+    }
+
+    /**
+     * Get investigation result for detective
+     */
+    getInvestigationResult(detectiveToken, targetToken) {
+        const targetPlayer = this.players.get(targetToken);
+        if (!targetPlayer) {
+            return null;
+        }
+
+        const suspicion = this.calculateSuspicionLevel(targetToken);
+        const investigationResults = {
+            targetName: targetPlayer.name,
+            level: suspicion.level,
+            suspicionScore: suspicion.suspicionScore,
+            reasons: suspicion.reasons || [],
+            round: this.currentRound
+        };
+
+        return investigationResults;
+    }
+
+    /**
      * Generate detective clue
      */
     getDetectiveClue() {
@@ -886,6 +979,8 @@ class SecretSyndicates extends GameManager {
                 return this.trialVote(playerToken, data.vote);
             case 'accusation-vote':
                 return this.accusationVote(playerToken, data.target);
+            case 'detective-lock':
+                return this.detectiveLockIn(playerToken, data);
             case 'player-ready':
                 this.setPlayerReady(playerToken);
                 return { success: true };
@@ -897,6 +992,39 @@ class SecretSyndicates extends GameManager {
             default:
                 return { success: false, message: 'Unknown event' };
         }
+    }
+
+    /**
+     * Handle detective lock-in for investigation
+     */
+    detectiveLockIn(detectiveToken, data) {
+        const role = this.getPlayerRole(detectiveToken);
+        if (role !== 'Detective') {
+            return { success: false, message: 'Only detectives can lock investigations' };
+        }
+
+        const { targetToken } = data || {};
+        if (!targetToken) {
+            return { success: false, message: 'No investigation target provided' };
+        }
+
+        // Get investigation result
+        const investigationResults = this.getInvestigationResult(detectiveToken, targetToken);
+        if (!investigationResults) {
+            return { success: false, message: 'Invalid investigation target' };
+        }
+
+        // Store the investigation
+        this.detectiveInvestigations.set(detectiveToken, {
+            targetToken,
+            targetName: investigationResults.targetName,
+            round: this.currentRound,
+            results: investigationResults
+        });
+
+        console.log(`[${this.gameCode}] Detective ${detectiveToken} locked investigation on ${investigationResults.targetName} - Suspicion: ${investigationResults.level}`);
+
+        return { success: true, results: investigationResults };
     }
 
     /**

@@ -1175,13 +1175,29 @@ class Game {
         messageContainer.style.marginBottom = '20px';
         
         if (data.isDetective && data.detectiveData) {
-            messageContainer.innerHTML = `
-                <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                    <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE'S CLUE</h3>
-                    <p style="margin: 10px 0; font-size: 14px;">${data.detectiveData.keyword || 'Pay close attention'}</p>
-                    <p style="margin: 10px 0; font-size: 14px; font-style: italic;">${data.detectiveData.hint || 'Look for clues in what people say'}</p>
-                </div>
-            `;
+            // Check if there are investigation results to display
+            if (data.detectiveData.investigationResults) {
+                const results = data.detectiveData.investigationResults;
+                messageContainer.innerHTML = `
+                    <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <h3 style="color: #4ecdc4; margin-top: 0;">🔍 INVESTIGATION RESULT</h3>
+                        <div style="background: rgba(78, 205, 196, 0.05); padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #4ecdc4;">
+                            <p style="margin: 5px 0; font-size: 14px;"><strong>Target:</strong> ${results.targetName}</p>
+                            <p style="margin: 5px 0; font-size: 14px;"><strong>Suspicion Level:</strong> <span style="color: #ffc107; font-weight: bold;">${results.level}</span></p>
+                            ${results.reasons && results.reasons.length > 0 ? `<p style="margin: 5px 0; font-size: 12px; font-style: italic;">${results.reasons.join(', ')}</p>` : ''}
+                        </div>
+                        <p style="margin: 10px 0; font-size: 13px; color: #aaa; font-style: italic;">Based on voting patterns and behavior analysis</p>
+                    </div>
+                `;
+            } else {
+                messageContainer.innerHTML = `
+                    <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE'S CLUE</h3>
+                        <p style="margin: 10px 0; font-size: 14px;">${data.detectiveData.keyword || 'Pay close attention'}</p>
+                        <p style="margin: 10px 0; font-size: 14px; font-style: italic;">${data.detectiveData.hint || 'Look for clues in what people say'}</p>
+                    </div>
+                `;
+            }
         } else if (data.isAssassin && data.assassinData) {
             messageContainer.innerHTML = `
                 <div style="background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
@@ -1923,19 +1939,19 @@ class Game {
         // Check if there are investigation results
         if (detectiveData.investigationResults) {
             const results = detectiveData.investigationResults;
-            const levelColor = results.level === 'Low' ? '#4ecdc4' : 
-                              results.level === 'High' ? '#ff6b6b' : 
-                              results.level === 'Medium' ? '#f4d03f' : '#888';
+            const levelColor = results.level === 'Very Suspicious' ? '#ff6b6b' : 
+                              results.level === 'Suspicious' ? '#ff9f43' : 
+                              results.level === 'Moderate' ? '#ffc107' :
+                              results.level === 'Low' ? '#4ecdc4' : '#888';
             
             investigationHtml = `
                 <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${levelColor};">
                     <h4 style="margin: 0 0 10px 0; color: #fff;">📋 Investigation Results: ${results.targetName}</h4>
-                    <div style="font-size: 18px; font-weight: bold; color: ${levelColor}; margin-bottom: 10px;">
+                    <div style="font-size: 16px; font-weight: bold; color: ${levelColor}; margin-bottom: 10px;">
                         Suspicion Level: ${results.level}
                     </div>
-                    <p style="margin: 0; color: #ccc; font-size: 14px;">${results.details}</p>
                     ${results.reasons && results.reasons.length > 0 ? `
-                        <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #aaa; font-size: 13px;">
+                        <ul style="margin: 5px 0 10px 20px; padding-left: 10px; color: #aaa; font-size: 13px;">
                             ${results.reasons.map(r => `<li>${r}</li>`).join('')}
                         </ul>
                     ` : ''}
@@ -1945,7 +1961,7 @@ class Game {
         
         detailsDiv.innerHTML = `
             ${investigationHtml}
-            <strong>Listen for the signal:</strong> "<span style="color: #4ecdc4; font-weight: bold;">${detectiveData.keyword}</span>"<br><br>
+            <strong>Listen for the signal:</strong> "<span style="color: #4ecdc4; font-weight: bold;">${detectiveData.keyword || 'Pay close attention'}</span>"<br><br>
             <em>If you hear this word or see a related gesture during discussions, you may have found the Eye Witness who knows the truth about the assassination.</em>
         `;
         messageDiv.style.display = 'block';
@@ -3012,7 +3028,8 @@ class Game {
         if (!this.detectiveState.investigation) return;
 
         this.sendMessage({
-            action: 'detectiveLockIn'
+            action: 'detectiveLockIn',
+            targetToken: this.detectiveState.investigation
         });
 
         this.detectiveState.lockedIn = true;
