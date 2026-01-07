@@ -32,7 +32,21 @@ class Game {
         // Check for test mode
         const urlParams = new URLSearchParams(window.location.search);
         const testToken = urlParams.get('test');
-        if (testToken) {
+        
+        // Check for results view mode
+        if (testToken === 'results') {
+            // Results-only view mode
+            const winner = urlParams.get('winner') || 'innocent';
+            const gameCode = urlParams.get('gameCode');
+            this.gameCode = gameCode;
+            this.playerToken = 'test-results-view';
+            this.playerName = 'Results Viewer';
+            console.log(`[RESULTS VIEW] Showing ${winner} win for game ${gameCode}`);
+            
+            // Skip normal connection and show results directly
+            this.showResultsScreenDirectly(winner);
+            return;
+        } else if (testToken) {
             // Test mode - use token from URL, and game info from URL params
             this.playerToken = testToken;
             const gameCode = urlParams.get('gameCode');
@@ -49,6 +63,38 @@ class Game {
         
         this.bindEvents();
         this.connect();
+    }
+    
+    showResultsScreenDirectly(winner) {
+        // Create mock data for results view
+        const mockPlayers = [
+            { name: 'A', token: 'test-player-1', role: 'Syndicate', alive: winner === 'syndicate' },
+            { name: 'B', token: 'test-player-2', role: 'Detective', alive: winner === 'innocent' },
+            { name: 'C', token: 'test-player-3', role: 'Bystander', alive: winner === 'innocent' },
+            { name: 'D', token: 'test-player-4', role: 'Bystander', alive: true },
+            { name: 'E', token: 'test-player-5', role: 'Bystander', alive: true }
+        ];
+        
+        // Simulate game-ended event
+        this.handleGameEnded({
+            winner: winner,
+            winType: winner === 'syndicate' ? 'CONTROL_VOTES' : 'ELIMINATED_SYNDICATES',
+            details: {
+                message: winner === 'syndicate' ? 'Syndicates control the votes!' : 'All syndicates have been eliminated!',
+                syndicatesLeft: winner === 'syndicate' ? 1 : 0,
+                innocentLeft: winner === 'innocent' ? 3 : 2
+            },
+            finalRound: 3,
+            playerRole: 'Bystander',
+            allPlayers: mockPlayers,
+            votingHistory: {
+                'test-player-1': { accusationVotes: ['test-player-2', 'test-player-3'], trialVotes: ['guilty', 'guilty', 'guilty'] },
+                'test-player-2': { accusationVotes: ['test-player-1', 'test-player-1'], trialVotes: ['guilty', 'guilty', 'guilty'] },
+                'test-player-3': { accusationVotes: ['test-player-4', 'test-player-1'], trialVotes: ['not-guilty', 'guilty', 'guilty'] },
+                'test-player-4': { accusationVotes: ['test-player-5', 'test-player-2'], trialVotes: ['guilty', 'guilty', 'guilty'] },
+                'test-player-5': { accusationVotes: ['test-player-3', 'test-player-4'], trialVotes: ['guilty', 'guilty', 'guilty'] }
+            }
+        });
     }
 
     // Session Management

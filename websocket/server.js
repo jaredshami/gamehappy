@@ -848,6 +848,82 @@ app.get('/test-game', (req, res) => {
   }
 });
 
+app.get('/test-results', (req, res) => {
+  try {
+    const winner = req.query.winner || 'innocent'; // 'innocent' or 'syndicate'
+    
+    // Create a simple test game with pre-determined results
+    const playerCount = 5;
+    const playerNames = ['A', 'B', 'C', 'D', 'E'];
+    const playerTokens = [];
+    
+    // Create the game
+    const createResult = gameServer.createGame('secretsyndicates', 'test-player-1', playerNames[0]);
+    if (!createResult.success) {
+      return res.json({ success: false, message: 'Failed to create game' });
+    }
+    
+    const gameCode = createResult.gameCode;
+    const game = gameServer.games.get(gameCode);
+    
+    playerTokens.push('test-player-1');
+    
+    // Add remaining players
+    for (let i = 1; i < playerNames.length; i++) {
+      const token = `test-player-${i + 1}`;
+      gameServer.joinGame(gameCode, token, playerNames[i]);
+      playerTokens.push(token);
+    }
+    
+    // Start the game
+    gameServer.startGame(gameCode, 'test-player-1');
+    
+    // Assign roles manually for consistent results
+    if (game) {
+      game.roles.clear();
+      // Assign roles: player-1 is Syndicate, others are Innocent/Detective/etc
+      game.roles.set('test-player-1', 'Syndicate');
+      game.roles.set('test-player-2', 'Detective');
+      game.roles.set('test-player-3', 'Bystander');
+      game.roles.set('test-player-4', 'Bystander');
+      game.roles.set('test-player-5', 'Bystander');
+      
+      // Manually set game to ended state with results
+      game.currentPhase = 'ended';
+      game.currentRound = 3;
+      
+      // Set which team wins
+      if (winner === 'syndicate') {
+        // Eliminate innocent players
+        game.eliminatedPlayers.add('test-player-2');
+        game.eliminatedPlayers.add('test-player-3');
+      } else {
+        // Eliminate the syndicate
+        game.eliminatedPlayers.add('test-player-1');
+      }
+    }
+    
+    console.log(`[TEST] Created results view game ${gameCode} with ${winner} winning`);
+    
+    const playerColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+    const players = playerNames.map((name, index) => ({
+      name,
+      token: `test-player-${index + 1}`,
+      color: playerColors[index]
+    }));
+    
+    res.json({
+      success: true,
+      gameCode: gameCode,
+      players: players,
+      winner: winner
+    });
+  } catch (err) {
+    console.error('Error creating test results:', err);
+    res.json({ success: false, message: 'Server error' });
+  }
+});
+
 server.listen(8443, () => {
   console.log('Socket.IO server running at wss://gamehappy.app/websocket');
   console.log('Ready to handle: secretsyndicates and future games');
