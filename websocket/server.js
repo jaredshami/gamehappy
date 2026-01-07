@@ -750,7 +750,7 @@ app.get('/test-game', (req, res) => {
           }
         }
         
-        if (game.currentPhase === 'verdict' && alivePlayers.length > 0 && game.trialAccused) {
+        if (game.currentPhase === 'verdict' && alivePlayers.length > 0 && game.accusedPlayer) {
           // Auto-vote for verdict phase
           for (const player of alivePlayers) {
             if (!game.trialVotes.has(player.token)) {

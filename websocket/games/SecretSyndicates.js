@@ -34,6 +34,10 @@ class SecretSyndicates extends GameManager {
         // Trial phase
         this.trialAccused = null;
         this.trialVotes = new Map(); // playerToken -> guilty/notguilty
+        
+        // Verdict phase - who is on trial
+        this.accusedPlayer = null;  // Current player being voted on in verdict phase
+        this.verdictEliminatedPlayer = null;  // Track who was eliminated this verdict
 
         // Accusation phase (phase 4)
         this.accusationVotes = new Map(); // playerToken -> targetToken
@@ -329,15 +333,19 @@ class SecretSyndicates extends GameManager {
                 // Track the newly eliminated player for the verdict phase
                 this.verdictEliminatedPlayer = null;
                 
-                console.log(`[${this.gameCode}] VERDICT PHASE: accusedPlayer=${this.accusedPlayer}, guiltVotes=${guiltVotes}, totalVotes=${totalVotes}, majorityGuilty=${majorityVotedGuilty}`);
+                const accusedRole = this.accusedPlayer ? this.getPlayerRole(this.accusedPlayer) : 'UNKNOWN';
+                console.log(`[${this.gameCode}] VERDICT PHASE: accusedPlayer=${this.accusedPlayer} (role: ${accusedRole}), guiltVotes=${guiltVotes}, totalVotes=${totalVotes}, majorityGuilty=${majorityVotedGuilty}`);
                 
                 if (majorityVotedGuilty && this.accusedPlayer) {
                     // Majority voted guilty - eliminate the accused player
+                    // ALWAYS eliminate, regardless of role
+                    console.log(`[${this.gameCode}] BEFORE ELIMINATION: eliminatedPlayers=${Array.from(this.eliminatedPlayers).join(', ')}`);
                     this.eliminatedPlayers.add(this.accusedPlayer);
                     this.verdictEliminatedPlayer = this.accusedPlayer;
-                    console.log(`[${this.gameCode}] Player ${this.accusedPlayer} eliminated by guilty verdict (${guiltVotes}/${totalVotes} votes)`);
+                    console.log(`[${this.gameCode}] Player ${this.accusedPlayer} (${accusedRole}) eliminated by guilty verdict (${guiltVotes}/${totalVotes} votes)`);
+                    console.log(`[${this.gameCode}] AFTER ELIMINATION: eliminatedPlayers=${Array.from(this.eliminatedPlayers).join(', ')}`);
                 } else if (this.accusedPlayer) {
-                    console.log(`[${this.gameCode}] Player ${this.accusedPlayer} acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);
+                    console.log(`[${this.gameCode}] Player ${this.accusedPlayer} (${accusedRole}) acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);
                 } else {
                     console.log(`[${this.gameCode}] VERDICT: No accused player set! Cannot eliminate.`);
                 }
@@ -540,6 +548,7 @@ class SecretSyndicates extends GameManager {
         }
 
         this.trialVotes.set(playerToken, normalizedVote);
+        console.log(`[${this.gameCode}] Trial vote recorded: ${playerToken} -> ${normalizedVote}. Total votes: ${this.trialVotes.size}`);
         
         // Track voting history
         if (!this.votingHistory[playerToken]) {
