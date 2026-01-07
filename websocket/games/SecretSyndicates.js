@@ -963,6 +963,8 @@ class SecretSyndicates extends GameManager {
      * Handle game-specific events
      */
     handleEvent(eventName, playerToken, data) {
+        console.log(`[${this.gameCode}] handleEvent: eventName=${eventName}, playerToken=${playerToken}`);
+        
         switch (eventName) {
             case 'night-vote':
                 return this.nightVote(playerToken, data.target);
@@ -975,6 +977,7 @@ class SecretSyndicates extends GameManager {
             case 'accusation-vote':
                 return this.accusationVote(playerToken, data.target);
             case 'detective-lock':
+                console.log(`[${this.gameCode}] Received detective-lock event for ${playerToken}`);
                 return this.detectiveLockIn(playerToken, data);
             case 'player-ready':
                 this.setPlayerReady(playerToken);
@@ -993,6 +996,8 @@ class SecretSyndicates extends GameManager {
      * Handle detective lock-in for investigation
      */
     detectiveLockIn(detectiveToken, data) {
+        console.log(`[${this.gameCode}] detectiveLockIn called for ${detectiveToken}, data:`, data);
+        
         const role = this.getPlayerRole(detectiveToken);
         if (role !== 'Detective') {
             return { success: false, message: 'Only detectives can lock investigations' };
@@ -1000,8 +1005,11 @@ class SecretSyndicates extends GameManager {
 
         const { targetToken } = data || {};
         if (!targetToken) {
+            console.log(`[${this.gameCode}] detectiveLockIn: No targetToken provided`);
             return { success: false, message: 'No investigation target provided' };
         }
+
+        console.log(`[${this.gameCode}] detectiveLockIn: targetToken=${targetToken}`);
 
         // Get investigation result
         const investigationResults = this.getInvestigationResult(detectiveToken, targetToken);
