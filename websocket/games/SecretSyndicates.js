@@ -311,7 +311,9 @@ class SecretSyndicates extends GameManager {
                     }
                     
                     this.accusedPlayer = mostAccused;
-                    console.log(`[${this.gameCode}] Most accused player: ${mostAccused} with ${maxVotes} votes`);
+                    console.log(`[${this.gameCode}] Most accused player: ${mostAccused} with ${maxVotes} votes - NOW ADVANCING TO VERDICT`);
+                } else {
+                    console.log(`[${this.gameCode}] No accusation votes - accusedPlayer will be: ${this.accusedPlayer}`);
                 }
                 
                 // Clear votes and advance to verdict phase
@@ -327,6 +329,8 @@ class SecretSyndicates extends GameManager {
                 // Track the newly eliminated player for the verdict phase
                 this.verdictEliminatedPlayer = null;
                 
+                console.log(`[${this.gameCode}] VERDICT PHASE: accusedPlayer=${this.accusedPlayer}, guiltVotes=${guiltVotes}, totalVotes=${totalVotes}, majorityGuilty=${majorityVotedGuilty}`);
+                
                 if (majorityVotedGuilty && this.accusedPlayer) {
                     // Majority voted guilty - eliminate the accused player
                     this.eliminatedPlayers.add(this.accusedPlayer);
@@ -334,6 +338,8 @@ class SecretSyndicates extends GameManager {
                     console.log(`[${this.gameCode}] Player ${this.accusedPlayer} eliminated by guilty verdict (${guiltVotes}/${totalVotes} votes)`);
                 } else if (this.accusedPlayer) {
                     console.log(`[${this.gameCode}] Player ${this.accusedPlayer} acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);
+                } else {
+                    console.log(`[${this.gameCode}] VERDICT: No accused player set! Cannot eliminate.`);
                 }
                 
                 // Check win conditions after verdict elimination
