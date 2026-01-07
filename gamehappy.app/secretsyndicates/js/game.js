@@ -3286,12 +3286,11 @@ class Game {
 
         caseNotesGridContainer.innerHTML = `
             <div class="case-notes-compact">
-                <p style="margin: 0 0 10px 0; font-size: 12px; color: #999;">Click a player card to add tags</p>
                 <div class="case-notes-grid-compact">
                     ${gridHtml}
                 </div>
-                <div class="case-notes-tags-compact" style="display: none; margin-top: 15px;">
-                    <h5>Add Tags to <span class="selected-player-name">Player</span></h5>
+                <div class="case-notes-tags-compact" style="display: none;">
+                    <h4>Add Tags to <span class="selected-player-name">Player</span></h4>
                     <div class="tag-buttons-compact">
                         ${allAvailableTags
                             .filter(tag => tagsToShow.includes(tag))
