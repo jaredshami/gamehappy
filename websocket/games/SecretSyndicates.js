@@ -723,6 +723,14 @@ class SecretSyndicates extends GameManager {
         // Add accusation phase data
         if (this.currentPhase === 'accusation') {
             gameState.voteCount = this.accusationVotes.size;
+            
+            // Add detective case notes
+            if (playerRole === 'Detective') {
+                gameState.detectiveData = {
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
+                    caseNotesPlayers: alivePlayersWithStatus
+                };
+            }
         }
 
         // Add verdict phase data
