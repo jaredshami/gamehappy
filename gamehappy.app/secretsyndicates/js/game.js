@@ -3008,17 +3008,23 @@ class Game {
         const caseNotesPlayers = detectiveData.caseNotesPlayers || state.players;
         let availableRoles = detectiveData.availableRoles || [];
         
-        // If availableRoles is empty, show all role tags
-        if (availableRoles.length === 0) {
-            availableRoles = ['Syndicate', 'Detective', 'Bystander', 'Eye Witness', 'Body Guard', 'Innocent', 'Suspicious'];
-        }
+        console.log('initCaseNotes: availableRoles from server =', availableRoles);
         
-        console.log('initCaseNotes: availableRoles =', availableRoles);
+        // Always include Suspicious and Innocent tags (they don't depend on roles in game)
+        const allAvailableTags = ['Syndicate', 'Detective', 'Bystander', 'Eye Witness', 'Body Guard', 'Suspicious', 'Innocent'];
+        const tagsToShow = allAvailableTags.filter(tag => {
+            // Suspicious and Innocent are always available
+            if (tag === 'Suspicious' || tag === 'Innocent') return true;
+            // Other tags only show if the role is in the game
+            return availableRoles.includes(tag);
+        });
+        
+        console.log('initCaseNotes: tagsToShow =', tagsToShow);
         
         // Show/hide tag buttons based on available roles
         document.querySelectorAll('.tag-btn').forEach(btn => {
             const tag = btn.dataset.tag;
-            btn.style.display = availableRoles.includes(tag) ? 'inline-block' : 'none';
+            btn.style.display = tagsToShow.includes(tag) ? 'inline-block' : 'none';
         });
         
         // Ensure case notes tags container is visible

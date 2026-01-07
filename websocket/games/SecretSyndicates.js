@@ -109,6 +109,24 @@ class SecretSyndicates extends GameManager {
     }
 
     /**
+     * Get all roles that are in the game
+     */
+    getAvailableRoles() {
+        const rolesInGame = new Set();
+        for (const role of this.roles.values()) {
+            rolesInGame.add(role);
+        }
+        
+        // Convert to array and always include Detective
+        const result = Array.from(rolesInGame);
+        if (!result.includes('Detective')) {
+            result.push('Detective');
+        }
+        
+        return result;
+    }
+
+    /**
      * Get player's role
      */
     getPlayerRole(playerToken) {
@@ -735,7 +753,7 @@ class SecretSyndicates extends GameManager {
                     canInvestigate: this.currentRound >= 2,
                     caseNotes: {},
                     caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: ['Syndicate', 'Eye Witness', 'Bystander', 'Body Guard']
+                    availableRoles: this.getAvailableRoles()
                 };
             }
 
