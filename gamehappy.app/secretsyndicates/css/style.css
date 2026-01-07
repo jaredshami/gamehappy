@@ -2377,7 +2377,10 @@ h3 {
     border-right: 1px solid #333;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     flex-shrink: 0;
+    overflow: hidden;
+    word-wrap: break-word;
 }
 
 .flex-cell:last-child {
@@ -2402,38 +2405,54 @@ h3 {
 
 .flex-cell-player {
     min-width: 80px;
+    max-width: 80px;
     width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .flex-cell-role {
     min-width: 100px;
+    max-width: 100px;
     width: 100px;
+    overflow: hidden;
 }
 
 .flex-cell-status {
     min-width: 70px;
+    max-width: 70px;
     width: 70px;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .flex-cell-round {
     min-width: 70px;
+    max-width: 70px;
     width: 70px;
     text-align: center;
     justify-content: center;
+    overflow: hidden;
+}
 }
 
 .flex-cell-guilty {
     min-width: 70px;
+    max-width: 70px;
     width: 70px;
     text-align: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .flex-cell-suspicion {
     min-width: 70px;
+    max-width: 70px;
     width: 70px;
     text-align: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .player-name {
@@ -2456,6 +2475,10 @@ h3 {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .status-badge.alive {
@@ -2510,6 +2533,10 @@ h3 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .role-badge.syndicate {
