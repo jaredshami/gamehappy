@@ -1209,6 +1209,10 @@ class Game {
                 phase3CountEl.textContent = gameState.doneCount;
             }
         }
+        // Update game notes if available
+        if (gameState && gameState.gameNotes) {
+            this.updateGameNotes(gameState.gameNotes);
+        }
         // Auto-mark as done if actions are complete
         if (!this.playerDone && eventResult && eventResult.doneCount !== undefined) {
             this.checkActionsComplete();
@@ -2569,7 +2573,7 @@ class Game {
                                     ${player.accusations.map(acc => `<td class="accusation">${acc}</td>`).join('')}
                                     <td class="guilty-votes">${player.guiltyVotes}</td>
                                     <td class="suspicion-cell">
-                                        <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionCount}</span>
+                                        <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionLevel.charAt(0).toUpperCase() + player.suspicionLevel.slice(1)}</span>
                                     </td>
                                 </tr>
                             `).join('')}

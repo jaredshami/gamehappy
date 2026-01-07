@@ -56,6 +56,9 @@ class SecretSyndicates extends GameManager {
         
         // Voting history - persists across entire game for detective suspicion calculations
         this.votingHistory = {}; // playerToken -> { accusationVotes: [], trialVotes: [], dayVotes: [] }
+        
+        // Game notes for all players
+        this.gameNotes = [];
     }
 
     /**
@@ -609,6 +612,16 @@ class SecretSyndicates extends GameManager {
 
         console.log(`[${this.gameCode}] Most voted player: ${mostVoted} with ${maxVotes} votes`);
 
+        // Generate rumors for players with 2+ accusations
+        for (const [targetToken, count] of voteCounts) {
+            if (count >= 2) {
+                const targetPlayer = this.players.get(targetToken);
+                const rumor = `Round ${this.currentRound}: A rumor has come to light that player ${targetPlayer?.name || targetToken} is suspicious.`;
+                this.gameNotes.push(rumor);
+                console.log(`[${this.gameCode}] Added rumor: ${rumor}`);
+            }
+        }
+
         if (mostVoted) {
             this.eliminatedPlayers.add(mostVoted);
             const victim = this.players.get(mostVoted);
@@ -943,7 +956,12 @@ class SecretSyndicates extends GameManager {
             }
 
             // Add game notes
-            gameState.gameNotes = [];
+            gameState.gameNotes = this.gameNotes;
+        }
+
+        // Add game notes to all phases
+        if (!gameState.gameNotes) {
+            gameState.gameNotes = this.gameNotes;
         }
 
         return gameState;
