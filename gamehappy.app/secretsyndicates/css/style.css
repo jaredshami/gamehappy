@@ -2378,7 +2378,7 @@ h3 {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    flex: 0 0 auto;
+    flex: 1;
 }
 
 .flex-cell:last-child {
@@ -2402,40 +2402,26 @@ h3 {
 }
 
 .flex-cell-player {
-    min-width: auto;
-    width: auto;
 }
 
 .flex-cell-role {
-    min-width: auto;
-    width: auto;
 }
 
 .flex-cell-status {
-    min-width: auto;
-    width: auto;
     justify-content: center;
 }
 
 .flex-cell-round {
-    min-width: auto;
-    width: auto;
     text-align: center;
     justify-content: center;
-    overflow: hidden;
-}
 }
 
 .flex-cell-guilty {
-    min-width: auto;
-    width: auto;
     text-align: center;
     justify-content: center;
 }
 
 .flex-cell-suspicion {
-    min-width: auto;
-    width: auto;
     text-align: center;
     justify-content: center;
 }
