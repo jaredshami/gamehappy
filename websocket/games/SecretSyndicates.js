@@ -805,14 +805,11 @@ class SecretSyndicates extends GameManager {
 
             // Add detective data
             if (playerRole === 'Detective') {
-                gameState.detectiveData = {
-                    investigation: null,
-                    lockedIn: false,
-                    canInvestigate: this.currentRound >= 2,
-                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus,
-                    availableRoles: this.getAvailableRoles()
-                };
+                gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
+                // Add night-phase-specific fields
+                gameState.detectiveData.investigation = null;
+                gameState.detectiveData.lockedIn = false;
+                gameState.detectiveData.canInvestigate = this.currentRound >= 2;
             }
 
             // Add body guard data
@@ -872,11 +869,6 @@ class SecretSyndicates extends GameManager {
         const targetPlayer = this.players.get(targetToken);
         if (!targetPlayer) {
             return { level: 'Unknown', suspicionScore: 0 };
-        }
-
-        // Check if target is syndicate member (100% suspicious)
-        if (this.roles.get(targetToken) === 'Syndicate') {
-            return { level: 'Very Suspicious', suspicionScore: 100, hint: 'They are a Syndicate member.' };
         }
 
         let suspicionScore = 0;
