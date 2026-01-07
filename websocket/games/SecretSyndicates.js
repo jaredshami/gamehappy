@@ -850,7 +850,7 @@ class SecretSyndicates extends GameManager {
                 this.setPlayerDone(playerToken);
                 return { success: true, doneCount: this.getDoneCount() };
             case 'update-case-notes':
-                return this.updateDetectiveCaseNotes(playerToken, payload);
+                return this.updateDetectiveCaseNotes(playerToken, data);
             default:
                 return { success: false, message: 'Unknown event' };
         }
