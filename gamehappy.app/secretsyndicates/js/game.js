@@ -2534,43 +2534,43 @@ class Game {
         // Build table headers with rounds
         const roundHeaders = [];
         for (let i = 1; i <= maxRounds; i++) {
-            roundHeaders.push(`<th>Round ${i}</th>`);
+            roundHeaders.push(i);
         }
 
         const tableHTML = `
             <div class="players-stats-section">
                 <h3 style="margin-bottom: 15px;">📊 Final Results</h3>
-                <div class="table-wrapper-scroll">
-                    <table class="players-stats-table">
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                ${roundHeaders.join('')}
-                                <th>Guilty Votes</th>
-                                <th>Suspicion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${playerStats.map(player => `
-                                <tr class="${player.alive ? '' : 'eliminated'}">
-                                    <td class="player-name"><strong>${player.name}</strong></td>
-                                    <td class="player-role">
-                                        <span class="role-badge ${player.role === 'Syndicate' ? 'syndicate' : 'innocent'}">
-                                            ${player.role}
-                                        </span>
-                                    </td>
-                                    <td class="status-badge ${player.alive ? 'alive' : 'dead'}">
+                <div class="flex-table-wrapper">
+                    <div class="flex-table">
+                        <div class="flex-row flex-header">
+                            <div class="flex-cell flex-cell-player">Player</div>
+                            <div class="flex-cell flex-cell-role">Role</div>
+                            <div class="flex-cell flex-cell-status">Status</div>
+                            ${roundHeaders.map(round => `<div class="flex-cell flex-cell-round">Round ${round}</div>`).join('')}
+                            <div class="flex-cell flex-cell-guilty">Guilty Votes</div>
+                            <div class="flex-cell flex-cell-suspicion">Suspicion</div>
+                        </div>
+                        ${playerStats.map(player => `
+                            <div class="flex-row flex-data ${player.alive ? '' : 'eliminated'}">
+                                <div class="flex-cell flex-cell-player"><strong>${player.name}</strong></div>
+                                <div class="flex-cell flex-cell-role">
+                                    <span class="role-badge ${player.role === 'Syndicate' ? 'syndicate' : 'innocent'}">
+                                        ${player.role}
+                                    </span>
+                                </div>
+                                <div class="flex-cell flex-cell-status">
+                                    <span class="status-badge ${player.alive ? 'alive' : 'dead'}">
                                         ${player.alive ? 'Alive' : 'Out'}
-                                    </td>
-                                    ${player.accusations.map(acc => `<td class="accusation">${acc}</td>`).join('')}
-                                    <td class="guilty-votes">${player.guiltyVotes}</td>
-                                    <td class="suspicion-level ${player.suspicionLevel}">${player.suspicionCount}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                                    </span>
+                                </div>
+                                ${player.accusations.map(acc => `<div class="flex-cell flex-cell-round accusation">${acc}</div>`).join('')}
+                                <div class="flex-cell flex-cell-guilty">${player.guiltyVotes}</div>
+                                <div class="flex-cell flex-cell-suspicion">
+                                    <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionCount}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         `;

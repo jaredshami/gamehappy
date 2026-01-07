@@ -2335,26 +2335,57 @@ h3 {
     overflow-x: auto;
 }
 
-.players-stats-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--darker-bg);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.players-stats-table thead {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
-}
-
-.table-wrapper-scroll {
+.flex-table-wrapper {
     overflow-x: auto;
     border-radius: 8px;
+    background: var(--darker-bg);
 }
 
-.players-stats-table th {
+.flex-table {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    min-width: 100%;
+    background: var(--darker-bg);
+}
+
+.flex-row {
+    display: flex;
+    border-bottom: 1px solid #222;
+    transition: background 0.2s ease;
+}
+
+.flex-row.flex-data:hover {
+    background: rgba(212, 175, 55, 0.05);
+}
+
+.flex-row.flex-data.eliminated {
+    opacity: 0.7;
+}
+
+.flex-header {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.flex-cell {
+    padding: 10px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    border-right: 1px solid #333;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.flex-cell:last-child {
+    border-right: none;
+}
+
+.flex-header .flex-cell {
     padding: 12px 10px;
-    text-align: left;
     color: var(--primary-gold);
     font-family: 'Cinzel', serif;
     font-size: 0.85rem;
@@ -2365,48 +2396,55 @@ h3 {
     font-weight: 700;
 }
 
-.players-stats-table th:last-child {
+.flex-header .flex-cell:last-child {
     border-right: none;
 }
 
-.players-stats-table th:last-child {
+.flex-cell-player {
+    min-width: 80px;
+    width: 80px;
+}
+
+.flex-cell-role {
+    min-width: 100px;
+    width: 100px;
+}
+
+.flex-cell-status {
+    min-width: 70px;
+    width: 70px;
+}
+
+.flex-cell-round {
+    min-width: 70px;
+    width: 70px;
     text-align: center;
-    padding-right: 10px;
+    justify-content: center;
 }
 
-.players-stats-table tbody tr {
-    border-bottom: 1px solid #222;
-    transition: background 0.2s ease;
-}
-
-.players-stats-table tbody tr:hover {
-    background: rgba(212, 175, 55, 0.05);
-}
-
-.players-stats-table tbody tr.eliminated {
-    opacity: 0.7;
-}
-
-.players-stats-table td {
-    padding: 10px;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    vertical-align: middle;
-    border-right: 1px solid #333;
-}
-
-.players-stats-table td:last-child {
-    border-right: none;
-}
-
-.players-stats-table td:last-child {
+.flex-cell-guilty {
+    min-width: 70px;
+    width: 70px;
     text-align: center;
-    padding-right: 10px;
+    justify-content: center;
+}
+
+.flex-cell-suspicion {
+    min-width: 70px;
+    width: 70px;
+    text-align: center;
+    justify-content: center;
 }
 
 .player-name {
     font-weight: 600;
     color: var(--text-light);
+}
+
+.player-role {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .status-badge {
