@@ -703,14 +703,16 @@ class SecretSyndicates extends GameManager {
                     keyword: 'Look for hesitation',
                     hint: 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.',
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: this.getAvailableRoles()
                 };
                 console.log(`[${this.gameCode}] Sending detective data (eyewitness enabled)`);
             } else if (gameState.isDetective) {
                 // Add case notes even if eyewitness is disabled
                 gameState.detectiveData = {
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: this.getAvailableRoles()
                 };
                 console.log(`[${this.gameCode}] Sending case notes to detective`);
             }
@@ -735,7 +737,8 @@ class SecretSyndicates extends GameManager {
             if (playerRole === 'Detective') {
                 gameState.detectiveData = {
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: this.getAvailableRoles()
                 };
             }
         }
@@ -752,7 +755,8 @@ class SecretSyndicates extends GameManager {
             if (playerRole === 'Detective') {
                 gameState.detectiveData = {
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: this.getAvailableRoles()
                 };
             }
         }
@@ -763,7 +767,8 @@ class SecretSyndicates extends GameManager {
             if (playerRole === 'Detective') {
                 gameState.detectiveData = {
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: this.getAvailableRoles()
                 };
             }
         }
@@ -774,7 +779,8 @@ class SecretSyndicates extends GameManager {
             if (playerRole === 'Detective') {
                 gameState.detectiveData = {
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
-                    caseNotesPlayers: alivePlayersWithStatus
+                    caseNotesPlayers: alivePlayersWithStatus,
+                    availableRoles: this.getAvailableRoles()
                 };
             }
         }

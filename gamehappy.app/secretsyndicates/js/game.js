@@ -3210,9 +3210,9 @@ class Game {
             return;
         }
 
-        // Initialize case notes data if not already done
+        // Update case notes data from detectiveData
         const detectiveData = state.detectiveData || {};
-        if (!Object.keys(this.caseNotes).length && detectiveData.caseNotes) {
+        if (detectiveData.caseNotes) {
             this.caseNotes = detectiveData.caseNotes;
         }
 
@@ -3235,8 +3235,8 @@ class Game {
             'night': 'phase1-case-notes-container',
             'murder': 'phase2-case-notes-container',
             'discussion': 'phase3-case-notes-container',
-            'vote': 'phase4-case-notes-container',
-            'trial': 'phase5-case-notes-container'
+            'accusation': 'phase4-case-notes-container',
+            'verdict': 'phase5-case-notes-container'
         };
 
         const containerId = phaseContainerMap[currentPhase];
