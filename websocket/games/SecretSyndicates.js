@@ -58,6 +58,9 @@ class SecretSyndicates extends GameManager {
         // Structure: playerToken -> { roundVotes: { roundNumber -> { accused: targetToken, verdict: 'guilty'|'not-guilty' } } }
         this.votingHistory = {}; // Will be populated during game play
         
+        // Eliminated players tracking
+        this.eliminatedPlayers = new Set(); // playerToken -> player is eliminated
+        
         // Game notes for all players
         this.gameNotes = [];
     }
