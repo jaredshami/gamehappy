@@ -246,13 +246,19 @@ io.on('connection', (socket) => {
                   const pToken = playerSocket.handshake.query.token || socketId;
                   if (game.hasPlayer(pToken)) {
                     const pGameState = gameServer.getGameStateForPlayer(pToken);
+                    // Enhance players with role information
+                    const enhancedPlayers = pGameState.players.map(p => ({
+                      ...p,
+                      role: game.getPlayerRole(p.token)
+                    }));
                     playerSocket.emit('game-ended', {
                       winner: phaseResult.winCondition.winner,
                       winType: phaseResult.winCondition.winType,
                       details: phaseResult.winCondition.details,
                       finalRound: pGameState.currentRound,
                       playerRole: pGameState.playerRole,
-                      allPlayers: pGameState.players
+                      allPlayers: enhancedPlayers,
+                      votingHistory: game.votingHistory || {}
                     });
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }
@@ -353,13 +359,19 @@ io.on('connection', (socket) => {
                   const pToken = playerSocket.handshake.query.token || socketId;
                   if (game.hasPlayer(pToken)) {
                     const pGameState = gameServer.getGameStateForPlayer(pToken);
+                    // Enhance players with role information
+                    const enhancedPlayers = pGameState.players.map(p => ({
+                      ...p,
+                      role: game.getPlayerRole(p.token)
+                    }));
                     playerSocket.emit('game-ended', {
                       winner: phaseResult.winCondition.winner,
                       winType: phaseResult.winCondition.winType,
                       details: phaseResult.winCondition.details,
                       finalRound: pGameState.currentRound,
                       playerRole: pGameState.playerRole,
-                      allPlayers: pGameState.players
+                      allPlayers: enhancedPlayers,
+                      votingHistory: game.votingHistory || {}
                     });
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }
@@ -475,13 +487,19 @@ io.on('connection', (socket) => {
                   const pToken = playerSocket.handshake.query.token || socketId;
                   if (game.hasPlayer(pToken)) {
                     const pGameState = gameServer.getGameStateForPlayer(pToken);
+                    // Enhance players with role information
+                    const enhancedPlayers = pGameState.players.map(p => ({
+                      ...p,
+                      role: game.getPlayerRole(p.token)
+                    }));
                     playerSocket.emit('game-ended', {
                       winner: phaseResult.winCondition.winner,
                       winType: phaseResult.winCondition.winType,
                       details: phaseResult.winCondition.details,
                       finalRound: pGameState.currentRound,
                       playerRole: pGameState.playerRole,
-                      allPlayers: pGameState.players
+                      allPlayers: enhancedPlayers,
+                      votingHistory: game.votingHistory || {}
                     });
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }

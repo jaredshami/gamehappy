@@ -2412,102 +2412,63 @@ class Game {
     }
 
     buildPlayersTable(container, allPlayers, playerRole) {
-        // Calculate suspicion level for each player based on voting patterns
-        // Suspicion increases if a player:
-        // 1. Voted for multiple players (changing their votes = suspicious)
-        // 2. Was voted for often in accusations
-        // 3. Voted not guilty for players who turned out to be syndicate
-        
         const playerStats = allPlayers.map(player => {
-            let suspicionScore = 50; // Start at neutral
-            
             // Get this player's voting history
             const history = this.votingHistory[player.token] || { accusationVotes: [], trialVotes: [] };
             
-            // Increase suspicion if they made many accusations (potential deflection)
-            if (history.accusationVotes && history.accusationVotes.length > 2) {
-                suspicionScore += Math.min(20, history.accusationVotes.length * 5);
+            // Get latest accusation (who they accused last)
+            let lastAccusation = '-';
+            if (history.accusationVotes && history.accusationVotes.length > 0) {
+                const targetToken = history.accusationVotes[history.accusationVotes.length - 1];
+                const targetPlayer = allPlayers.find(p => p.token === targetToken);
+                lastAccusation = targetPlayer ? targetPlayer.name : 'Unknown';
             }
             
-            // Decrease suspicion if they voted consistently guilty on those accused
-            if (history.trialVotes) {
-                const guiltyVotes = history.trialVotes.filter(v => v === 'guilty').length;
-                if (guiltyVotes > 0) {
-                    suspicionScore -= Math.min(15, guiltyVotes * 5);
-                }
-            }
-            
-            // Add some variance based on position for realism
-            const playerIndex = allPlayers.indexOf(player);
-            suspicionScore += (Math.sin(playerIndex) * 10);
-            
-            // Clamp between 0 and 100
-            suspicionScore = Math.max(0, Math.min(100, suspicionScore));
-            
-            let suspicionLevel = 'Low';
-            if (suspicionScore > 75) {
-                suspicionLevel = 'Very High';
-            } else if (suspicionScore > 60) {
-                suspicionLevel = 'High';
-            } else if (suspicionScore > 40) {
-                suspicionLevel = 'Medium';
-            } else if (suspicionScore > 25) {
-                suspicionLevel = 'Low';
-            } else {
-                suspicionLevel = 'Clear';
-            }
+            // Count guilty votes
+            const guiltyVotes = history.trialVotes ? history.trialVotes.filter(v => v === 'guilty').length : 0;
             
             return {
                 name: player.name,
-                role: 'Hidden', // Role is hidden for other players until game ends
+                role: player.role || 'Hidden',
                 alive: player.alive,
-                suspicionScore: suspicionScore,
-                suspicion: suspicionLevel
+                lastAccusation: lastAccusation,
+                guiltyVotes: guiltyVotes
             };
         });
 
-        // Sort by suspicion score (highest first)
-        playerStats.sort((a, b) => b.suspicionScore - a.suspicionScore);
+        // Sort by name
+        playerStats.sort((a, b) => a.name.localeCompare(b.name));
 
         const tableHTML = `
             <div class="players-stats-section">
-                <h3 style="margin-bottom: 15px;">📊 Player Statistics & Suspicion Levels</h3>
+                <h3 style="margin-bottom: 15px;">📊 Final Results</h3>
                 <div class="table-wrapper">
                     <table class="players-stats-table">
                         <thead>
                             <tr>
                                 <th>Player</th>
+                                <th>Role</th>
                                 <th>Status</th>
-                                <th>Suspicion Level</th>
-                                <th>Score</th>
+                                <th>Last Accusation</th>
+                                <th>Guilty Votes</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${playerStats.map(player => {
-                                let suspicionEmoji = '🟢';
-                                let levelText = player.suspicion;
-                                if (player.suspicion === 'Very High') {
-                                    suspicionEmoji = '🔴';
-                                } else if (player.suspicion === 'High') {
-                                    suspicionEmoji = '🔴';
-                                } else if (player.suspicion === 'Medium') {
-                                    suspicionEmoji = '🟡';
-                                } else if (player.suspicion === 'Clear') {
-                                    suspicionEmoji = '🟢';
-                                }
-                                
-                                return `
+                            ${playerStats.map(player => `
                                 <tr class="${player.alive ? '' : 'eliminated'}">
-                                    <td class="player-name">${player.name}</td>
+                                    <td class="player-name"><strong>${player.name}</strong></td>
+                                    <td class="player-role">
+                                        <span class="role-badge ${player.role === 'Syndicate' ? 'syndicate' : 'innocent'}">
+                                            ${player.role}
+                                        </span>
+                                    </td>
                                     <td class="status-badge ${player.alive ? 'alive' : 'dead'}">
-                                        ${player.alive ? '👤 Alive' : '💀 Eliminated'}
+                                        ${player.alive ? '✓ Alive' : '✗ Out'}
                                     </td>
-                                    <td class="suspicion-level ${player.suspicionScore > 75 ? 'high' : player.suspicionScore > 40 ? 'medium' : 'low'}">
-                                        ${suspicionEmoji} ${levelText}
-                                    </td>
-                                    <td class="suspicion-score">${Math.round(player.suspicionScore)}%</td>
+                                    <td class="accusation">${player.lastAccusation}</td>
+                                    <td class="guilty-votes">${player.guiltyVotes}</td>
                                 </tr>
-                            `}).join('')}
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>

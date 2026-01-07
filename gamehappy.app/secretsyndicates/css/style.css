@@ -2348,20 +2348,20 @@ h3 {
 }
 
 .players-stats-table th {
-    padding: 15px 12px;
+    padding: 12px 10px;
     text-align: left;
     color: var(--primary-gold);
     font-family: 'Cinzel', serif;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     border-bottom: 2px solid var(--primary-gold);
     font-weight: 700;
 }
 
 .players-stats-table th:last-child {
-    text-align: right;
-    padding-right: 20px;
+    text-align: center;
+    padding-right: 10px;
 }
 
 .players-stats-table tbody tr {
@@ -2378,14 +2378,14 @@ h3 {
 }
 
 .players-stats-table td {
-    padding: 14px 12px;
+    padding: 10px;
     color: var(--text-light);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .players-stats-table td:last-child {
-    text-align: right;
-    padding-right: 20px;
+    text-align: center;
+    padding-right: 10px;
 }
 
 .player-name {
@@ -2443,6 +2443,40 @@ h3 {
     font-family: 'Cinzel', serif;
     font-weight: 700;
     font-size: 1rem;
+}
+
+/* Role badges */
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-badge.syndicate {
+    background: rgba(139, 0, 0, 0.3);
+    color: #ff6b6b;
+    border: 1px solid var(--accent-red);
+}
+
+.role-badge.innocent {
+    background: rgba(45, 90, 45, 0.3);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+}
+
+.accusation {
+    font-size: 0.9rem;
+    color: #d4af37;
+}
+
+.guilty-votes {
+    font-weight: 600;
+    color: var(--primary-gold);
+    text-align: center;
 }
 
 /* Animations */
