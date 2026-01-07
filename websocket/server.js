@@ -881,6 +881,11 @@ app.get('/test-results', (req, res) => {
     // Assign roles manually for consistent results
     if (game) {
       game.roles.clear();
+      // Initialize eliminatedPlayers if it doesn't exist
+      if (!game.eliminatedPlayers) {
+        game.eliminatedPlayers = new Set();
+      }
+      
       // Assign roles: player-1 is Syndicate, others are Innocent/Detective/etc
       game.roles.set('test-player-1', 'Syndicate');
       game.roles.set('test-player-2', 'Detective');
