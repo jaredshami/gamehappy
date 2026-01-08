@@ -931,8 +931,10 @@ io.on('connection', (socket) => {
    * Admin: Get list of all games
    */
   socket.on('admin-get-games', (data, callback) => {
+    console.log(`[ADMIN] admin-get-games requested, games in server: ${gameServer.games.size}`);
     const games = {};
     for (const [code, game] of gameServer.games) {
+      console.log(`[ADMIN] Found game ${code}: status=${game.gameState}`);
       games[code] = {
         status: game.gameState,
         players: game.getPlayers() || [],
@@ -941,7 +943,10 @@ io.on('connection', (socket) => {
         timestamp: Date.now()
       };
     }
-    callback(games);
+    console.log(`[ADMIN] Sending ${Object.keys(games).length} games to admin`);
+    if (typeof callback === 'function') {
+      callback(games);
+    }
   });
 
   /**

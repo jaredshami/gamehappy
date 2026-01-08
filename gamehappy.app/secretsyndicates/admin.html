@@ -444,7 +444,9 @@
 
             refreshGames() {
                 if (this.socket && this.isAuthenticated) {
+                    console.log('[ADMIN] Requesting games list...');
                     this.socket.emit('admin-get-games', {}, (games) => {
+                        console.log('[ADMIN] Received games response:', games);
                         this.gamesList = games || {};
                         this.renderGamesList();
                     });
