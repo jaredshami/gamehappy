@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.production.local
+.env.development.local
+
+# SSL Certificates (must be created locally)
+key.pem
+cert.pem
+
+# PM2
+logs/
+pm2.log
+.pm2/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.thumbs/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Production builds
+dist/
+build/

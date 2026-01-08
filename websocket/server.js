@@ -1113,7 +1113,40 @@ app.get('/test-results', (req, res) => {
   }
 });
 
-server.listen(8443, () => {
-  console.log('Socket.IO server running at wss://gamehappy.app/websocket');
+const PORT = process.env.PORT || 8443;
+
+server.listen(PORT, () => {
+  console.log(`[${new Date().toISOString()}] Socket.IO server running at wss://gamehappy.app/websocket`);
   console.log('Ready to handle: secretsyndicates and future games');
+});
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('[SIGTERM] Shutting down gracefully...');
+  io.close(() => {
+    console.log('Socket.IO server closed');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+});
+
+process.on('SIGINT', () => {
+  console.log('[SIGINT] Shutting down gracefully...');
+  io.close(() => {
+    console.log('Socket.IO server closed');
+    process.exit(0);
+  });
+});
+
+// Error handling
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED REJECTION] Promise:', promise, 'Reason:', reason);
 });
