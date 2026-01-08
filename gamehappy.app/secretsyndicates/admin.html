@@ -414,7 +414,8 @@
             }
 
             connectWebSocket() {
-                this.socket = io({
+                this.socket = io('https://gamehappy.app:8443', {
+                    path: '/websocket',
                     query: {
                         adminPanel: true
                     }
