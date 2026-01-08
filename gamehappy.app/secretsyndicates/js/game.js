@@ -1347,6 +1347,9 @@ class Game {
         this.phase2Data = data;
         this.phase2Ready = false;
         
+        // Update role banner
+        this.updatePhase2RoleBanner(data);
+        
         // Show the murder story view
         const murderView = document.getElementById('murder-view');
         if (murderView) {
@@ -1480,6 +1483,47 @@ class Game {
         
         // Show persistent case notes for detectives
         this.showPersistentCaseNotesPanel(data);
+    }
+
+    updatePhase2RoleBanner(data) {
+        const bannerName = document.getElementById('phase2-role-name');
+        const bannerAction = document.getElementById('phase2-role-action');
+        
+        if (!bannerName || !bannerAction) return;
+        
+        const role = data.role || this.role;
+        
+        // Define role-specific messages
+        const roleMessages = {
+            'Syndicate': {
+                emoji: '🔴',
+                action: 'Select and eliminate your target during the night'
+            },
+            'Detective': {
+                emoji: '🔍',
+                action: 'Investigate one player to determine their suspicion level'
+            },
+            'Body Guard': {
+                emoji: '🛡️',
+                action: 'Protect one player from assassination'
+            },
+            'Eye Witness': {
+                emoji: '👁️',
+                action: 'You saw the assassination happen during the night'
+            },
+            'Bystander': {
+                emoji: '👤',
+                action: 'Listen and observe. You have no special action'
+            }
+        };
+        
+        const roleData = roleMessages[role] || {
+            emoji: '❓',
+            action: 'Unknown role'
+        };
+        
+        bannerName.textContent = `${roleData.emoji} ${role}`;
+        bannerAction.textContent = roleData.action;
     }
 
     initPhase2ReadySection(data) {
