@@ -1526,6 +1526,47 @@ class Game {
         bannerAction.textContent = roleData.action;
     }
 
+    updatePhaseRoleBanner(phaseId, data) {
+        const bannerName = document.getElementById(`${phaseId}-role-name`);
+        const bannerAction = document.getElementById(`${phaseId}-role-action`);
+        
+        if (!bannerName || !bannerAction) return;
+        
+        const role = data.role || this.role;
+        
+        // Define role-specific messages
+        const roleMessages = {
+            'Syndicate': {
+                emoji: '🔴',
+                action: 'Select and eliminate your target during the night'
+            },
+            'Detective': {
+                emoji: '🔍',
+                action: 'Investigate one player to determine their suspicion level'
+            },
+            'Body Guard': {
+                emoji: '🛡️',
+                action: 'Protect one player from assassination'
+            },
+            'Eye Witness': {
+                emoji: '👁️',
+                action: 'You saw the assassination happen during the night'
+            },
+            'Bystander': {
+                emoji: '👤',
+                action: 'Listen and observe. You have no special action'
+            }
+        };
+        
+        const roleData = roleMessages[role] || {
+            emoji: '❓',
+            action: 'Unknown role'
+        };
+        
+        bannerName.textContent = `${roleData.emoji} ${role}`;
+        bannerAction.textContent = roleData.action;
+    }
+
     initPhase2ReadySection(data) {
         this.phase2Ready = false;
         
@@ -1763,6 +1804,10 @@ class Game {
 
     initPhase3Screen(data) {
         console.log('initPhase3Screen called with data:', data);
+        
+        // Update role banner
+        this.updatePhaseRoleBanner('phase3', data);
+        
         document.getElementById('phase2-screen').style.display = 'none';
         document.getElementById('phase3-screen').style.display = 'block';
         
@@ -2300,6 +2345,9 @@ class Game {
     initPhase4Screen(data) {
         console.log('initPhase4Screen called with data:', data);
         
+        // Update role banner
+        this.updatePhaseRoleBanner('phase4', data);
+        
         // Build player grid for voting (alive players, excluding self)
         const grid = document.getElementById('vote-player-grid');
         grid.innerHTML = '';
@@ -2396,6 +2444,9 @@ class Game {
     
     initPhase5Screen(data) {
         console.log('initPhase5Screen called with data:', data);
+        
+        // Update role banner
+        this.updatePhaseRoleBanner('phase5', data);
         
         const hasVoted = data.amVoted || false;
         this.phase5Voted = hasVoted;
