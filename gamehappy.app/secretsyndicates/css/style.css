@@ -2401,6 +2401,7 @@ h3 {
 
 .suspicion-cell {
     text-align: center;
+    min-width: 200px;
 }
 
 .round-data {
