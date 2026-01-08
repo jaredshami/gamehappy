@@ -40,6 +40,43 @@ io.on('connection', (socket) => {
   // Generate unique player token (could use existing token from client)
   const playerToken = socket.handshake.query.token || socket.id;
 
+  // Helper function to extract action details
+  const extractActionDetails = (eventName, payload, player) => {
+    const details = {};
+    
+    switch(eventName) {
+      case 'select-target':
+      case 'select-assassin':
+      case 'protect-player':
+      case 'investigate-player':
+        details.targetName = payload?.targetName || payload?.playerName || 'Unknown';
+        if (payload?.suspicionLevel) details.suspicionLevel = payload.suspicionLevel;
+        break;
+      case 'cast-vote':
+        details.targetName = payload?.targetName || 'Anonymous';
+        details.anonymous = payload?.anonymous !== false;
+        break;
+      case 'trial-vote':
+        details.verdict = payload?.verdict || 'unknown';
+        break;
+      case 'phase-transition':
+        details.newPhase = payload?.phase;
+        details.eliminatedPlayer = payload?.eliminatedPlayer;
+        details.winner = payload?.winner;
+        break;
+      case 'join-game':
+        details.playerName = player?.name;
+        break;
+      case 'ready':
+        details.ready = payload?.ready !== false;
+        break;
+      default:
+        if (payload) details.payload = payload;
+    }
+    
+    return details;
+  };
+
   // ==== GAME MANAGEMENT EVENTS ====
 
   /**
@@ -226,7 +263,7 @@ io.on('connection', (socket) => {
         // Broadcast to admin watchers
         const player = game.getPlayers().find(p => p.token === playerToken);
         if (player) {
-          io.to(`admin-watch-${game.gameCode}`).emit('player-state-update', {
+          const adminUpdate = {
             gameCode: game.gameCode,
             playerToken: playerToken,
             playerName: player.name,
@@ -235,8 +272,11 @@ io.on('connection', (socket) => {
             phase: game.currentPhase,
             screen: eventName,
             action: eventName,
+            actionDetails: extractActionDetails(eventName, payload, player),
             state: result.success ? 'Success' : 'Failed'
-          });
+          };
+          console.log(`[ADMIN] Broadcasting to admin-watch-${game.gameCode}:`, adminUpdate);
+          io.to(`admin-watch-${game.gameCode}`).emit('player-state-update', adminUpdate);
         }        // Handle syndicate real-time updates (night-vote or night-lock)
         if (result.syndicateUpdate && (eventName === 'night-vote' || eventName === 'night-lock')) {
           console.log(`[${game.gameCode}] Broadcasting syndicate update to syndicate members`);
@@ -973,6 +1013,12 @@ io.on('connection', (socket) => {
           role: player.role,
           alive: player.alive,
           phase: game.currentPhase,
+          screen: game.currentPhase,
+          action: 'join-game',
+          actionDetails: {
+            playerName: player.name,
+            role: player.role
+          },
           gameState: playerState ? playerState.gameState : 'unknown'
         });
       }

@@ -218,47 +218,85 @@
             background: rgba(0, 0, 0, 0.5);
             border: 2px solid var(--primary-gold);
             border-radius: 8px;
-            padding: 15px;
-            min-height: 400px;
+            padding: 0;
+            min-height: 600px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+        }
+
+        .player-header {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.1));
+            border-bottom: 2px solid var(--primary-gold);
+            padding: 12px 15px;
+            flex-shrink: 0;
         }
 
         .player-name {
             font-family: 'Cinzel', serif;
             color: var(--primary-gold);
             font-size: 16px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid var(--primary-gold);
-            padding-bottom: 10px;
+            margin: 0 0 5px 0;
         }
 
-        .player-role {
-            font-size: 14px;
+        .player-meta {
+            font-size: 12px;
             color: var(--text-muted);
-            margin-bottom: 10px;
+            margin: 3px 0;
         }
 
         .player-screen {
             flex: 1;
             overflow-y: auto;
-            font-size: 12px;
+            font-size: 13px;
             background: rgba(0, 0, 0, 0.3);
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 15px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            min-height: 200px;
         }
 
-        .player-screen h3 {
+        .screen-content {
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        .screen-content h4 {
             color: var(--primary-gold);
-            font-size: 14px;
-            margin-top: 10px;
-            margin-bottom: 5px;
+            margin: 10px 0 5px 0;
+            font-size: 13px;
         }
 
-        .player-screen p {
+        .screen-content p {
             margin: 5px 0;
-            line-height: 1.4;
+        }
+
+        .player-logs {
+            flex-shrink: 0;
+            height: 150px;
+            overflow-y: auto;
+            border-top: 1px solid rgba(212, 175, 55, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+        }
+
+        .action-log {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            border-left: 2px solid var(--primary-gold);
+            padding-left: 8px;
+        }
+
+        .action-log .timestamp {
+            color: var(--primary-gold);
+            font-weight: bold;
+        }
+
+        .action-log .action-text {
+            color: var(--text-light);
         }
 
         .empty-message {
@@ -336,6 +374,7 @@
                 this.currentMonitoredGame = null;
                 this.gamesList = {};
                 this.playerScreens = {};
+                this.playerActions = {};
                 
                 this.setupEventListeners();
                 this.attemptAutoLogin();
@@ -436,7 +475,33 @@
 
                 this.socket.on('player-state-update', (data) => {
                     if (data.gameCode === this.currentMonitoredGame) {
-                        this.playerScreens[data.playerToken] = data;
+                        const key = data.playerToken;
+                        if (!this.playerScreens[key]) {
+                            this.playerScreens[key] = {};
+                            this.playerActions[key] = [];
+                        }
+                        this.playerScreens[key] = {
+                            name: data.playerName,
+                            role: data.role,
+                            alive: data.alive !== false,
+                            phase: data.phase,
+                            gameState: data.gameState || {},
+                            screen: data.screen,
+                            action: data.action,
+                            actionDetails: data.actionDetails || {}
+                        };
+                        // Log action if provided
+                        if (data.action) {
+                            const timestamp = new Date().toLocaleTimeString();
+                            this.playerActions[key].push({
+                                time: timestamp,
+                                action: data.action,
+                                details: data.actionDetails
+                            });
+                            if (this.playerActions[key].length > 50) {
+                                this.playerActions[key].shift();
+                            }
+                        }
                         this.renderPlayerScreens();
                     }
                 });
@@ -480,6 +545,8 @@
             startListeningToGame(gameCode) {
                 if (this.socket) {
                     this.playerScreens = {};
+                    this.playerActions = {};
+                    this.currentMonitoredGame = gameCode;
                     console.log(`[ADMIN] Starting to watch game ${gameCode}`);
                     this.socket.emit('admin-watch-game', { gameCode });
                 }
@@ -502,49 +569,152 @@
 
                 playersGrid.innerHTML = Object.entries(this.playerScreens).map(([token, data]) => `
                     <div class="player-viewport">
-                        <div class="player-name">${data.playerName} ${data.alive === false ? '(ELIMINATED)' : ''}</div>
-                        <div class="player-role">Role: ${data.role || 'Unknown'} | Phase: ${data.phase || 'N/A'}</div>
+                        <div class="player-header">
+                            <div class="player-name">${data.name || 'Unknown'}</div>
+                            <div class="player-meta">🎭 Role: <strong>${data.role || 'Unknown'}</strong></div>
+                            <div class="player-meta">📍 Phase: <strong>${data.phase || 'N/A'}</strong></div>
+                            <div class="player-meta">❤️ Status: ${data.alive ? '<span style="color: #4ade80;">ALIVE</span>' : '<span style="color: #ef4444;">ELIMINATED</span>'}</div>
+                        </div>
                         <div class="player-screen">
-                            ${this.formatPlayerState(data)}
+                            <div class="screen-content">
+                                ${this.formatPlayerScreen(data)}
+                            </div>
+                        </div>
+                        <div class="player-logs">
+                            <strong style="color: var(--primary-gold); font-size: 12px;">📋 ACTION LOG:</strong>
+                            ${this.formatPlayerActions(token)}
                         </div>
                     </div>
                 `).join('');
             }
 
-            formatPlayerState(data) {
-                let html = '<div style="font-size: 13px; line-height: 1.6;">';
-                
-                if (data.gameState) {
-                    html += `<p><strong>State:</strong> ${data.gameState}</p>`;
+            formatPlayerScreen(data) {
+                let html = '';
+                const phase = data.phase || 'unknown';
+                const role = data.role || 'Bystander';
+
+                // Show role info
+                const roleEmojis = {
+                    'Syndicate': '🔴',
+                    'Detective': '🔍',
+                    'Body Guard': '🛡️',
+                    'Eye Witness': '👁️',
+                    'Bystander': '👤'
+                };
+                const emoji = roleEmojis[role] || '❓';
+                html += `<h4>${emoji} You are a ${role}</h4>`;
+
+                // Show phase-specific content
+                switch(phase) {
+                    case 'phase-1':
+                        html += '<p>Game starting... waiting for day/night cycle to begin</p>';
+                        break;
+                    case 'phase-2':
+                        if (role === 'Syndicate') {
+                            html += '<p><strong>🌙 NIGHT PHASE - Select your target to eliminate</strong></p>';
+                            html += '<p style="color: #fbbf24;">Your syndicate is choosing who to eliminate tonight</p>';
+                        } else if (role === 'Body Guard') {
+                            html += '<p><strong>🛡️ NIGHT PHASE - Select who to protect</strong></p>';
+                            html += '<p style="color: #60a5fa;">Choose one player to protect from assassination</p>';
+                        } else if (role === 'Detective') {
+                            html += '<p><strong>🔍 NIGHT PHASE - Investigate a player</strong></p>';
+                            html += '<p style="color: #c084fc;">Investigate one player to learn their suspicion level</p>';
+                        } else if (role === 'Eye Witness') {
+                            html += '<p><strong>👁️ NIGHT PHASE - Watching</strong></p>';
+                            html += '<p style="color: #a78bfa;">You will see who performs the assassination</p>';
+                        } else {
+                            html += '<p><strong>🌙 NIGHT PHASE</strong></p>';
+                            html += '<p>Special roles are acting. Innocents rest...</p>';
+                        }
+                        break;
+                    case 'phase-3':
+                        html += '<p><strong>☀️ DAY PHASE - Discussion</strong></p>';
+                        html += '<p>The group discusses who to eliminate</p>';
+                        if (data.actionDetails && data.actionDetails.eliminatedPlayer) {
+                            html += `<p style="color: #ef4444;"><strong>❌ ${data.actionDetails.eliminatedPlayer} was eliminated last night</strong></p>`;
+                        }
+                        break;
+                    case 'phase-4':
+                        html += '<p><strong>🗳️ DAY PHASE - Voting</strong></p>';
+                        html += '<p>Cast your vote to eliminate someone</p>';
+                        if (data.actionDetails && data.actionDetails.canVote === false) {
+                            html += '<p style="color: #fbbf24;">You cannot vote this round</p>';
+                        }
+                        break;
+                    case 'phase-5':
+                        html += '<p><strong>⚖️ TRIAL PHASE</strong></p>';
+                        html += '<p>Special trial rules in effect</p>';
+                        break;
+                    case 'game-end':
+                        html += '<p><strong>🏁 GAME OVER</strong></p>';
+                        if (data.actionDetails && data.actionDetails.winner) {
+                            html += `<p style="color: #4ade80;"><strong>Winner: ${data.actionDetails.winner}</strong></p>`;
+                        }
+                        break;
+                    default:
+                        html += `<p>Current phase: ${phase}</p>`;
                 }
-                
-                if (data.phase) {
-                    html += `<p><strong>Phase:</strong> ${data.phase}</p>`;
-                }
-                
+
                 if (data.screen) {
-                    html += `<p><strong>Screen:</strong> ${data.screen}</p>`;
+                    html += `<p style="margin-top: 10px; color: var(--text-muted);">Current Screen: <em>${data.screen}</em></p>`;
                 }
+
+                return html;
+            }
+
+            formatPlayerActions(playerToken) {
+                const actions = this.playerActions[playerToken] || [];
                 
-                if (data.action) {
-                    html += `<p><strong>Last Action:</strong> ${data.action}</p>`;
+                if (actions.length === 0) {
+                    return '<div class="action-log" style="border-left-color: #666;"><em>No actions yet</em></div>';
                 }
+
+                return actions.map((act, idx) => `
+                    <div class="action-log">
+                        <span class="timestamp">${act.time}</span>
+                        <span class="action-text">→ ${this.formatActionText(act.action, act.details)}</span>
+                    </div>
+                `).join('');
+            }
+
+            formatActionText(action, details) {
+                if (!action) return 'Unknown action';
                 
-                if (data.state) {
-                    html += `<p><strong>Status:</strong> ${data.state}</p>`;
+                const detailStr = details ? JSON.stringify(details) : '';
+                
+                switch(action.toLowerCase()) {
+                    case 'select-target':
+                        return `Selected target: ${details?.targetName || 'Unknown'}`;
+                    case 'protect':
+                    case 'protect-player':
+                        return `Protected: ${details?.targetName || 'Unknown'}`;
+                    case 'investigate':
+                    case 'investigate-player':
+                        return `Investigated: ${details?.targetName || 'Unknown'} (${details?.suspicionLevel || 'Unknown'})`;
+                    case 'vote':
+                    case 'cast-vote':
+                        return `Voted for: ${details?.targetName || 'Anonymous'} (${details?.anonymous ? 'Anonymous' : 'Named'})`;
+                    case 'assassinate':
+                    case 'kill':
+                        return `Assassinated: ${details?.targetName || 'Unknown'}`;
+                    case 'accusation':
+                    case 'accuse':
+                        return `Accused: ${details?.targetName || 'Unknown'}`;
+                    case 'trial-vote':
+                        return `Trial vote: ${details?.verdict || 'Unknown'}`;
+                    case 'join-game':
+                        return 'Joined game';
+                    case 'ready':
+                        return 'Ready to start';
+                    case 'skip':
+                        return 'Skipped action';
+                    case 'disconnect':
+                        return 'Disconnected';
+                    case 'reconnect':
+                        return 'Reconnected';
+                    default:
+                        return `${action}${detailStr ? ' ' + detailStr : ''}`;
                 }
-                
-                if (data.alive !== undefined) {
-                    const status = data.alive ? '✓ Alive' : '✗ Eliminated';
-                    html += `<p><strong>Status:</strong> ${status}</p>`;
-                }
-                
-                if (data.ready !== undefined) {
-                    html += `<p><strong>Ready:</strong> ${data.ready ? 'Yes' : 'No'}</p>`;
-                }
-                
-                html += '</div>';
-                return html.length > 60 ? html : '<p style="color: var(--text-muted);">Waiting for updates...</p>';
             }
         }
 
