@@ -131,29 +131,29 @@ class NeighborhoodGame {
 
     buildHouses() {
         const housePositions = [
-            // Top left block
-            { x: -90, z: -90, color: 0xff6b6b }, // Red
-            { x: -60, z: -90, color: 0x4ecdc4 }, // Teal
-            { x: -90, z: -60, color: 0xffe66d }, // Yellow
-            { x: -60, z: -60, color: 0x95e1d3 }, // Mint
+            // Top left block (x: -90 to -30, z: -90 to -30)
+            { x: -80, z: -80, color: 0xff6b6b }, // Red
+            { x: -50, z: -80, color: 0x4ecdc4 }, // Teal
+            { x: -80, z: -50, color: 0xffe66d }, // Yellow
+            { x: -50, z: -50, color: 0x95e1d3 }, // Mint
 
-            // Top right block
-            { x: 30, z: -90, color: 0xff6b6b },
-            { x: 60, z: -90, color: 0x4ecdc4 },
-            { x: 30, z: -60, color: 0xffe66d },
-            { x: 60, z: -60, color: 0x95e1d3 },
+            // Top right block (x: 30 to 90, z: -90 to -30)
+            { x: 40, z: -80, color: 0xff6b6b },
+            { x: 70, z: -80, color: 0x4ecdc4 },
+            { x: 40, z: -50, color: 0xffe66d },
+            { x: 70, z: -50, color: 0x95e1d3 },
 
-            // Bottom left block
-            { x: -90, z: 30, color: 0xff6b6b },
-            { x: -60, z: 30, color: 0x4ecdc4 },
-            { x: -90, z: 60, color: 0xffe66d },
-            { x: -60, z: 60, color: 0x95e1d3 },
+            // Bottom left block (x: -90 to -30, z: 30 to 90)
+            { x: -80, z: 40, color: 0xff6b6b },
+            { x: -50, z: 40, color: 0x4ecdc4 },
+            { x: -80, z: 70, color: 0xffe66d },
+            { x: -50, z: 70, color: 0x95e1d3 },
 
-            // Bottom right block
-            { x: 30, z: 30, color: 0xff6b6b },
-            { x: 60, z: 30, color: 0x4ecdc4 },
-            { x: 30, z: 60, color: 0xffe66d },
-            { x: 60, z: 60, color: 0x95e1d3 }
+            // Bottom right block (x: 30 to 90, z: 30 to 90)
+            { x: 40, z: 40, color: 0xff6b6b },
+            { x: 70, z: 40, color: 0x4ecdc4 },
+            { x: 40, z: 70, color: 0xffe66d },
+            { x: 70, z: 70, color: 0x95e1d3 }
         ];
 
         housePositions.forEach(pos => {
@@ -375,9 +375,18 @@ class NeighborhoodGame {
             this.carSpeed = Math.max(this.carSpeed - this.acceleration * 0.5, 0);
         }
 
-        // Move car based on rotation and speed
-        this.carPosition.x += Math.cos(this.carRotation - Math.PI / 2) * this.carSpeed;
-        this.carPosition.z += Math.sin(this.carRotation - Math.PI / 2) * this.carSpeed;
+        // Calculate new position
+        const newX = this.carPosition.x + Math.cos(this.carRotation - Math.PI / 2) * this.carSpeed;
+        const newZ = this.carPosition.z + Math.sin(this.carRotation - Math.PI / 2) * this.carSpeed;
+
+        // Check if new position is on a road
+        if (this.isOnRoad(newX, newZ)) {
+            this.carPosition.x = newX;
+            this.carPosition.z = newZ;
+        } else {
+            // Stop car if trying to drive off road
+            this.carSpeed = 0;
+        }
 
         // Update car object
         this.car.position.copy(this.carPosition);
@@ -388,6 +397,30 @@ class NeighborhoodGame {
         const directions = ['East', 'North', 'West', 'South'];
         const dirIndex = Math.round((this.carRotation / (Math.PI / 2)) % 4 + 4) % 4;
         document.getElementById('direction-display').textContent = `Direction: ${directions[dirIndex]}`;
+    }
+
+    isOnRoad(x, z) {
+        const roadWidth = 15;
+        const roadHalfWidth = roadWidth / 2;
+        
+        // Road positions (centers)
+        const roadPositions = [-60, 0, 60];
+
+        // Check horizontal roads
+        for (let roadZ of roadPositions) {
+            if (Math.abs(z - roadZ) <= roadHalfWidth && x >= -150 && x <= 150) {
+                return true;
+            }
+        }
+
+        // Check vertical roads
+        for (let roadX of roadPositions) {
+            if (Math.abs(x - roadX) <= roadHalfWidth && z >= -150 && z <= 150) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     updateCamera() {
