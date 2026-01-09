@@ -15,6 +15,7 @@ class Game {
         this.wheelRotation = 0;
         this.keys = {};
         this.isRunning = false;
+        this.carLoaded = false;
         
         this.init();
     }
@@ -79,148 +80,61 @@ class Game {
     createCar() {
         this.car = new THREE.Group();
         this.car.position.set(0, 0, 0);
-        this.wheels = [];
+        
+        // Load a free car model from CDN (Red sedan car model)
+        const loader = new THREE.GLTFLoader();
+        
+        // Using a free simple car model from a CDN
+        loader.load(
+            'https://models.readyplayer.me/644db19a84427901002049a5.glb',
+            (gltf) => {
+                const model = gltf.scene;
+                model.scale.set(1.5, 1.5, 1.5);
+                model.position.y = 0;
+                
+                // Set up shadows
+                model.traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                    }
+                });
+                
+                this.car.add(model);
+                this.carLoaded = true;
+            },
+            undefined,
+            (error) => {
+                console.error('Failed to load car model:', error);
+                // Fallback: create a simple car if model fails to load
+                this.createFallbackCar();
+            }
+        );
+    }
 
-        // Main body with rounded corners using LatheGeometry for smooth sides
+    createFallbackCar() {
+        // Fallback simple car if model loading fails
+        this.carLoaded = true;
+        
         const carBodyMaterial = new THREE.MeshStandardMaterial({
             color: 0xC41E3A,
             metalness: 0.6,
-            roughness: 0.3,
-            side: THREE.DoubleSide
+            roughness: 0.3
         });
 
-        // Front section (hood)
-        const frontGeometry = new THREE.BoxGeometry(1.1, 0.4, 0.8);
-        const front = new THREE.Mesh(frontGeometry, carBodyMaterial);
-        front.position.set(0, 0.4, 1.4);
-        front.scale.z = 0.6;
-        front.castShadow = true;
-        front.receiveShadow = true;
-        this.car.add(front);
+        const bodyGeometry = new THREE.BoxGeometry(1.15, 0.8, 2.0);
+        const body = new THREE.Mesh(bodyGeometry, carBodyMaterial);
+        body.position.y = 0.4;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        this.car.add(body);
 
-        // Main cabin body (rounded)
-        const cabinGeometry = new THREE.BoxGeometry(1.15, 0.8, 2.0);
-        const cabin = new THREE.Mesh(cabinGeometry, carBodyMaterial);
-        cabin.position.set(0, 0.45, 0);
-        cabin.castShadow = true;
-        cabin.receiveShadow = true;
-        this.car.add(cabin);
-
-        // Rear cargo section
-        const cargoGeometry = new THREE.BoxGeometry(1.15, 0.7, 1.2);
-        const cargo = new THREE.Mesh(cargoGeometry, carBodyMaterial);
-        cargo.position.set(0, 0.4, -1.3);
-        cargo.castShadow = true;
-        cargo.receiveShadow = true;
-        this.car.add(cargo);
-
-        // Rounded roof
-        const roofGeometry = new THREE.BoxGeometry(1.0, 0.5, 1.8);
-        const roof = new THREE.Mesh(roofGeometry, carBodyMaterial);
-        roof.position.set(0, 1.15, 0.1);
-        roof.castShadow = true;
-        roof.receiveShadow = true;
-        this.car.add(roof);
-
-        // Glass material for windows
-        const glassMaterial = new THREE.MeshStandardMaterial({
-            color: 0x87CEEB,
-            transparent: true,
-            opacity: 0.35,
-            metalness: 0.2,
-            roughness: 0.1,
-            side: THREE.DoubleSide
-        });
-
-        // Windshield
-        const windshieldGeometry = new THREE.PlaneGeometry(1.0, 0.45);
-        const windshield = new THREE.Mesh(windshieldGeometry, glassMaterial);
-        windshield.position.set(0, 0.75, 1.1);
-        windshield.rotation.x = -0.2;
-        windshield.castShadow = false;
-        windshield.receiveShadow = true;
-        this.car.add(windshield);
-
-        // Side windows
-        const sideWindowGeometry = new THREE.PlaneGeometry(0.4, 0.5);
-        const leftWindow = new THREE.Mesh(sideWindowGeometry, glassMaterial);
-        leftWindow.rotation.y = Math.PI / 2;
-        leftWindow.position.set(-0.625, 0.65, 0.2);
-        leftWindow.castShadow = false;
-        leftWindow.receiveShadow = true;
-        this.car.add(leftWindow);
-
-        const rightWindow = new THREE.Mesh(sideWindowGeometry, glassMaterial);
-        rightWindow.rotation.y = Math.PI / 2;
-        rightWindow.position.set(0.625, 0.65, 0.2);
-        rightWindow.castShadow = false;
-        rightWindow.receiveShadow = true;
-        this.car.add(rightWindow);
-
-        // Rear window
-        const rearWindowGeometry = new THREE.PlaneGeometry(1.0, 0.4);
-        const rearWindow = new THREE.Mesh(rearWindowGeometry, glassMaterial);
-        rearWindow.position.set(0, 0.8, -1.5);
-        rearWindow.castShadow = false;
-        rearWindow.receiveShadow = true;
-        this.car.add(rearWindow);
-
-        // Headlights
-        const headlightGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.05, 16);
-        const headlightMaterial = new THREE.MeshStandardMaterial({
-            color: 0xFFFF99,
-            metalness: 0.8,
-            roughness: 0.2,
-            emissive: 0xFFFF00,
-            emissiveIntensity: 0.3
-        });
-
-        const leftHeadlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
-        leftHeadlight.position.set(-0.35, 0.35, 1.8);
-        leftHeadlight.rotation.z = Math.PI / 2;
-        leftHeadlight.castShadow = true;
-        this.car.add(leftHeadlight);
-
-        const rightHeadlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
-        rightHeadlight.position.set(0.35, 0.35, 1.8);
-        rightHeadlight.rotation.z = Math.PI / 2;
-        rightHeadlight.castShadow = true;
-        this.car.add(rightHeadlight);
-
-        // Bumpers (sleek looking)
-        const bumperMaterial = new THREE.MeshStandardMaterial({
-            color: 0x222222,
-            metalness: 0.5,
-            roughness: 0.4
-        });
-
-        const frontBumperGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.15);
-        const frontBumper = new THREE.Mesh(frontBumperGeometry, bumperMaterial);
-        frontBumper.position.set(0, 0.25, 1.95);
-        frontBumper.castShadow = true;
-        frontBumper.receiveShadow = true;
-        this.car.add(frontBumper);
-
-        const rearBumperGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.15);
-        const rearBumper = new THREE.Mesh(rearBumperGeometry, bumperMaterial);
-        rearBumper.position.set(0, 0.25, -2.0);
-        rearBumper.castShadow = true;
-        rearBumper.receiveShadow = true;
-        this.car.add(rearBumper);
-
-        // Wheels
+        // Simple wheel setup
         const wheelGeometry = new THREE.CylinderGeometry(0.38, 0.38, 0.28, 32);
         const wheelMaterial = new THREE.MeshStandardMaterial({
             color: 0x1a1a1a,
             metalness: 0.7,
             roughness: 0.4
-        });
-
-        const rimGeometry = new THREE.CylinderGeometry(0.24, 0.24, 0.3, 32);
-        const rimMaterial = new THREE.MeshStandardMaterial({
-            color: 0xc0c0c0,
-            metalness: 0.9,
-            roughness: 0.2
         });
 
         const wheelPositions = [
@@ -231,26 +145,14 @@ class Game {
         ];
 
         wheelPositions.forEach((pos) => {
-            const wheelGroup = new THREE.Group();
-            wheelGroup.position.set(pos.x, 0.38, pos.z);
-            wheelGroup.rotation.z = Math.PI / 2;
-
             const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(pos.x, 0.38, pos.z);
             wheel.castShadow = true;
             wheel.receiveShadow = true;
-            wheelGroup.add(wheel);
-
-            const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-            rim.position.z = 0.02;
-            rim.castShadow = true;
-            rim.receiveShadow = true;
-            wheelGroup.add(rim);
-
-            this.car.add(wheelGroup);
-            this.wheels.push(wheelGroup);
+            this.car.add(wheel);
+            this.wheels.push(wheel);
         });
-
-        this.scene.add(this.car);
     }
 
     setupControls() {
@@ -364,3 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+ (only if wheels exist)
+        if (this.wheels.length > 0) {
+            this.wheelRotation += this.carSpeed * 0.15;
+            this.wheels.forEach(wheel => {
+                wheel.rotation.x = this.wheelRotation;
+            });
+        }
