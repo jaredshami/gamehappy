@@ -81,10 +81,9 @@ class Game {
         this.car = new THREE.Group();
         this.car.position.set(0, 0, 0);
         
-        // Load a free car model from CDN (Red sedan car model)
+        // Load a free car model from CDN
         const loader = new THREE.GLTFLoader();
         
-        // Using a free simple car model from a CDN
         loader.load(
             'https://models.readyplayer.me/644db19a84427901002049a5.glb',
             (gltf) => {
@@ -106,14 +105,14 @@ class Game {
             undefined,
             (error) => {
                 console.error('Failed to load car model:', error);
-                // Fallback: create a simple car if model fails to load
                 this.createFallbackCar();
             }
         );
+        
+        this.scene.add(this.car);
     }
 
     createFallbackCar() {
-        // Fallback simple car if model loading fails
         this.carLoaded = true;
         
         const carBodyMaterial = new THREE.MeshStandardMaterial({
@@ -129,7 +128,6 @@ class Game {
         body.receiveShadow = true;
         this.car.add(body);
 
-        // Simple wheel setup
         const wheelGeometry = new THREE.CylinderGeometry(0.38, 0.38, 0.28, 32);
         const wheelMaterial = new THREE.MeshStandardMaterial({
             color: 0x1a1a1a,
@@ -171,7 +169,6 @@ class Game {
         const friction = 0.92;
         const turnSpeed = 0.08;
 
-        // Forward/Backward
         if (this.keys['arrowup'] || this.keys['w']) {
             this.carSpeed = Math.min(this.carSpeed + acceleration, maxSpeed);
         } else if (this.keys['arrowdown'] || this.keys['s']) {
@@ -180,7 +177,6 @@ class Game {
             this.carSpeed *= friction;
         }
 
-        // Left/Right turning
         if (this.keys['arrowleft'] || this.keys['a']) {
             this.carRotation += turnSpeed;
         }
@@ -188,31 +184,27 @@ class Game {
             this.carRotation -= turnSpeed;
         }
 
-        // Update wheel rotation based on movement
-        this.wheelRotation += this.carSpeed * 0.15;
-        this.wheels.forEach(wheel => {
-            wheel.rotation.x = this.wheelRotation;
-        });
+        if (this.wheels.length > 0) {
+            this.wheelRotation += this.carSpeed * 0.15;
+            this.wheels.forEach(wheel => {
+                wheel.rotation.x = this.wheelRotation;
+            });
+        }
 
-        // Update car position based on rotation and speed
         this.carPosition.x += Math.sin(this.carRotation) * this.carSpeed;
         this.carPosition.z += Math.cos(this.carRotation) * this.carSpeed;
 
-        // Update car world position and rotation
         this.car.position.x = this.carPosition.x;
         this.car.position.z = this.carPosition.z;
         this.car.rotation.y = this.carRotation;
 
-        // Camera positioned behind the car, always looking at it
         const cameraDistance = 6;
         const cameraHeight = 2;
         
-        // Position camera behind car based on its rotation
         this.camera.position.x = this.carPosition.x + Math.sin(this.carRotation) * cameraDistance;
         this.camera.position.z = this.carPosition.z + Math.cos(this.carRotation) * cameraDistance;
         this.camera.position.y = cameraHeight;
 
-        // Always look at the car
         this.camera.lookAt(this.carPosition.x, 0.3, this.carPosition.z);
     }
 
@@ -254,7 +246,6 @@ function startGame() {
     gameInstance = new Game('game-container');
 }
 
-// Cleanup when going back
 document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
@@ -266,10 +257,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
- (only if wheels exist)
-        if (this.wheels.length > 0) {
-            this.wheelRotation += this.carSpeed * 0.15;
-            this.wheels.forEach(wheel => {
-                wheel.rotation.x = this.wheelRotation;
-            });
-        }
