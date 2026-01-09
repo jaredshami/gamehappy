@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Are We There Yet?</title>
+    <link rel="stylesheet" href="css/style.css?v=20260109">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <h1>Are We There Yet?</h1>
+            <p class="login-message">Please log in to play</p>
+            <div class="login-form">
+                <input type="text" id="username-input" placeholder="Username" autocomplete="off">
+                <input type="password" id="password-input" placeholder="Password" autocomplete="off">
+                <button id="login-btn" class="btn-primary">Log In</button>
+            </div>
+            <p id="login-error" class="error-message"></p>
+            <button id="demo-btn" class="btn-secondary">Demo Admin</button>
+        </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen">
+        <div class="top-bar">
+            <div class="player-info">
+                <span id="player-name">Player</span>
+            </div>
+            <button id="logout-btn" class="btn-logout">Logout</button>
+        </div>
+        <div class="container">
+            <div class="header">
+                <h1>Are We There Yet?</h1>
+                <p>Help Grandma Navigate!</p>
+            </div>
+            <div class="level-grid">
+                <button id="level-1-btn" class="level-card">
+                    <div class="level-number">1</div>
+                    <div class="level-title">First Drive</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div id="game-container"></div>
+        <div id="back-btn" class="btn-back">← Back</div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
