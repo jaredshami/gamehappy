@@ -22,6 +22,7 @@ class NeighborhoodGame {
         this.carSpeed = 0;
         this.carRotation = 0; // 0 = East, PI/2 = North, PI = West, 3PI/2 = South
         this.carPosition = { x: 0, y: 0.5, z: 0 };
+        this.scenePosition = { x: 0, y: 0, z: 0 }; // Track scene translation
         this.maxSpeed = 0.5;
         this.acceleration = 0.02;
         this.turnSpeed = 0.05;
@@ -366,11 +367,18 @@ class NeighborhoodGame {
             this.carRotation -= this.turnSpeed;
         }
 
-        // Acceleration
+        // Acceleration (forward and backward)
         if (this.keys['forward'] || this.keys['arrowup'] || this.keys['w']) {
             this.carSpeed = Math.min(this.carSpeed + this.acceleration, this.maxSpeed);
+        } else if (this.keys['backward'] || this.keys['arrowdown'] || this.keys['s']) {
+            this.carSpeed = Math.max(this.carSpeed - this.acceleration, -this.maxSpeed);
         } else {
-            this.carSpeed = Math.max(this.carSpeed - this.acceleration * 0.5, 0);
+            // Decelerate
+            if (this.carSpeed > 0) {
+                this.carSpeed = Math.max(this.carSpeed - this.acceleration * 0.5, 0);
+            } else if (this.carSpeed < 0) {
+                this.carSpeed = Math.min(this.carSpeed + this.acceleration * 0.5, 0);
+            }
         }
 
         // Car stays at center, world moves
@@ -381,15 +389,19 @@ class NeighborhoodGame {
         const worldOffsetX = -Math.cos(this.carRotation) * this.carSpeed;
         const worldOffsetZ = -Math.sin(this.carRotation) * this.carSpeed;
 
-        // Update all objects in scene (except camera which is fixed)
-        this.scene.position.x += worldOffsetX;
-        this.scene.position.z += worldOffsetZ;
+        // Update scene position and track it
+        this.scenePosition.x += worldOffsetX;
+        this.scenePosition.z += worldOffsetZ;
+        this.scene.position.x = this.scenePosition.x;
+        this.scene.position.z = this.scenePosition.z;
 
-        // Keep car visually fixed - counteract scene rotation
+        // Keep car visually fixed - counteract scene rotation and translation
         this.car.rotation.y = -this.carRotation;
+        this.car.position.x = -this.scenePosition.x;
+        this.car.position.z = -this.scenePosition.z;
 
         // Update HUD
-        document.getElementById('speed-display').textContent = `Speed: ${(this.carSpeed * 100).toFixed(0)}%`;
+        document.getElementById('speed-display').textContent = `Speed: ${Math.abs(this.carSpeed * 100).toFixed(0)}%`;
         const directions = ['East', 'North', 'West', 'South'];
         const dirIndex = Math.round((this.carRotation / (Math.PI / 2)) % 4 + 4) % 4;
         document.getElementById('direction-display').textContent = `Direction: ${directions[dirIndex]}`;
