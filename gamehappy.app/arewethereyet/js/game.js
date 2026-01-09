@@ -360,12 +360,12 @@ class NeighborhoodGame {
     }
 
     updateCarMovement() {
-        // Turning
+        // Turning - right turns clockwise (counterclockwise in our coordinate system), left turns counterclockwise
         if (this.keys['right'] || this.keys['arrowright']) {
-            this.carRotation -= this.turnSpeed;
+            this.carRotation += this.turnSpeed;
         }
         if (this.keys['left'] || this.keys['arrowleft']) {
-            this.carRotation += this.turnSpeed;
+            this.carRotation -= this.turnSpeed;
         }
 
         // Acceleration
@@ -376,8 +376,8 @@ class NeighborhoodGame {
         }
 
         // Calculate new position
-        const newX = this.carPosition.x + Math.cos(this.carRotation - Math.PI / 2) * this.carSpeed;
-        const newZ = this.carPosition.z + Math.sin(this.carRotation - Math.PI / 2) * this.carSpeed;
+        const newX = this.carPosition.x + Math.cos(this.carRotation) * this.carSpeed;
+        const newZ = this.carPosition.z + Math.sin(this.carRotation) * this.carSpeed;
 
         // Check if new position is on a road
         if (this.isOnRoad(newX, newZ)) {
@@ -424,17 +424,19 @@ class NeighborhoodGame {
     }
 
     updateCamera() {
-        // Camera follows car from behind and above
+        // Camera follows car from behind and above - always positioned opposite to car's forward direction
         const cameraDistance = 15;
         const cameraHeight = 10;
         
-        const cameraX = this.carPosition.x - Math.cos(this.carRotation - Math.PI / 2) * cameraDistance;
-        const cameraZ = this.carPosition.z - Math.sin(this.carRotation - Math.PI / 2) * cameraDistance;
+        // Position camera directly behind the car (opposite of rotation direction)
+        const cameraX = this.carPosition.x - Math.cos(this.carRotation) * cameraDistance;
+        const cameraZ = this.carPosition.z - Math.sin(this.carRotation) * cameraDistance;
 
         this.camera.position.x = cameraX;
         this.camera.position.y = this.carPosition.y + cameraHeight;
         this.camera.position.z = cameraZ;
 
+        // Look at a point in front of the car
         this.camera.lookAt(this.carPosition.x, this.carPosition.y + 2, this.carPosition.z);
     }
 
