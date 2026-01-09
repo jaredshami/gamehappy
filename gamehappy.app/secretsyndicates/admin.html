@@ -795,7 +795,7 @@
                         </div>
                         <div class="player-screen">
                             <div class="screen-content">
-                                ${this.formatPlayerScreen(data)}
+                                ${this.formatGameScreenContent(data)}
                             </div>
                         </div>
                         <div class="player-logs">
@@ -806,12 +806,15 @@
                 `).join('');
             }
 
-            formatPlayerScreen(data) {
-                let html = '';
-                const phase = data.phase || 'unknown';
-                const role = data.role || 'Bystander';
+            formatGameScreenContent(data) {
+                if (!data || !data.gameState) {
+                    return '<p style="color: var(--text-muted);">Waiting for game state...</p>';
+                }
 
-                // Show role info
+                const gs = data.gameState;
+                let html = '';
+
+                // Show player's role clearly
                 const roleEmojis = {
                     'Syndicate': '🔴',
                     'Detective': '🔍',
@@ -819,62 +822,96 @@
                     'Eye Witness': '👁️',
                     'Bystander': '👤'
                 };
-                const emoji = roleEmojis[role] || '❓';
-                html += `<h4>${emoji} You are a ${role}</h4>`;
+                const roleEmoji = roleEmojis[data.role] || '❓';
+                html += `<h4>${roleEmoji} You are ${data.role}</h4>`;
 
-                // Show phase-specific content
-                switch(phase) {
-                    case 'phase-1':
-                        html += '<p>Game starting... waiting for day/night cycle to begin</p>';
-                        break;
-                    case 'phase-2':
-                        if (role === 'Syndicate') {
-                            html += '<p><strong>🌙 NIGHT PHASE - Select your target to eliminate</strong></p>';
-                            html += '<p style="color: #fbbf24;">Your syndicate is choosing who to eliminate tonight</p>';
-                        } else if (role === 'Body Guard') {
-                            html += '<p><strong>🛡️ NIGHT PHASE - Select who to protect</strong></p>';
-                            html += '<p style="color: #60a5fa;">Choose one player to protect from assassination</p>';
-                        } else if (role === 'Detective') {
-                            html += '<p><strong>🔍 NIGHT PHASE - Investigate a player</strong></p>';
-                            html += '<p style="color: #c084fc;">Investigate one player to learn their suspicion level</p>';
-                        } else if (role === 'Eye Witness') {
-                            html += '<p><strong>👁️ NIGHT PHASE - Watching</strong></p>';
-                            html += '<p style="color: #a78bfa;">You will see who performs the assassination</p>';
-                        } else {
-                            html += '<p><strong>🌙 NIGHT PHASE</strong></p>';
-                            html += '<p>Special roles are acting. Innocents rest...</p>';
+                // Show current phase and what's happening
+                const phase = data.phase || 'unknown';
+                
+                if (phase === 'phase-2' || phase === 'night') {
+                    if (data.role === 'Syndicate') {
+                        html += '<p><strong>🌙 NIGHT PHASE - Select your target</strong></p>';
+                        if (gs.availableTargets && gs.availableTargets.length > 0) {
+                            html += '<p>Available targets:</p><ul>';
+                            gs.availableTargets.forEach(t => {
+                                html += `<li>• ${t.name}${t.alive === false ? ' (eliminated)' : ''}</li>`;
+                            });
+                            html += '</ul>';
                         }
-                        break;
-                    case 'phase-3':
-                        html += '<p><strong>☀️ DAY PHASE - Discussion</strong></p>';
-                        html += '<p>The group discusses who to eliminate</p>';
-                        if (data.actionDetails && data.actionDetails.eliminatedPlayer) {
-                            html += `<p style="color: #ef4444;"><strong>❌ ${data.actionDetails.eliminatedPlayer} was eliminated last night</strong></p>`;
+                        if (gs.selectedTarget) {
+                            html += `<p style="color: #fbbf24;"><strong>Selected: ${gs.selectedTarget}</strong></p>`;
                         }
-                        break;
-                    case 'phase-4':
-                        html += '<p><strong>🗳️ DAY PHASE - Voting</strong></p>';
-                        html += '<p>Cast your vote to eliminate someone</p>';
-                        if (data.actionDetails && data.actionDetails.canVote === false) {
-                            html += '<p style="color: #fbbf24;">You cannot vote this round</p>';
+                    } else if (data.role === 'Body Guard') {
+                        html += '<p><strong>🛡️ NIGHT PHASE - Select who to protect</strong></p>';
+                        if (gs.availableTargets && gs.availableTargets.length > 0) {
+                            html += '<p>Available to protect:</p><ul>';
+                            gs.availableTargets.forEach(t => {
+                                html += `<li>• ${t.name}${t.alive === false ? ' (eliminated)' : ''}</li>`;
+                            });
+                            html += '</ul>';
                         }
-                        break;
-                    case 'phase-5':
-                        html += '<p><strong>⚖️ TRIAL PHASE</strong></p>';
-                        html += '<p>Special trial rules in effect</p>';
-                        break;
-                    case 'game-end':
-                        html += '<p><strong>🏁 GAME OVER</strong></p>';
-                        if (data.actionDetails && data.actionDetails.winner) {
-                            html += `<p style="color: #4ade80;"><strong>Winner: ${data.actionDetails.winner}</strong></p>`;
+                        if (gs.selectedProtection) {
+                            html += `<p style="color: #60a5fa;"><strong>Protecting: ${gs.selectedProtection}</strong></p>`;
                         }
-                        break;
-                    default:
-                        html += `<p>Current phase: ${phase}</p>`;
-                }
-
-                if (data.screen) {
-                    html += `<p style="margin-top: 10px; color: var(--text-muted);">Current Screen: <em>${data.screen}</em></p>`;
+                    } else if (data.role === 'Detective') {
+                        html += '<p><strong>🔍 NIGHT PHASE - Investigate a player</strong></p>';
+                        if (gs.availableTargets && gs.availableTargets.length > 0) {
+                            html += '<p>Can investigate:</p><ul>';
+                            gs.availableTargets.forEach(t => {
+                                html += `<li>• ${t.name}${t.alive === false ? ' (eliminated)' : ''}</li>`;
+                            });
+                            html += '</ul>';
+                        }
+                        if (gs.selectedInvestigation) {
+                            html += `<p style="color: #c084fc;"><strong>Investigating: ${gs.selectedInvestigation}</strong></p>`;
+                        }
+                    } else if (data.role === 'Eye Witness') {
+                        html += '<p><strong>👁️ NIGHT PHASE - Watching</strong></p>';
+                        html += '<p style="color: #a78bfa;">Observing who performs the assassination...</p>';
+                        if (gs.witnessedKill) {
+                            html += `<p style="color: #ef4444;"><strong>You saw: ${gs.witnessedKill}</strong></p>`;
+                        }
+                    } else {
+                        html += '<p><strong>🌙 NIGHT PHASE</strong></p>';
+                        html += '<p>Special roles are acting. Resting...</p>';
+                    }
+                } else if (phase === 'phase-3' || phase === 'discussion') {
+                    html += '<p><strong>☀️ DAY PHASE - Discussion</strong></p>';
+                    if (gs.eliminatedLastNight) {
+                        html += `<p style="color: #ef4444;"><strong>❌ ${gs.eliminatedLastNight} was eliminated!</strong></p>`;
+                    }
+                    if (gs.players && gs.players.length > 0) {
+                        html += '<p>Players alive:</p><ul>';
+                        gs.players.filter(p => p.alive).forEach(p => {
+                            html += `<li>• ${p.name}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+                } else if (phase === 'phase-4' || phase === 'voting') {
+                    html += '<p><strong>🗳️ VOTING PHASE</strong></p>';
+                    html += '<p>Cast your vote to eliminate someone</p>';
+                    if (gs.players && gs.players.length > 0) {
+                        html += '<p>Players to vote for:</p><ul>';
+                        gs.players.filter(p => p.alive).forEach(p => {
+                            html += `<li>• ${p.name}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+                    if (gs.playerVote) {
+                        html += `<p style="color: #fbbf24;"><strong>Your vote: ${gs.playerVote}</strong></p>`;
+                    }
+                } else if (phase === 'phase-5' || phase === 'trial') {
+                    html += '<p><strong>⚖️ TRIAL PHASE</strong></p>';
+                    html += '<p>Deciding the verdict...</p>';
+                    if (gs.trialVerdicts) {
+                        html += `<p>Guilty votes: ${gs.trialVerdicts.guilty || 0}</p>`;
+                        html += `<p>Not guilty votes: ${gs.trialVerdicts.notGuilty || 0}</p>`;
+                    }
+                } else {
+                    html += `<p>Phase: ${phase}</p>`;
+                    if (gs) {
+                        html += `<pre style="font-size: 11px; color: #999; overflow-x: auto;">${JSON.stringify(gs, null, 2).substring(0, 500)}...</pre>`;
+                    }
                 }
 
                 return html;

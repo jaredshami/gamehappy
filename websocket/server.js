@@ -348,6 +348,7 @@ io.on('connection', (socket) => {
         // Broadcast to admin watchers
         const player = game.getPlayers().find(p => p.token === playerToken);
         if (player) {
+          const fullGameState = gameServer.getGameStateForPlayer(playerToken);
           const adminUpdate = {
             gameCode: game.gameCode,
             playerToken: playerToken,
@@ -358,7 +359,8 @@ io.on('connection', (socket) => {
             screen: eventName,
             action: eventName,
             actionDetails: extractActionDetails(eventName, payload, player),
-            state: result.success ? 'Success' : 'Failed'
+            state: result.success ? 'Success' : 'Failed',
+            gameState: fullGameState
           };
           console.log(`[ADMIN] Broadcasting to admin-watch-${game.gameCode}:`, adminUpdate);
           io.to(`admin-watch-${game.gameCode}`).emit('player-state-update', adminUpdate);
@@ -1158,7 +1160,7 @@ io.on('connection', (socket) => {
             playerName: player.name,
             role: player.role
           },
-          gameState: playerState ? playerState.gameState : 'unknown'
+          gameState: playerState
         });
       }
     }
