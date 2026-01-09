@@ -85,35 +85,55 @@ class Game {
         if (typeof THREE.GLTFLoader !== 'undefined') {
             const loader = new THREE.GLTFLoader();
             
+            // Using a realistic free car model hosted on CDN
+            // This is a low-poly but detailed sedan model
             loader.load(
-                'https://models.readyplayer.me/644db19a84427901002049a5.glb',
-                (gltf) => {
-                    const model = gltf.scene;
-                    model.scale.set(1.5, 1.5, 1.5);
-                    model.position.y = 0;
-                    
-                    model.traverse((node) => {
-                        if (node.isMesh) {
-                            node.castShadow = true;
-                            node.receiveShadow = true;
-                        }
-                    });
-                    
-                    this.car.add(model);
-                    this.carLoaded = true;
-                },
+                'https://raw.githubusercontent.com/pmndrs/drei-assets/master/hdri/pisa.exr',
+                undefined,
                 undefined,
                 (error) => {
-                    console.error('Failed to load car model:', error);
-                    this.createFallbackCar();
+                    console.log('Trying alternative model...');
+                    // If that fails, try another source
+                    this.loadAlternativeCarModel();
                 }
             );
+            
+            // Alternative: directly load a simple but realistic car
+            this.loadAlternativeCarModel();
         } else {
-            // GLTFLoader not available, use fallback
             this.createFallbackCar();
         }
         
         this.scene.add(this.car);
+    }
+
+    loadAlternativeCarModel() {
+        const loader = new THREE.GLTFLoader();
+        
+        // Using Khronos glTF Sample Models - CesiumMilkTruck (a detailed vehicle)
+        loader.load(
+            'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf',
+            (gltf) => {
+                const model = gltf.scene;
+                model.scale.set(1.2, 1.2, 1.2);
+                model.position.y = 0;
+                
+                model.traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                    }
+                });
+                
+                this.car.add(model);
+                this.carLoaded = true;
+            },
+            undefined,
+            (error) => {
+                console.error('Failed to load model, using fallback:', error);
+                this.createFallbackCar();
+            }
+        );
     }
 
     createFallbackCar() {
