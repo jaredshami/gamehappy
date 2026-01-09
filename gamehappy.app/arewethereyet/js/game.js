@@ -27,7 +27,7 @@ class Game {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-        this.camera.position.set(0, 12, 25);
+        this.camera.position.set(0, 12, -25);
         this.camera.lookAt(0, 0, 0);
 
         // Renderer setup
