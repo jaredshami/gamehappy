@@ -379,12 +379,15 @@ io.on('connection', (socket) => {
         const player = game.getPlayers().find(p => p.token === playerToken);
         if (player) {
           const fullGameState = gameServer.getGameStateForPlayer(playerToken);
+          const playerIsReady = game.playersReady && game.playersReady.has(playerToken);
           
           // Determine current screen based on game state
+          // If player hasn't clicked "I'm Ready" yet, they're on role-screen
+          // Otherwise, they're on whatever phase the game is in
           let screenType = 'role-screen';
-          if (game.currentPhase) {
+          if (playerIsReady && game.currentPhase && game.currentPhase !== 'not-started' && game.currentPhase !== 'waiting') {
             screenType = game.currentPhase;
-          } else if (player.role) {
+          } else if (player.role && !playerIsReady) {
             screenType = 'role-screen';
           } else {
             screenType = 'lobby-screen';
@@ -398,6 +401,7 @@ io.on('connection', (socket) => {
             alive: player.alive,
             phase: game.currentPhase,
             screen: screenType,
+            playerIsReady: playerIsReady,
             action: eventName,
             actionDetails: extractActionDetails(eventName, payload, player),
             state: result.success ? 'Success' : 'Failed',
@@ -1188,26 +1192,41 @@ io.on('connection', (socket) => {
       
       for (const player of players) {
         const playerState = gameServer.getGameStateForPlayer(player.token);
+        const playerIsReady = game.playersReady && game.playersReady.has(player.token);
         
         // Determine what screen the player is viewing
+        // If player hasn't clicked "I'm Ready" yet, they're on role-screen
+        // Otherwise, they're on whatever phase the game is in
         let screenType = 'role-screen'; // default to role screen
-        if (game.currentPhase && game.currentPhase !== 'not-started') {
-          // If game has started phases, use current phase
+        if (playerIsReady && game.currentPhase && game.currentPhase !== 'not-started' && game.currentPhase !== 'waiting') {
+          // Player is ready and game has started phases - use current phase
           screenType = game.currentPhase;
-        } else if (player.role) {
-          // If player has role but no game phase, they're viewing role screen
+        } else if (player.role && !playerIsReady) {
+          // Player has role but hasn't clicked ready yet - they're viewing role screen
           screenType = 'role-screen';
-        } else {
-          // If no role yet, they're in lobby
+        } else if (!player.role) {
+          // Player doesn't have role yet - they're in lobby
           screenType = 'lobby-screen';
         }
         
-        console.log(`[ADMIN] Player ${player.name}: role from player.role=${player.role}, role from gameState=${playerState?.playerRole}, screen=${screenType}`);
+        console.log(`[ADMIN] Player ${player.name}: role=${player.role}, isReady=${playerIsReady}, screen=${screenType}`);
         socket.emit('player-state-update', {
           gameCode: data.gameCode,
           playerToken: player.token,
           playerName: player.name,
           role: player.role || playerState?.playerRole || 'Unknown',
+          alive: player.alive,
+          phase: game.currentPhase,
+          screen: screenType,
+          playerIsReady: playerIsReady,
+          action: 'join-game',
+          actionDetails: {
+            playerName: player.name,
+            role: player.role || playerState?.playerRole || 'Unknown'
+          },
+          gameState: playerState
+        });
+      }
           alive: player.alive,
           phase: game.currentPhase,
           screen: screenType,
