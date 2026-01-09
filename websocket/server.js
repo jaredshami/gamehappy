@@ -62,6 +62,23 @@ function saveGameHistory(games) {
   }
 }
 
+// Create a game replay object for storage
+function createGameReplay(game, finalGameState) {
+  return {
+    gameCode: game.gameCode,
+    players: game.getPlayers().map(p => ({
+      token: p.token,
+      name: p.name,
+      role: p.role,
+      team: p.role === 'Syndicate' ? 'Syndicate' : 'Town'
+    })),
+    // Store final game state for reference
+    finalState: finalGameState,
+    // Initialize empty phases array - will be populated during gameplay
+    phases: []
+  };
+}
+
 // Add CORS headers for HTTP requests
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://gamehappy.app');
