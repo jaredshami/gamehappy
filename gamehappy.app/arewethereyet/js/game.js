@@ -64,9 +64,6 @@ class NeighborhoodGame {
         ground.receiveShadow = true;
         this.scene.add(ground);
 
-        // Road system - 4 blocks
-        this.buildRoads();
-
         // Create the car
         this.createCar();
     }
@@ -373,17 +370,8 @@ class NeighborhoodGame {
         }
 
         // Calculate new position
-        const newX = this.carPosition.x + Math.cos(this.carRotation) * this.carSpeed;
-        const newZ = this.carPosition.z + Math.sin(this.carRotation) * this.carSpeed;
-
-        // Check if new position is on a road
-        if (this.isOnRoad(newX, newZ)) {
-            this.carPosition.x = newX;
-            this.carPosition.z = newZ;
-        } else {
-            // Stop car if trying to drive off road
-            this.carSpeed = 0;
-        }
+        this.carPosition.x += Math.cos(this.carRotation) * this.carSpeed;
+        this.carPosition.z += Math.sin(this.carRotation) * this.carSpeed;
 
         // Update car object
         this.car.position.copy(this.carPosition);
