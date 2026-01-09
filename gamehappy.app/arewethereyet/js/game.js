@@ -162,19 +162,17 @@ class Game {
         this.car.position.z = this.carPosition.z;
         this.car.rotation.y = this.carRotation;
 
-        // Camera always faces north and pans to keep car centered
-        const cameraDistance = 25;
-        const cameraHeight = 12;
-        const offsetDistance = 5; // How far ahead of car to look
-        const lookAheadZ = this.carPosition.z + Math.cos(this.carRotation) * offsetDistance;
-        const lookAheadX = this.carPosition.x + Math.sin(this.carRotation) * offsetDistance;
-
-        this.camera.position.x = this.carPosition.x;
-        this.camera.position.z = this.carPosition.z + cameraDistance;
+        // Camera positioned behind the car, always looking at it
+        const cameraDistance = 6;
+        const cameraHeight = 2;
+        
+        // Position camera behind car based on its rotation
+        this.camera.position.x = this.carPosition.x + Math.sin(this.carRotation) * cameraDistance;
+        this.camera.position.z = this.carPosition.z + Math.cos(this.carRotation) * cameraDistance;
         this.camera.position.y = cameraHeight;
 
-        // Always look at a point ahead of the car, centered horizontally
-        this.camera.lookAt(lookAheadX, 0, lookAheadZ);
+        // Always look at the car
+        this.camera.lookAt(this.carPosition.x, 0.3, this.carPosition.z);
     }
 
     gameLoop = () => {
