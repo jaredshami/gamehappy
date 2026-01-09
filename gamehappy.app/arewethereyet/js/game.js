@@ -109,14 +109,14 @@ class Game {
                 const sprite = new THREE.Sprite(spriteMaterial);
                 
                 // Image is 536x729 (width x height), so aspect ratio is 0.735
-                // Scale to maintain proper proportions (taller than wide)
+                // Scale much larger and adjust vertical position to prevent cutoff
                 const aspectRatio = 536 / 729;
-                sprite.scale.set(1.5 * aspectRatio, 1.5, 1); // Height 1.5, width adjusted by aspect ratio
-                sprite.position.y = 0.5;
+                sprite.scale.set(6 * aspectRatio, 6, 1); // Much bigger!
+                sprite.position.y = -0.5; // Move down a bit so bottom isn't cut off
                 
                 this.car.add(sprite);
                 this.carLoaded = true;
-                console.log('Car sprite added to scene with correct aspect ratio');
+                console.log('Car sprite added with larger scale');
             },
             undefined,
             (error) => {
