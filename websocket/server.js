@@ -18,13 +18,18 @@ const io = new Server(server, {
   }
 });
 
-// Game history file path
-const GAME_HISTORY_FILE = './game-history.json';
+// Game history file path - use absolute path for reliability
+const GAME_HISTORY_FILE = require('path').join(__dirname, 'game-history.json');
 
 // Ensure game history file exists
 function ensureGameHistoryFile() {
-  if (!fs.existsSync(GAME_HISTORY_FILE)) {
-    fs.writeFileSync(GAME_HISTORY_FILE, JSON.stringify([], null, 2));
+  try {
+    if (!fs.existsSync(GAME_HISTORY_FILE)) {
+      console.log(`[HISTORY] Creating game history file at: ${GAME_HISTORY_FILE}`);
+      fs.writeFileSync(GAME_HISTORY_FILE, JSON.stringify([], null, 2));
+    }
+  } catch (err) {
+    console.error(`[HISTORY] Error ensuring file exists:`, err);
   }
 }
 
@@ -32,10 +37,16 @@ function ensureGameHistoryFile() {
 function loadGameHistory() {
   try {
     ensureGameHistoryFile();
+    if (!fs.existsSync(GAME_HISTORY_FILE)) {
+      console.warn(`[HISTORY] File does not exist: ${GAME_HISTORY_FILE}`);
+      return [];
+    }
     const data = fs.readFileSync(GAME_HISTORY_FILE, 'utf8');
-    return JSON.parse(data) || [];
+    const parsed = JSON.parse(data) || [];
+    console.log(`[HISTORY] Loaded ${parsed.length} games from history`);
+    return parsed;
   } catch (err) {
-    console.error('Error loading game history:', err);
+    console.error(`[HISTORY] Error loading game history from ${GAME_HISTORY_FILE}:`, err);
     return [];
   }
 }
@@ -43,9 +54,11 @@ function loadGameHistory() {
 // Save game history to file
 function saveGameHistory(games) {
   try {
+    console.log(`[HISTORY] Saving ${games.length} games to ${GAME_HISTORY_FILE}`);
     fs.writeFileSync(GAME_HISTORY_FILE, JSON.stringify(games, null, 2));
+    console.log(`[HISTORY] Successfully saved games to history`);
   } catch (err) {
-    console.error('Error saving game history:', err);
+    console.error(`[HISTORY] Error saving game history to ${GAME_HISTORY_FILE}:`, err);
   }
 }
 
