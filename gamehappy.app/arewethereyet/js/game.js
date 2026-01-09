@@ -109,15 +109,14 @@ class Game {
                 const sprite = new THREE.Sprite(spriteMaterial);
                 
                 // Image is 536x729 (width x height), so aspect ratio is 0.735
-                // Scale sprite to 750px height, maintaining aspect ratio
+                // Scale sprite to 8 units height, maintaining aspect ratio
                 const aspectRatio = 536 / 729;
-                const spriteHeight = 750;
-                sprite.scale.set(spriteHeight * aspectRatio, spriteHeight, 1);
+                sprite.scale.set(8 * aspectRatio, 8, 1);
                 sprite.position.y = 0; // Center sprite
                 
                 this.car.add(sprite);
                 this.carLoaded = true;
-                console.log('Car sprite added with 750px height');
+                console.log('Car sprite added with proper scale');
             },
             undefined,
             (error) => {
