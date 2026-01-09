@@ -109,14 +109,14 @@ class Game {
                 const sprite = new THREE.Sprite(spriteMaterial);
                 
                 // Image is 536x729 (width x height), so aspect ratio is 0.735
-                // Scale much larger and adjust vertical position to prevent cutoff
+                // Scale large and position so entire car is visible
                 const aspectRatio = 536 / 729;
-                sprite.scale.set(6 * aspectRatio, 6, 1); // Much bigger!
-                sprite.position.y = -0.5; // Move down a bit so bottom isn't cut off
+                sprite.scale.set(6 * aspectRatio, 6, 1);
+                sprite.position.y = -2; // Move down significantly to show bottom
                 
                 this.car.add(sprite);
                 this.carLoaded = true;
-                console.log('Car sprite added with larger scale');
+                console.log('Car sprite added with adjusted position');
             },
             undefined,
             (error) => {
