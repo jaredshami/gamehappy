@@ -593,6 +593,24 @@ io.on('connection', (socket) => {
                 // Game has ended
                 console.log(`[${game.gameCode}] GAME ENDED: ${phaseResult.winCondition.winner} wins (${phaseResult.winCondition.winType})`);
                 
+                // Save completed game to history
+                try {
+                  const gameHistories = loadGameHistory();
+                  gameHistories.push({
+                    id: `${game.gameCode}-${Date.now()}`,
+                    gameCode: game.gameCode,
+                    completedAt: new Date().toISOString(),
+                    playerCount: game.getPlayers().length,
+                    winner: phaseResult.winCondition.winner,
+                    winType: phaseResult.winCondition.winType,
+                    duration: phaseResult.winCondition.duration
+                  });
+                  saveGameHistory(gameHistories);
+                  console.log(`[HISTORY] Game ${game.gameCode} saved to history`);
+                } catch (historyErr) {
+                  console.error(`[HISTORY] Error saving game to history:`, historyErr);
+                }
+                
                 // Calculate suspicion levels for all players
                 const playerSuspicionLevels = {};
                 game.getPlayers().forEach(player => {
@@ -732,6 +750,24 @@ io.on('connection', (socket) => {
               if (phaseResult.gameEnded && phaseResult.winCondition) {
                 // Game has ended
                 console.log(`[${game.gameCode}] GAME ENDED: ${phaseResult.winCondition.winner} wins (${phaseResult.winCondition.winType})`);
+                
+                // Save completed game to history
+                try {
+                  const gameHistories = loadGameHistory();
+                  gameHistories.push({
+                    id: `${game.gameCode}-${Date.now()}`,
+                    gameCode: game.gameCode,
+                    completedAt: new Date().toISOString(),
+                    playerCount: game.getPlayers().length,
+                    winner: phaseResult.winCondition.winner,
+                    winType: phaseResult.winCondition.winType,
+                    duration: phaseResult.winCondition.duration
+                  });
+                  saveGameHistory(gameHistories);
+                  console.log(`[HISTORY] Game ${game.gameCode} saved to history`);
+                } catch (historyErr) {
+                  console.error(`[HISTORY] Error saving game to history:`, historyErr);
+                }
                 
                 // Calculate suspicion levels for all players
                 const playerSuspicionLevels = {};
