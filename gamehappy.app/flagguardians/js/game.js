@@ -59,11 +59,19 @@ class Game {
     // ===== SOCKET CONNECTION =====
     connect() {
         console.log('Attempting to connect to socket server...');
-        const socketUrl = window.location.protocol === 'https:' ? 
-            window.location.hostname : 
-            `${window.location.hostname}:3000`;
+        
+        // Determine the correct server URL
+        let socketUrl;
+        if (window.location.protocol === 'https:') {
+            socketUrl = window.location.origin;
+        } else {
+            socketUrl = `http://${window.location.hostname}:8443`;
+        }
+        
+        console.log('Connecting to:', socketUrl);
         
         this.socket = io(socketUrl, {
+            path: '/websocket',
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
@@ -80,6 +88,17 @@ class Game {
             console.log('✗ Disconnected from server');
             this.isConnected = false;
             this.showMessage('Disconnected from server', 'error');
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            this.isConnected = false;
+            this.showMessage(`Connection error: ${error.message}`, 'error');
+        });
+
+        this.socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            this.showMessage(`Socket error: ${error}`, 'error');
         });
 
         // Game events
