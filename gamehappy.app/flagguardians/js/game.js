@@ -185,8 +185,11 @@ class Game {
         const allScreens = document.querySelectorAll('.screen');
         console.log(`[SHOW SCREEN] Found ${allScreens.length} screens total`);
         
-        allScreens.forEach(screen => {
+        allScreens.forEach((screen, index) => {
+            const wasActive = screen.classList.contains('active');
             screen.classList.remove('active');
+            const isActive = screen.classList.contains('active');
+            console.log(`[SHOW SCREEN] Screen ${index}: ${screen.id} - was active: ${wasActive}, now active: ${isActive}, display: ${window.getComputedStyle(screen).display}`);
         });
 
         // Show selected screen
@@ -194,6 +197,8 @@ class Game {
         if (screen) {
             console.log(`[SHOW SCREEN] Found target screen, adding active class`);
             screen.classList.add('active');
+            const isActive = screen.classList.contains('active');
+            console.log(`[SHOW SCREEN] Target screen ${screenId} - active: ${isActive}, display: ${window.getComputedStyle(screen).display}`);
             this.gameState = screenId;
         } else {
             console.error(`[SHOW SCREEN] Screen not found: ${screenId}`);

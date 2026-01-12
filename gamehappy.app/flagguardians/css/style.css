@@ -44,12 +44,14 @@ body {
 
 /* ===== SCREENS ===== */
 .screen {
-    display: none;
+    display: none !important;
     animation: fadeIn 0.3s ease;
+    visibility: hidden !important;
 }
 
 .screen.active {
-    display: block;
+    display: block !important;
+    visibility: visible !important;
 }
 
 @keyframes fadeIn {
