@@ -164,14 +164,28 @@
             </div>
 
             <div class="game-content">
-                <!-- Map Display -->
-                <div class="map-container">
-                    <canvas id="game-map-canvas" class="game-map"></canvas>
+                <!-- Full Screen Map -->
+                <div class="map-container-fullscreen">
+                    <canvas id="game-map-canvas" class="game-map-fullscreen"></canvas>
                 </div>
 
-                <!-- Game Info Sidebar -->
-                <div class="game-info-panel">
-                    <div class="flag-status">
+                <!-- Overlay Controls -->
+                <div class="game-overlay">
+                    <div class="overlay-section visible-players-overlay">
+                        <h4>Nearby</h4>
+                        <div id="visible-players" class="visible-players-list">
+                            <p class="message-info">Scanning...</p>
+                        </div>
+                    </div>
+
+                    <div class="overlay-section game-log-overlay">
+                        <h4>Updates</h4>
+                        <div id="game-log" class="game-log">
+                            <p class="message-info">Game started!</p>
+                        </div>
+                    </div>
+
+                    <div class="overlay-section flag-status-overlay">
                         <div class="flag-item">
                             <span class="flag-emoji">🚩</span>
                             <p>Your Flag: <span id="flag-status">Secure</span></p>
@@ -179,20 +193,6 @@
                         <div class="flag-item">
                             <span class="flag-emoji">⚔️</span>
                             <p>Enemy Flag: <span id="enemy-flag-status">Defending</span></p>
-                        </div>
-                    </div>
-
-                    <div class="game-messages">
-                        <h4>Nearby Players</h4>
-                        <div id="visible-players" class="visible-players-list">
-                            <p class="message-info">Looking for enemies...</p>
-                        </div>
-                    </div>
-
-                    <div class="game-messages">
-                        <h4>Game Updates</h4>
-                        <div id="game-log" class="game-log">
-                            <p class="message-info">Game started! Click on The Block to move.</p>
                         </div>
                     </div>
                 </div>
