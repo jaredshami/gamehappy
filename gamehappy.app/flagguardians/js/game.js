@@ -113,15 +113,40 @@ class Game {
 
     // ===== EVENT HANDLERS =====
     bindEvents() {
+        console.log('[BIND EVENTS] Starting to bind event listeners');
+        
         // Home screen
-        document.getElementById('btn-create-game').addEventListener('click', () => this.showScreen('create-game-screen'));
-        document.getElementById('btn-join-game').addEventListener('click', () => this.showScreen('join-game-screen'));
-        document.getElementById('btn-how-to-play').addEventListener('click', () => this.showScreen('how-to-play-screen'));
+        const btnCreateGame = document.getElementById('btn-create-game');
+        if (btnCreateGame) {
+            console.log('[BIND EVENTS] Found btn-create-game, binding click listener');
+            btnCreateGame.addEventListener('click', () => {
+                console.log('[BIND EVENTS] btn-create-game clicked');
+                this.showScreen('create-game-screen');
+            });
+        } else {
+            console.error('[BIND EVENTS] btn-create-game NOT FOUND');
+        }
+        
+        const btnJoinGame = document.getElementById('btn-join-game');
+        if (btnJoinGame) {
+            console.log('[BIND EVENTS] Found btn-join-game, binding click listener');
+            btnJoinGame.addEventListener('click', () => this.showScreen('join-game-screen'));
+        } else {
+            console.error('[BIND EVENTS] btn-join-game NOT FOUND');
+        }
+        
+        const btnHowToPlay = document.getElementById('btn-how-to-play');
+        if (btnHowToPlay) {
+            console.log('[BIND EVENTS] Found btn-how-to-play, binding click listener');
+            btnHowToPlay.addEventListener('click', () => this.showScreen('how-to-play-screen'));
+        } else {
+            console.error('[BIND EVENTS] btn-how-to-play NOT FOUND');
+        }
 
         // Navigation
-        document.getElementById('btn-back-create').addEventListener('click', () => this.showScreen('home-screen'));
-        document.getElementById('btn-back-join').addEventListener('click', () => this.showScreen('home-screen'));
-        document.getElementById('btn-back-how-to-play').addEventListener('click', () => this.showScreen('home-screen'));
+        document.getElementById('btn-back-create')?.addEventListener('click', () => this.showScreen('home-screen'));
+        document.getElementById('btn-back-join')?.addEventListener('click', () => this.showScreen('home-screen'));
+        document.getElementById('btn-back-how-to-play')?.addEventListener('click', () => this.showScreen('home-screen'));
 
         // Create/Join Game
         document.getElementById('btn-start-create-game').addEventListener('click', () => this.createGame());
@@ -154,16 +179,24 @@ class Game {
 
     // ===== SCREEN MANAGEMENT =====
     showScreen(screenId) {
+        console.log(`[SHOW SCREEN] Switching to: ${screenId}`);
+        
         // Hide all screens
-        document.querySelectorAll('.screen').forEach(screen => {
+        const allScreens = document.querySelectorAll('.screen');
+        console.log(`[SHOW SCREEN] Found ${allScreens.length} screens total`);
+        
+        allScreens.forEach(screen => {
             screen.classList.remove('active');
         });
 
         // Show selected screen
         const screen = document.getElementById(screenId);
         if (screen) {
+            console.log(`[SHOW SCREEN] Found target screen, adding active class`);
             screen.classList.add('active');
             this.gameState = screenId;
+        } else {
+            console.error(`[SHOW SCREEN] Screen not found: ${screenId}`);
         }
     }
 
