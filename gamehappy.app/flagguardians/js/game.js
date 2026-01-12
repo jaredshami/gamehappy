@@ -115,6 +115,12 @@ class Game {
     bindEvents() {
         console.log('[BIND EVENTS] Starting to bind event listeners');
         
+        // Only bind once
+        if (this.eventsAlreadyBound) {
+            console.log('[BIND EVENTS] Events already bound, skipping');
+            return;
+        }
+        this.eventsAlreadyBound = true;
         // Home screen
         const btnCreateGame = document.getElementById('btn-create-game');
         if (btnCreateGame) {
@@ -419,6 +425,18 @@ class Game {
             hostBadge.style.display = 'block';
         } else {
             hostBadge.style.display = 'none';
+        }
+
+        // Show host controls or waiting message
+        const hostControls = document.getElementById('host-controls');
+        const waitingMessage = document.getElementById('waiting-message');
+        
+        if (this.isHost) {
+            hostControls.style.display = 'block';
+            waitingMessage.style.display = 'none';
+        } else {
+            hostControls.style.display = 'none';
+            waitingMessage.style.display = 'block';
         }
 
         this.updateLobbyTeams();

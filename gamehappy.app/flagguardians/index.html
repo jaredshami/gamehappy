@@ -137,7 +137,12 @@
             </div>
 
             <div class="lobby-controls">
-                <button id="btn-start-game" class="btn btn-primary" disabled>Start Game (Minimum 2 players)</button>
+                <div id="host-controls" style="display: none;">
+                    <button id="btn-start-game" class="btn btn-primary" disabled>Start Game (Minimum 2 players)</button>
+                </div>
+                <div id="waiting-message" style="display: none;">
+                    <p class="waiting-text">⏳ Waiting for the host to start the game...</p>
+                </div>
                 <button id="btn-leave-game" class="btn btn-secondary">Leave Game</button>
             </div>
 

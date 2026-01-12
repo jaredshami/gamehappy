@@ -498,6 +498,17 @@ input::placeholder {
     gap: 12px;
 }
 
+.waiting-text {
+    text-align: center;
+    padding: 16px;
+    background: rgba(59, 126, 255, 0.1);
+    border: 1px solid rgba(59, 126, 255, 0.3);
+    border-radius: 6px;
+    color: var(--blue-light);
+    font-size: 1rem;
+    margin: 0;
+}
+
 /* ===== GAME SCREEN ===== */
 .game-header {
     display: grid;
