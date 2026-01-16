@@ -2118,7 +2118,7 @@ app.get('/test-results', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 8443;
+const PORT = process.env.PORT || 8445;
 
 server.listen(PORT, () => {
   console.log(`[${new Date().toISOString()}] Socket.IO server running at wss://gamehappy.app/websocket`);
