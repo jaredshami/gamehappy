@@ -349,11 +349,46 @@ io.on('connection', (socket) => {
       const result = game.addBotPlayers(botCount);
 
       if (result.success) {
+        // Auto-ready all bots immediately
+        for (const bot of result.botsAdded) {
+          game.setPlayerReady(bot.token);
+        }
+
+        // Get updated game state after bots are ready
+        const gameState = gameServer.getGameStateForPlayer(playerToken);
+
         // Broadcast updated player list to all players in game
         io.to(`game-${gameCode}`).emit('player-joined', {
           game: game.getLobbyInfo(),
           botsAdded: result.botsAdded
         });
+
+        // Broadcast ready status update
+        io.to(`game-${gameCode}`).emit('player-ready-updated', {
+          playerCount: gameState.readyCount,
+          totalPlayers: gameState.totalPlayers,
+          gameState
+        });
+
+        // Check if all players are ready now (including bots) - if so, emit phase-start event
+        if (game.allPlayersReady && typeof game.allPlayersReady === 'function' && game.allPlayersReady()) {
+          console.log(`[${gameCode}] ALL PLAYERS READY (including bots)! Broadcasting on-phase-start to each player`);
+          // All players ready - emit phase-start to trigger game flow
+          // Send to each player with their individual gameState
+          for (const [socketId, playerSocket] of io.sockets.sockets) {
+            const playerToken = playerSocket.handshake.query.token || socketId;
+            
+            if (game.hasPlayer(playerToken)) {
+              const playerGameState = gameServer.getGameStateForPlayer(playerToken);
+              playerSocket.emit('on-phase-start', {
+                phase: 1,
+                phaseState: playerGameState,
+                phaseName: 'Night Phase'
+              });
+              console.log(`[${gameCode}] Sent on-phase-start to player ${playerToken} with role: ${playerGameState.playerRole}`);
+            }
+          }
+        }
 
         console.log(`[${gameCode}] Successfully added ${result.count} bot(s)`);
         callback({ 
