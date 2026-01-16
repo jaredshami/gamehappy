@@ -349,6 +349,13 @@ io.on('connection', (socket) => {
       const result = game.addBotPlayers(botCount);
 
       if (result.success) {
+        // CRITICAL: Assign roles to newly added bots
+        // We need to re-run role assignment to include the new bots
+        const roleResult = game.assignRoles();
+        if (!roleResult.success) {
+          console.warn(`[${gameCode}] Warning: Could not assign roles to bots: ${roleResult.message}`);
+        }
+        
         // Auto-ready all bots immediately
         for (const bot of result.botsAdded) {
           game.setPlayerReady(bot.token);
