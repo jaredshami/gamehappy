@@ -1407,6 +1407,83 @@ io.on('connection', (socket) => {
             console.log(`[${game.gameCode}] Sent on-phase-start to player ${playerToken} with role: ${playerGameState.playerRole}`);
           }
         }
+        
+        // Auto-perform bot actions for current phase
+        console.log(`[${game.gameCode}] Auto-performing bot actions for phase`);
+        const botPlayersPhase = game.getBotPlayers ? game.getBotPlayers() : [];
+        for (const botPlayer of botPlayersPhase) {
+          const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+          const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+          
+          console.log(`[${game.gameCode}] Processing bot ${botPlayer.name} [${botRole}]`);
+          
+          let action = null;
+          
+          // Get bot action based on role and phase
+          if (game.getBotAction) {
+            action = game.getBotAction(botPlayer.token, 'night'); // night phase for getBotAction
+          } else if (game.getBotSyndicateNightAction && botRole === 'Syndicate') {
+            action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+          } else if (game.getBotBodyGuardAction && botRole === 'BodyGuard') {
+            action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+          }
+          
+          // Execute action if bot has one
+          if (action) {
+            console.log(`[${game.gameCode}] Bot ${botPlayer.name} executing action:`, action);
+            if (action.type === 'nightVote') {
+              gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
+              // Broadcast bot action to all players
+              io.to(`game-${game.gameCode}`).emit('game-event', {
+                eventName: 'bot-action-performed',
+                payload: {
+                  playerName: botPlayer.name,
+                  action: 'voted for assassination target'
+                }
+              });
+            } else if (action.type === 'bodyguardProtect') {
+              gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+              // Broadcast bot action to all players
+              io.to(`game-${game.gameCode}`).emit('game-event', {
+                eventName: 'bot-action-performed',
+                payload: {
+                  playerName: botPlayer.name,
+                  action: 'chose protection target'
+                }
+              });
+            }
+          } else {
+            console.log(`[${game.gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for this phase (OK - passive role)`);
+          }
+          
+          // Always mark bot as done - whether they had an action or not
+          if (game.setPlayerDone) {
+            game.setPlayerDone(botPlayer.token);
+            console.log(`[${game.gameCode}] Bot ${botPlayer.name} marked done for phase`);
+            
+            // Broadcast to all players that this bot is done (for UI counter updates)
+            io.to(`game-${game.gameCode}`).emit('player-done-notification', {
+              playerToken: botPlayer.token,
+              playerName: botPlayer.name,
+              isDone: true
+            });
+          }
+        }
+        
+        // Check if all players are done
+        const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+        console.log(`[${game.gameCode}] All players done check: ${allDone}`);
+        
+        if (allDone) {
+          console.log(`[${game.gameCode}] AUTO-ADVANCING PHASE!`);
+          const phaseResult = game.advancePhase();
+          if (phaseResult.success) {
+            io.to(`game-${game.gameCode}`).emit('game-event', {
+              eventName: 'phase-advancing',
+              payload: { fromPhase: game.currentPhase, toPhase: phaseResult.phase }
+            });
+          }
+        }
       } else {
         console.log(`[${game.gameCode}] Not all players ready yet`);
       }
