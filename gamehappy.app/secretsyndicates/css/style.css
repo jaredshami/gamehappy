@@ -2739,3 +2739,172 @@ h3 {
     font-size: 0.85rem;
     font-style: italic;
 }
+
+/* ===== VERDICT RESULT SCREEN ===== */
+.verdict-container {
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.9), rgba(10, 10, 10, 0.9));
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    padding: 30px 20px;
+    margin: 20px 0;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.15);
+}
+
+.verdict-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+}
+
+.verdict-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    color: var(--primary-gold);
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.verdict-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.verdict-accused {
+    text-align: center;
+    padding: 20px;
+    background: rgba(139, 0, 0, 0.1);
+    border: 2px solid rgba(139, 0, 0, 0.4);
+    border-radius: 8px;
+}
+
+.verdict-accused h3 {
+    color: rgba(212, 175, 55, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.accused-name-large {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    color: #ff6b6b;
+    font-weight: bold;
+    margin: 0;
+}
+
+.verdict-votes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.vote-column {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.vote-column.guilty {
+    border-color: rgba(200, 50, 50, 0.6);
+    background-color: rgba(200, 50, 50, 0.1);
+}
+
+.vote-column.guilty h4 {
+    color: #ff6b6b;
+}
+
+.vote-column.not-guilty {
+    border-color: rgba(50, 150, 50, 0.6);
+    background-color: rgba(50, 150, 50, 0.1);
+}
+
+.vote-column.not-guilty h4 {
+    color: #6bff6b;
+}
+
+.vote-column h4 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: var(--primary-gold);
+}
+
+.vote-count {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.vote-column.guilty .vote-count {
+    color: #ff6b6b;
+}
+
+.vote-column.not-guilty .vote-count {
+    color: #6bff6b;
+}
+
+.verdict-result {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    background: rgba(212, 175, 55, 0.05);
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    margin: 15px 0;
+}
+
+.verdict-result h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--primary-gold);
+}
+
+.verdict-result p {
+    font-size: 1rem;
+    color: #ccc;
+    margin: 0;
+}
+
+.verdict-action-section {
+    text-align: center;
+    padding: 20px;
+    background: rgba(212, 175, 55, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+}
+
+.verdict-instruction {
+    color: var(--primary-gold);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#btn-verdict-ready {
+    background: linear-gradient(135deg, var(--primary-gold), rgba(212, 175, 55, 0.8));
+    color: #000;
+    font-weight: bold;
+    padding: 12px 30px;
+    margin: 15px 0;
+}
+
+#btn-verdict-ready:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.9), var(--primary-gold));
+    transform: scale(1.05);
+}
+
+.verdict-ready-status {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 15px;
+}
+
+.verdict-ready-status span {
+    color: var(--primary-gold);
+    font-weight: bold;
+}
+

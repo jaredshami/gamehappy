@@ -311,6 +311,11 @@ class Game {
                 this.onPhase5VoteUpdate(data);
             });
 
+            this.socket.on('verdict-result', (data) => {
+                console.log('Verdict result received:', data);
+                this.displayVerdictScreen(data);
+            });
+
             // Syndicate real-time updates
             this.socket.on('syndicate-recommendations-update', (data) => {
                 console.log('Syndicate recommendations update received:', data);
@@ -2518,6 +2523,100 @@ class Game {
         console.log('Received Phase 5 vote update:', data);
         document.getElementById('guilty-count').textContent = data.guiltyCount || 0;
         document.getElementById('not-guilty-count').textContent = data.notGuiltyCount || 0;
+    }
+
+    displayVerdictScreen(data) {
+        console.log('Displaying verdict screen with data:', data);
+        
+        // Hide phase 5 screen and show verdict screen
+        const phase5Screen = document.getElementById('phase5-screen');
+        const verdictScreen = document.getElementById('verdict-result-screen');
+        
+        if (phase5Screen) phase5Screen.style.display = 'none';
+        if (verdictScreen) verdictScreen.style.display = 'block';
+        
+        // Store verdict ready state for this player
+        this.verdictReady = false;
+        
+        // Update verdict screen with data from server
+        document.getElementById('verdict-accused-name').textContent = data.accusedName || 'Unknown Player';
+        document.getElementById('verdict-guilty-count').textContent = data.guiltyCount || 0;
+        document.getElementById('verdict-not-guilty-count').textContent = data.notGuiltyCount || 0;
+        
+        // Determine verdict outcome
+        const guiltyCount = data.guiltyCount || 0;
+        const notGuiltyCount = data.notGuiltyCount || 0;
+        const totalVotes = guiltyCount + notGuiltyCount;
+        const isGuilty = guiltyCount > notGuiltyCount;
+        
+        const verdictOutcomeEl = document.getElementById('verdict-outcome');
+        const verdictMessageEl = document.getElementById('verdict-message');
+        
+        if (isGuilty) {
+            verdictOutcomeEl.textContent = '🔴 GUILTY - Player Eliminated';
+            verdictOutcomeEl.style.color = '#e94560';
+            verdictMessageEl.textContent = `${data.accusedName} has been found guilty by a vote of ${guiltyCount} to ${notGuiltyCount} and has been imprisoned.`;
+        } else {
+            verdictOutcomeEl.textContent = '🟢 NOT GUILTY - Player Acquitted';
+            verdictOutcomeEl.style.color = '#4ecdc4';
+            verdictMessageEl.textContent = `${data.accusedName} has been found not guilty by a vote of ${notGuiltyCount} to ${guiltyCount} and remains in the game.`;
+        }
+        
+        // Update player ready count
+        document.getElementById('verdict-ready-count').textContent = '0';
+        document.getElementById('verdict-ready-total').textContent = data.totalPlayers || '0';
+        
+        // Setup "I Understand" button
+        const verdictReadyBtn = document.getElementById('btn-verdict-ready');
+        if (verdictReadyBtn) {
+            // Remove any existing click handlers by cloning
+            const newBtn = verdictReadyBtn.cloneNode(true);
+            verdictReadyBtn.parentNode.replaceChild(newBtn, verdictReadyBtn);
+            
+            // Add new click handler
+            newBtn.addEventListener('click', () => this.handleVerdictReady());
+        }
+        
+        // Listen for verdict ready updates
+        this.setupVerdictReadyListener();
+    }
+
+    handleVerdictReady() {
+        if (this.verdictReady) {
+            console.warn('Already marked as ready for verdict');
+            return;
+        }
+        
+        console.log('Player clicked I Understand button');
+        this.verdictReady = true;
+        
+        // Disable button
+        const btn = document.getElementById('btn-verdict-ready');
+        if (btn) btn.disabled = true;
+        
+        // Send verdict-ready message to server
+        this.sendMessage({
+            action: 'verdictReady'
+        });
+    }
+
+    setupVerdictReadyListener() {
+        // Listen for verdict-ready-count updates from server
+        if (this.verdictReadyListener) {
+            this.socket.removeListener('verdict-ready-count', this.verdictReadyListener);
+        }
+        
+        this.verdictReadyListener = (data) => {
+            console.log('Verdict ready count updated:', data);
+            document.getElementById('verdict-ready-count').textContent = data.readyCount || 0;
+            
+            // Check if all players are ready
+            if (data.readyCount >= data.totalPlayers) {
+                console.log('All players ready, waiting for server to advance phase');
+            }
+        };
+        
+        this.socket.on('verdict-ready-count', this.verdictReadyListener);
     }
     
     onPlayerEliminated(data) {

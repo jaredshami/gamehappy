@@ -602,6 +602,46 @@
             </div>
         </div>
 
+        <!-- Verdict Result Screen -->
+        <div id="verdict-result-screen" class="screen" style="display: none;">
+            <div class="verdict-container">
+                <div class="verdict-header">
+                    <h2>⚖️ Trial Verdict</h2>
+                </div>
+                
+                <div class="verdict-content">
+                    <div class="verdict-accused">
+                        <h3>The Accused</h3>
+                        <p id="verdict-accused-name" class="accused-name-large">Player Name</p>
+                    </div>
+
+                    <div class="verdict-votes">
+                        <div class="vote-column guilty">
+                            <h4>🔴 Guilty</h4>
+                            <p class="vote-count" id="verdict-guilty-count">0</p>
+                        </div>
+                        <div class="vote-column not-guilty">
+                            <h4>🟢 Not Guilty</h4>
+                            <p class="vote-count" id="verdict-not-guilty-count">0</p>
+                        </div>
+                    </div>
+
+                    <div class="verdict-result" id="verdict-result-box">
+                        <h3 id="verdict-outcome">GUILTY - Player Eliminated</h3>
+                        <p id="verdict-message">The accused has been found guilty and imprisoned.</p>
+                    </div>
+
+                    <div class="verdict-action-section">
+                        <p class="verdict-instruction">All players must acknowledge the verdict to continue</p>
+                        <button id="btn-verdict-ready" class="btn btn-primary">I Understand</button>
+                        <div class="verdict-ready-status">
+                            <span id="verdict-ready-count">0</span> / <span id="verdict-ready-total">0</span> players acknowledged
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Player Eliminated Screen -->
         <div id="eliminated-screen" class="screen" style="display: none;">
             <div class="eliminated-container">

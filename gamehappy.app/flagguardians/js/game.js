@@ -22,15 +22,6 @@ class Game {
         this.blueScore = 0;
         this.currentRound = 1;
         this.gameStarted = false;
-
-        // Map data
-        this.mapConfig = null;
-        this.houses = null;
-        this.playerPosition = null; // {x, y}
-        this.visiblePlayers = [];
-        this.mapCanvas = null;
-        this.canvasCtx = null;
-        this.animationFrameId = null;
         
         this.init();
     }
@@ -118,10 +109,6 @@ class Game {
         this.socket.on('lobby:player-left', (data) => this.onPlayerLeft(data));
         this.socket.on('game:started', (data) => this.onGameStarted(data));
         this.socket.on('game:error', (data) => this.onGameError(data));
-
-        // Map events
-        this.socket.on('map:players-update', (data) => this.onMapPlayersUpdate(data));
-        this.socket.on('map:visible-players', (data) => this.onVisiblePlayersUpdate(data));
     }
 
     // ===== EVENT HANDLERS =====
@@ -179,12 +166,6 @@ class Game {
 
         // Game
         document.getElementById('btn-leave-mid-game').addEventListener('click', () => this.leaveGame());
-
-        // Map canvas click to move
-        const canvas = document.getElementById('game-map-canvas');
-        if (canvas) {
-            canvas.addEventListener('click', (e) => this.handleMapClick(e));
-        }
 
         // Results
         document.getElementById('btn-play-again').addEventListener('click', () => this.playAgain());
@@ -393,14 +374,6 @@ class Game {
         this.players = data.players;
         this.redTeamPlayers = data.redTeam || [];
         this.blueTeamPlayers = data.blueTeam || [];
-        
-        // Find the host from the players list
-        const hostPlayer = data.players?.find(p => p.isHost);
-        if (hostPlayer) {
-            this.isHost = (hostPlayer.token === this.playerToken);
-            console.log(`[LOBBY UPDATED] Host is: ${hostPlayer.name}, I am host: ${this.isHost}`);
-        }
-        
         this.updateLobbyScreen();
     }
 
@@ -409,14 +382,6 @@ class Game {
         this.players = data.players;
         this.redTeamPlayers = data.redTeam || [];
         this.blueTeamPlayers = data.blueTeam || [];
-        
-        // Find the host from the players list
-        const hostPlayer = data.players?.find(p => p.isHost);
-        if (hostPlayer) {
-            this.isHost = (hostPlayer.token === this.playerToken);
-            console.log(`[PLAYER JOINED] Host is: ${hostPlayer.name}, I am host: ${this.isHost}`);
-        }
-        
         this.updateLobbyTeams();
         this.updatePlayerCount();
     }
@@ -429,14 +394,6 @@ class Game {
         this.players = data.players;
         this.redTeamPlayers = data.redTeam || [];
         this.blueTeamPlayers = data.blueTeam || [];
-        
-        // Find the host from the players list
-        const hostPlayer = data.players?.find(p => p.isHost);
-        if (hostPlayer) {
-            this.isHost = (hostPlayer.token === this.playerToken);
-            console.log(`[PLAYER LEFT] Host is: ${hostPlayer.name}, I am host: ${this.isHost}`);
-        }
-        
         this.updateLobbyTeams();
         this.updatePlayerCount();
     }
@@ -445,492 +402,13 @@ class Game {
         console.log('Game started:', data);
         this.gameStarted = true;
         this.currentRound = 1;
-        
-        // Extract map config from game state
-        this.mapConfig = data.mapConfig || data.gameState?.mapConfig;
-        this.houses = data.houses || data.gameState?.houses;
-        
-        // Set initial player position (will be updated by server)
-        if (data.playerPosition) {
-            this.playerPosition = data.playerPosition;
-        } else {
-            // Default position based on team
-            const startY = this.playerTeam === 'red' ? 100 : 20;
-            this.playerPosition = { x: 60, y: startY };
-        }
-        
-        console.log('Map config:', this.mapConfig);
-        console.log('Initial position:', this.playerPosition);
-        
         this.showScreen('game-screen');
-        this.initializeMapCanvas();
         this.updateGameScreen();
-        this.startMapRendering();
-    }
-
-    onMapPlayersUpdate(data) {
-        console.log('[MAP UPDATE] Players update:', data);
-        // Server notifies that someone moved - we don't need to do anything
-        // Our own position is handled by the move callback
-    }
-
-    onVisiblePlayersUpdate(data) {
-        console.log('[VISIBILITY] Visible players update:', data);
-        this.playerPosition = data.playerPosition;
-        this.visiblePlayers = data.visiblePlayers || [];
-        
-        // Update the visible players list in the UI
-        const visiblePlayersList = document.getElementById('visible-players');
-        if (visiblePlayersList) {
-            if (this.visiblePlayers.length === 0) {
-                visiblePlayersList.innerHTML = '<p class="message-info">No nearby players spotted</p>';
-            } else {
-                visiblePlayersList.innerHTML = this.visiblePlayers
-                    .map(p => `<div class="player-item ${p.team}">${p.name} (${Math.round(p.distance)}m)</div>`)
-                    .join('');
-            }
-        }
     }
 
     onGameError(data) {
         console.error('Game error:', data);
         this.showMessage(data.message || 'Game error occurred', 'error');
-    }
-
-    onMapPlayersUpdate(data) {
-        console.log('Map players update:', data);
-        // This event notifies all clients of player positions
-        // We don't use it directly - we use the map:visible-players instead
-    }
-
-    onVisiblePlayersUpdate(data) {
-        console.log('Visible players:', data);
-        this.visiblePlayers = data.visiblePlayers || [];
-        this.playerPosition = data.playerPosition || this.playerPosition;
-        
-        // Update visible players in UI
-        this.updateVisiblePlayersList();
-    }
-
-    // ===== MAP RENDERING =====
-    initializeMapCanvas() {
-        this.mapCanvas = document.getElementById('game-map-canvas');
-        if (!this.mapCanvas) {
-            console.error('Map canvas not found!');
-            return;
-        }
-        
-        this.canvasCtx = this.mapCanvas.getContext('2d');
-        this.resizeCanvas();
-        
-        // Handle canvas clicks for movement
-        this.mapCanvas.addEventListener('click', (e) => this.handleMapClick(e));
-        window.addEventListener('resize', () => this.resizeCanvas());
-    }
-
-    resizeCanvas() {
-        const container = this.mapCanvas.parentElement;
-        this.mapCanvas.width = container.offsetWidth;
-        this.mapCanvas.height = container.offsetHeight;
-    }
-
-    handleMapClick(event) {
-        if (!this.gameStarted || !this.playerPosition) return;
-
-        const rect = this.mapCanvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
-
-        // Viewport and rendering parameters
-        const viewportWidth = 15;
-        const viewportHeight = 30;
-        const pixelsPerSquareX = this.mapCanvas.width / viewportWidth;
-        const pixelsPerSquareY = this.mapCanvas.height / viewportHeight;
-        const pixelsPerSquare = Math.min(pixelsPerSquareX, pixelsPerSquareY);
-
-        // Calculate camera position
-        const cameraX = this.playerPosition.x - (viewportWidth / 2);
-        const cameraY = this.playerPosition.y - (viewportHeight / 2);
-        const clampedCameraX = Math.max(0, Math.min(cameraX, this.mapConfig.width - viewportWidth));
-        const clampedCameraY = Math.max(0, Math.min(cameraY, this.mapConfig.height - viewportHeight));
-
-        // Convert click position to map coordinates
-        const mapX = Math.floor(clampedCameraX + clickX / pixelsPerSquare);
-        const mapY = Math.floor(clampedCameraY + clickY / pixelsPerSquare);
-
-        // Clamp to map bounds
-        const targetX = Math.max(0, Math.min(mapX, this.mapConfig.width - 1));
-        const targetY = Math.max(0, Math.min(mapY, this.mapConfig.height - 1));
-
-        console.log(`[MAP CLICK] Target position: (${targetX}, ${targetY})`);
-
-        // Send movement to server
-        this.socket.emit('game:move', 
-            { gameCode: this.gameCode, targetX, targetY },
-            (response) => {
-                if (response.success) {
-                    console.log('[MAP CLICK] Move successful:', response.position);
-                    this.playerPosition = response.position;
-                } else {
-                    console.log('[MAP CLICK] Move failed:', response.message);
-                }
-            }
-        );
-    }
-
-    startMapRendering() {
-        const render = () => {
-            this.renderMap();
-            this.animationFrameId = requestAnimationFrame(render);
-        };
-        render();
-    }
-
-    stopMapRendering() {
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = null;
-        }
-    }
-
-    renderMap() {
-        if (!this.canvasCtx || !this.mapConfig || !this.playerPosition) return;
-
-        const ctx = this.canvasCtx;
-        const canvas = this.mapCanvas;
-
-        // Viewport: 15 squares wide by 30 squares tall (you said 15 by 30)
-        const viewportWidth = 15;  // squares
-        const viewportHeight = 30; // squares
-
-        // Calculate pixels per square to fill the screen
-        const pixelsPerSquareX = canvas.width / viewportWidth;
-        const pixelsPerSquareY = canvas.height / viewportHeight;
-        const pixelsPerSquare = Math.min(pixelsPerSquareX, pixelsPerSquareY);
-
-        // Calculate camera position (keep player centered)
-        const cameraX = this.playerPosition.x - (viewportWidth / 2);
-        const cameraY = this.playerPosition.y - (viewportHeight / 2);
-
-        // Clamp camera to map bounds
-        const clampedCameraX = Math.max(0, Math.min(cameraX, this.mapConfig.width - viewportWidth));
-        const clampedCameraY = Math.max(0, Math.min(cameraY, this.mapConfig.height - viewportHeight));
-
-        // Clear canvas with black
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Save context for transformations
-        ctx.save();
-
-        // Draw viewport
-        const mapWidth = this.mapConfig.width;
-        const mapHeight = this.mapConfig.height;
-
-        // Draw background
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Helper function to draw a map region
-        const drawSquare = (x, y, color) => {
-            if (x >= clampedCameraX && x < clampedCameraX + viewportWidth &&
-                y >= clampedCameraY && y < clampedCameraY + viewportHeight) {
-                const screenX = (x - clampedCameraX) * pixelsPerSquare;
-                const screenY = (y - clampedCameraY) * pixelsPerSquare;
-                ctx.fillStyle = color;
-                ctx.fillRect(screenX, screenY, pixelsPerSquare, pixelsPerSquare);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(screenX, screenY, pixelsPerSquare, pixelsPerSquare);
-            }
-        };
-
-        // Draw alleyway (central strip)
-        const alleyStart = this.mapConfig.alleyway.y;
-        const alleyEnd = alleyStart + this.mapConfig.alleyway.height;
-        for (let x = 0; x < mapWidth; x++) {
-            for (let y = alleyStart; y < alleyEnd; y++) {
-                drawSquare(x, y, '#2a2a2a');
-            }
-        }
-
-        // Draw blue territory (top)
-        for (let x = 0; x < mapWidth; x++) {
-            for (let y = 0; y < alleyStart; y++) {
-                drawSquare(x, y, '#001a4d');
-            }
-        }
-
-        // Draw red territory (bottom)
-        for (let x = 0; x < mapWidth; x++) {
-            for (let y = alleyEnd; y < mapHeight; y++) {
-                drawSquare(x, y, '#4d0000');
-            }
-        }
-
-        // Draw houses
-        const drawHouse = (house) => {
-            const color = house.team === 'red' ? '#ff5555' : '#5555ff';
-            // Draw house
-            for (let x = house.x; x < house.x + house.width; x++) {
-                for (let y = house.y; y < house.y + house.yardHeight; y++) {
-                    if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight) {
-                        drawSquare(x, y, color);
-                    }
-                }
-            }
-
-            // Draw house number
-            if (Math.abs(this.playerPosition.x - (house.x + house.width / 2)) < viewportWidth &&
-                Math.abs(this.playerPosition.y - (house.y + house.yardHeight / 2)) < viewportHeight) {
-                const screenX = (house.x - clampedCameraX + 2) * pixelsPerSquare;
-                const screenY = (house.y - clampedCameraY + 2) * pixelsPerSquare;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.font = `${pixelsPerSquare * 0.6}px Arial`;
-                ctx.fillText(`${house.id}`, screenX, screenY + pixelsPerSquare * 0.5);
-            }
-        };
-
-        if (this.houses) {
-            [...this.houses.red, ...this.houses.blue].forEach(drawHouse);
-        }
-
-        // Draw other players
-        for (let vPlayer of this.visiblePlayers) {
-            const color = vPlayer.team === 'red' ? '#ff3b3b' : '#3b7eff';
-            if (vPlayer.position.x >= clampedCameraX && vPlayer.position.x < clampedCameraX + viewportWidth &&
-                vPlayer.position.y >= clampedCameraY && vPlayer.position.y < clampedCameraY + viewportHeight) {
-                const screenX = (vPlayer.position.x - clampedCameraX) * pixelsPerSquare;
-                const screenY = (vPlayer.position.y - clampedCameraY) * pixelsPerSquare;
-                
-                // Draw player circle
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(screenX + pixelsPerSquare / 2, screenY + pixelsPerSquare / 2, pixelsPerSquare / 3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Draw player name label
-                ctx.fillStyle = '#fff';
-                ctx.font = `${pixelsPerSquare * 0.4}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.fillText(vPlayer.name.substring(0, 3), screenX + pixelsPerSquare / 2, screenY + pixelsPerSquare * 1.5);
-            }
-        }
-
-        // Draw player (centered)
-        const screenCenterX = (viewportWidth / 2) * pixelsPerSquare;
-        const screenCenterY = (viewportHeight / 2) * pixelsPerSquare;
-        ctx.fillStyle = this.playerTeam === 'red' ? '#ff3b3b' : '#3b7eff';
-        ctx.beginPath();
-        ctx.arc(screenCenterX, screenCenterY, pixelsPerSquare / 2.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw center crosshair
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(screenCenterX - pixelsPerSquare / 4, screenCenterY);
-        ctx.lineTo(screenCenterX + pixelsPerSquare / 4, screenCenterY);
-        ctx.moveTo(screenCenterX, screenCenterY - pixelsPerSquare / 4);
-        ctx.lineTo(screenCenterX, screenCenterY + pixelsPerSquare / 4);
-        ctx.stroke();
-
-        // Draw grid lines every 5 squares
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 0.5;
-        for (let x = Math.floor(clampedCameraX / 5) * 5; x < clampedCameraX + viewportWidth; x += 5) {
-            const screenX = (x - clampedCameraX) * pixelsPerSquare;
-            ctx.beginPath();
-            ctx.moveTo(screenX, 0);
-            ctx.lineTo(screenX, canvas.height);
-            ctx.stroke();
-        }
-        for (let y = Math.floor(clampedCameraY / 5) * 5; y < clampedCameraY + viewportHeight; y += 5) {
-            const screenY = (y - clampedCameraY) * pixelsPerSquare;
-            ctx.beginPath();
-            ctx.moveTo(0, screenY);
-            ctx.lineTo(canvas.width, screenY);
-            ctx.stroke();
-        }
-
-        ctx.restore();
-    }
-        const alley = this.mapConfig.alleyway;
-        ctx.fillStyle = '#444';
-        ctx.fillRect(alley.x, alley.y, alley.width, alley.height);
-        ctx.strokeStyle = '#666';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(alley.x, alley.y, alley.width, alley.height);
-
-        // Draw team territories
-        ctx.fillStyle = 'rgba(255, 59, 59, 0.08)';
-        const redTerritory = this.mapConfig.redTerritory;
-        ctx.fillRect(redTerritory.x, redTerritory.y, redTerritory.width, redTerritory.height);
-
-        ctx.fillStyle = 'rgba(59, 126, 255, 0.08)';
-        const blueTerritory = this.mapConfig.blueTerritory;
-        ctx.fillRect(blueTerritory.x, blueTerritory.y, blueTerritory.width, blueTerritory.height);
-
-        // Draw houses
-        if (this.houses) {
-            this.drawHouses(ctx);
-        }
-
-        // Draw visible players
-        this.drawVisiblePlayers(ctx);
-
-        // Draw player (self)
-        this.drawPlayerMarker(ctx, this.playerPosition?.x || 60, this.playerPosition?.y || 60, true);
-
-        // Draw grid (optional - for debugging)
-        this.drawGrid(ctx, mapWidth, mapHeight);
-
-        ctx.restore();
-    }
-
-    drawHouses(ctx) {
-        const drawHouse = (house, color) => {
-            ctx.fillStyle = color;
-            ctx.fillRect(house.x, house.y, house.width, house.yardHeight);
-            ctx.strokeStyle = this.playerTeam === house.team ? '#ff9f3b' : '#3b7eff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(house.x, house.y, house.width, house.yardHeight);
-
-            // Draw house label
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 2px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`H${house.id}`, house.x + house.width / 2, house.y + 4);
-
-            // Draw floors indicator for multi-story
-            if (house.stories > 1) {
-                ctx.fillStyle = '#f39c12';
-                ctx.font = '1px Arial';
-                ctx.fillText(`${house.stories}F`, house.x + house.width / 2, house.y + 2);
-            }
-        };
-
-        if (this.houses.red) {
-            this.houses.red.forEach(house => drawHouse(house, 'rgba(255, 59, 59, 0.2)'));
-        }
-        if (this.houses.blue) {
-            this.houses.blue.forEach(house => drawHouse(house, 'rgba(59, 126, 255, 0.2)'));
-        }
-    }
-
-    drawVisiblePlayers(ctx) {
-        for (let player of this.visiblePlayers) {
-            const color = player.team === 'red' ? '#ff3b3b' : '#3b7eff';
-            this.drawPlayerMarker(ctx, player.position.x, player.position.y, false, color, player.name);
-        }
-    }
-
-    drawPlayerMarker(ctx, x, y, isSelf = false, color = null, label = null) {
-        const actualColor = color || (this.playerTeam === 'red' ? '#ff9f3b' : '#6ba3ff');
-        
-        ctx.fillStyle = actualColor;
-        ctx.beginPath();
-        ctx.arc(x, y, isSelf ? 1.5 : 1, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw outline
-        ctx.strokeStyle = isSelf ? '#fff' : actualColor;
-        ctx.lineWidth = isSelf ? 0.5 : 0.3;
-        ctx.stroke();
-
-        // Draw name if available
-        if (label) {
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 1px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(label, x, y - 2);
-        }
-    }
-
-    drawGrid(ctx, mapWidth, mapHeight) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 0.2;
-
-        // Vertical lines
-        for (let x = 0; x <= mapWidth; x += 10) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, mapHeight);
-            ctx.stroke();
-        }
-
-        // Horizontal lines
-        for (let y = 0; y <= mapHeight; y += 10) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(mapWidth, y);
-            ctx.stroke();
-        }
-    }
-
-    handleMapClick(event) {
-        if (!this.gameStarted || !this.mapCanvas) return;
-
-        const rect = this.mapCanvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
-
-        // Convert canvas coordinates to map coordinates
-        const mapWidth = this.mapConfig.width;
-        const mapHeight = this.mapConfig.height;
-        const zoomLevel = Math.min(
-            this.mapCanvas.width / (mapWidth * 1.2),
-            this.mapCanvas.height / (mapHeight * 1.2)
-        );
-        
-        const offsetX = this.mapCanvas.width / 2 - (this.playerPosition?.x || 60) * zoomLevel;
-        const offsetY = this.mapCanvas.height / 2 - (this.playerPosition?.y || 60) * zoomLevel;
-
-        const targetX = (clickX - offsetX) / zoomLevel;
-        const targetY = (clickY - offsetY) / zoomLevel;
-
-        // Emit movement command
-        this.moveToPosition(targetX, targetY);
-    }
-
-    moveToPosition(targetX, targetY) {
-        if (!this.gameCode || !this.playerToken) return;
-
-        // Clamp to map bounds
-        targetX = Math.max(0, Math.min(targetX, this.mapConfig.width - 1));
-        targetY = Math.max(0, Math.min(targetY, this.mapConfig.height - 1));
-
-        this.socket.emit('game:move',
-            {
-                gameCode: this.gameCode,
-                playerToken: this.playerToken,
-                targetX: Math.round(targetX),
-                targetY: Math.round(targetY)
-            },
-            (response) => {
-                if (response.success) {
-                    this.playerPosition = response.position;
-                } else {
-                    console.log('Move failed:', response.message);
-                }
-            }
-        );
-    }
-
-    updateVisiblePlayersList() {
-        const list = document.getElementById('visible-players');
-        if (!list) return;
-
-        if (this.visiblePlayers.length === 0) {
-            list.innerHTML = '<p class="message-info">No enemies nearby...</p>';
-            return;
-        }
-
-        list.innerHTML = this.visiblePlayers.map(player => `
-            <div class="player-item ${player.team === 'red' ? 'enemy' : 'ally'}">
-                ${player.team === 'red' ? '🔴' : '🔵'} ${player.name} (${player.distance}m)
-            </div>
-        `).join('');
     }
 
     // ===== UI UPDATE FUNCTIONS =====
@@ -947,18 +425,6 @@ class Game {
             hostBadge.style.display = 'block';
         } else {
             hostBadge.style.display = 'none';
-        }
-
-        // Show host controls or waiting message
-        const hostControls = document.getElementById('host-controls');
-        const waitingMessage = document.getElementById('waiting-message');
-        
-        if (this.isHost) {
-            hostControls.style.display = 'block';
-            waitingMessage.style.display = 'none';
-        } else {
-            hostControls.style.display = 'none';
-            waitingMessage.style.display = 'block';
         }
 
         this.updateLobbyTeams();
@@ -1027,38 +493,35 @@ class Game {
     }
 
     updateGameScreen() {
-        // Update header with team scores (these elements exist in new layout)
-        const redScore = document.getElementById('red-score');
-        const blueScore = document.getElementById('blue-score');
-        const currentRound = document.getElementById('current-round');
+        // Update header with team scores
+        document.getElementById('red-score').textContent = this.redScore;
+        document.getElementById('blue-score').textContent = this.blueScore;
+        document.getElementById('current-round').textContent = this.currentRound;
+
+        // Update team display
+        const teamEmoji = this.playerTeam === 'red' ? '🔴' : '🔵';
+        const teamColor = this.playerTeam === 'red' ? 'Red' : 'Blue';
+        document.getElementById('my-team-display').textContent = `${teamEmoji} ${teamColor}`;
+
+        // Update my team players
+        const myTeamPlayers = this.playerTeam === 'red' ? this.redTeamPlayers : this.blueTeamPlayers;
+        const myTeamList = document.getElementById('my-team-players');
         
-        if (redScore) redScore.textContent = this.redScore;
-        if (blueScore) blueScore.textContent = this.blueScore;
-        if (currentRound) currentRound.textContent = this.currentRound;
-
-        // Update visible players list
-        const visiblePlayersList = document.getElementById('visible-players');
-        if (visiblePlayersList) {
-            if (this.visiblePlayers.length === 0) {
-                visiblePlayersList.innerHTML = '<p class="message-info">No nearby players spotted</p>';
-            } else {
-                visiblePlayersList.innerHTML = this.visiblePlayers
-                    .map(p => `<div class="player-item ${p.team}">${p.name} (${Math.round(p.distance)}m)</div>`)
-                    .join('');
-            }
+        if (myTeamPlayers.length === 0) {
+            myTeamList.innerHTML = '<p>No teammates</p>';
+        } else {
+            myTeamList.innerHTML = myTeamPlayers
+                .map(p => `<div class="player-item">${p.name}</div>`)
+                .join('');
         }
 
-        // Update game log
+        // Placeholder game log
         const gameLog = document.getElementById('game-log');
-        if (gameLog) {
-            const lastLog = gameLog.innerHTML || '';
-            if (!lastLog.includes('Game started')) {
-                gameLog.innerHTML = `
-                    <p class="message-info">🎮 Game started! Click on the map to move.</p>
-                    <p class="message-info">👀 Enemies are only visible if nearby and in line of sight.</p>
-                `;
-            }
-        }
+        gameLog.innerHTML = `
+            <p class="message-info">🎮 Game started! Defend your flag and capture the enemy flag!</p>
+            <p class="message-info">🔴 Red Team is ready to battle!</p>
+            <p class="message-info">🔵 Blue Team is ready to battle!</p>
+        `;
     }
 
     playAgain() {

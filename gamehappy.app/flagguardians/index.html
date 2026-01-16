@@ -137,12 +137,7 @@
             </div>
 
             <div class="lobby-controls">
-                <div id="host-controls" style="display: none;">
-                    <button id="btn-start-game" class="btn btn-primary" disabled>Start Game (Minimum 2 players)</button>
-                </div>
-                <div id="waiting-message" style="display: none;">
-                    <p class="waiting-text">⏳ Waiting for the host to start the game...</p>
-                </div>
+                <button id="btn-start-game" class="btn btn-primary" disabled>Start Game (Minimum 2 players)</button>
                 <button id="btn-leave-game" class="btn btn-secondary">Leave Game</button>
             </div>
 
@@ -164,28 +159,15 @@
             </div>
 
             <div class="game-content">
-                <!-- Full Screen Map -->
-                <div class="map-container-fullscreen">
-                    <canvas id="game-map-canvas" class="game-map-fullscreen"></canvas>
+                <div class="my-team-section">
+                    <h3>Your Team (<span id="my-team-display">---</span>)</h3>
+                    <div class="players-list" id="my-team-players">
+                        <p>Loading...</p>
+                    </div>
                 </div>
 
-                <!-- Overlay Controls -->
-                <div class="game-overlay">
-                    <div class="overlay-section visible-players-overlay">
-                        <h4>Nearby</h4>
-                        <div id="visible-players" class="visible-players-list">
-                            <p class="message-info">Scanning...</p>
-                        </div>
-                    </div>
-
-                    <div class="overlay-section game-log-overlay">
-                        <h4>Updates</h4>
-                        <div id="game-log" class="game-log">
-                            <p class="message-info">Game started!</p>
-                        </div>
-                    </div>
-
-                    <div class="overlay-section flag-status-overlay">
+                <div class="game-actions">
+                    <div class="flag-status">
                         <div class="flag-item">
                             <span class="flag-emoji">🚩</span>
                             <p>Your Flag: <span id="flag-status">Secure</span></p>
@@ -194,6 +176,13 @@
                             <span class="flag-emoji">⚔️</span>
                             <p>Enemy Flag: <span id="enemy-flag-status">Defending</span></p>
                         </div>
+                    </div>
+                </div>
+
+                <div class="game-messages">
+                    <h4>Game Updates</h4>
+                    <div id="game-log" class="game-log">
+                        <p class="message-info">Game started!</p>
                     </div>
                 </div>
             </div>

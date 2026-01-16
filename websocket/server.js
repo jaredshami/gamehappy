@@ -786,9 +786,52 @@ io.on('connection', (socket) => {
           console.log(`[${game.gameCode}] trial-vote check: votes=${trialVotes}, alivePlayers=${alivePlayers.length}, allVoted=${allVoted}`);
           
           if (allVoted) {
-            console.log(`[${game.gameCode}] ALL PLAYERS VOTED ON VERDICT! Advancing to next phase from ${game.currentPhase}`);
+            console.log(`[${game.gameCode}] ALL PLAYERS VOTED ON VERDICT! Sending verdict result to all players`);
             
-            // Advance the phase (which will execute the verdict)
+            // Calculate verdict result BEFORE advancing phase
+            const notGuiltyCount = trialVotes - guiltyVotes;
+            const isGuilty = guiltyVotes > notGuiltyCount;
+            const accusedName = game.accusedPlayer ? 
+              (game.getPlayers().find(p => p.token === game.accusedPlayer)?.name || 'Unknown') : 'Unknown';
+            
+            // Emit verdict result to all players
+            io.sockets.emit('verdict-result', {
+              accusedName: accusedName,
+              guiltyCount: guiltyVotes,
+              notGuiltyCount: notGuiltyCount,
+              totalPlayers: alivePlayers.length,
+              isGuilty: isGuilty,
+              round: game.currentRound
+            });
+            console.log(`[${game.gameCode}] Emitted verdict-result: ${accusedName} - ${guiltyVotes} guilty, ${notGuiltyCount} not guilty`);
+            
+            // Initialize verdict ready tracking for all players
+            game.verdictReadyPlayers = new Set();
+            console.log(`[${game.gameCode}] Initialized verdictReadyPlayers tracking`);
+          }
+        } else if (eventName === 'verdictReady') {
+          // Player acknowledged the verdict and clicked "I Understand"
+          const pToken = socket.handshake.query.token || socket.id;
+          const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+          
+          if (!game.verdictReadyPlayers) {
+            game.verdictReadyPlayers = new Set();
+          }
+          
+          game.verdictReadyPlayers.add(pToken);
+          console.log(`[${game.gameCode}] Player ${pToken} acknowledged verdict. Ready: ${game.verdictReadyPlayers.size}/${alivePlayers.length}`);
+          
+          // Broadcast updated count to all players
+          io.sockets.emit('verdict-ready-count', {
+            readyCount: game.verdictReadyPlayers.size,
+            totalPlayers: alivePlayers.length
+          });
+          
+          // Check if all players are ready
+          if (game.verdictReadyPlayers.size >= alivePlayers.length) {
+            console.log(`[${game.gameCode}] ALL PLAYERS ACKNOWLEDGED VERDICT! Advancing to next phase from ${game.currentPhase}`);
+            
+            // Advance the phase (which will execute the verdict and start next round)
             const phaseResult = game.advancePhase();
             if (phaseResult.success) {
               console.log(`[${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
@@ -916,6 +959,9 @@ io.on('connection', (socket) => {
               // Clear elimination trackers
               game.murderEliminatedPlayer = null;
               game.verdictEliminatedPlayer = null;
+              
+              // Clear verdict ready players
+              game.verdictReadyPlayers = new Set();
               
               // Clear playersDone tracker so alive players can mark done for next phase
               // If we don't clear this, the server will be waiting for eliminated players
@@ -1057,7 +1103,6 @@ io.on('connection', (socket) => {
         const gameCode = result.gameCode;
         console.log(`[GAME:CREATE] Game created successfully with code: ${gameCode}`);
         socket.join(`game-${gameCode}`);
-        socket.join(`player-${playerToken}`); // Join player-specific room for visibility updates
 
         // Broadcast game created event
         io.to(`game-${gameCode}`).emit('game:created', {
@@ -1097,18 +1142,13 @@ io.on('connection', (socket) => {
       
       if (result.success) {
         socket.join(`game-${gameCode}`);
-        socket.join(`player-${playerToken}`); // Join player-specific room for visibility updates
 
         // Broadcast player joined
         const game = gameServer.getGame(gameCode);
-        const playersWithHost = result.game.players.map(p => ({
-          ...p,
-          isHost: p.token === game.host
-        }));
         io.to(`game-${gameCode}`).emit('lobby:player-joined', {
           playerName,
           playerToken,
-          players: playersWithHost,
+          players: result.game.players,
           redTeam: game.redTeam,
           blueTeam: game.blueTeam
         });
@@ -1145,12 +1185,8 @@ io.on('connection', (socket) => {
       
       if (result.success) {
         // Broadcast team selection
-        const playersWithHost = game.getPlayers().map(p => ({
-          ...p,
-          isHost: p.token === game.host
-        }));
         io.to(`game-${gameCode}`).emit('lobby:updated', {
-          players: playersWithHost,
+          players: game.getPlayers(),
           redTeam: game.redTeam,
           blueTeam: game.blueTeam,
           currentPhase: game.currentPhase
@@ -1190,8 +1226,6 @@ io.on('connection', (socket) => {
         // Broadcast game started
         io.to(`game-${gameCode}`).emit('game:started', {
           gameState: result.gameState,
-          mapConfig: game.mapConfig,
-          houses: game.houses,
           redTeam: game.redTeam,
           blueTeam: game.blueTeam,
           currentRound: game.currentRound
@@ -1223,13 +1257,9 @@ io.on('connection', (socket) => {
           gameServer.games.delete(gameCode);
         } else {
           // Notify remaining players
-          const playersWithHost = game.getPlayers().map(p => ({
-            ...p,
-            isHost: p.token === game.host
-          }));
           io.to(`game-${gameCode}`).emit('lobby:player-left', {
             playerToken,
-            players: playersWithHost,
+            players: game.getPlayers(),
             redTeam: game.redTeam,
             blueTeam: game.blueTeam,
             isHost: game.host
@@ -1240,58 +1270,6 @@ io.on('connection', (socket) => {
       callback({ success: true });
     } catch (err) {
       console.error('Error leaving game:', err);
-      callback({ success: false, message: 'Server error' });
-    }
-  });
-
-  /**
-   * Player moves on map (Flag Guardians)
-   */
-  socket.on('game:move', (data, callback) => {
-    try {
-      const { gameCode, targetX, targetY } = data;
-      const game = gameServer.getGame(gameCode);
-
-      if (!game) {
-        callback({ success: false, message: 'Game not found' });
-        return;
-      }
-
-      // Validate game type
-      if (game.gameType !== 'flagguardians') {
-        callback({ success: false, message: 'Invalid game type' });
-        return;
-      }
-
-      // Move player
-      const result = game.movePlayer(playerToken, targetX, targetY);
-      
-      if (result.success) {
-        callback({ success: true, position: result.position });
-        
-        // Get visible players for all players in the game
-        const allPlayers = game.getPlayers();
-        for (let player of allPlayers) {
-          const visiblePlayers = game.getVisiblePlayers(player.token);
-          const playerPos = game.playerPositions.get(player.token);
-          
-          // Send visible players update to this player
-          io.to(`player-${player.token}`).emit('map:visible-players', {
-            playerPosition: playerPos,
-            visiblePlayers: visiblePlayers
-          });
-        }
-
-        // Broadcast that a player moved (without position info to non-visible players)
-        io.to(`game-${gameCode}`).emit('map:players-update', {
-          playerToken,
-          moved: true
-        });
-      } else {
-        callback({ success: false, message: result.message });
-      }
-    } catch (err) {
-      console.error('Error moving player:', err);
       callback({ success: false, message: 'Server error' });
     }
   });
