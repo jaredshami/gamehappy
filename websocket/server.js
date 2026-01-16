@@ -422,6 +422,26 @@ io.on('connection', (socket) => {
                   console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
                 }
               }
+              
+              // Mark bot as done with this phase
+              if (game.setPlayerDone) {
+                game.setPlayerDone(botPlayer.token);
+                console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
+                
+                // Check if all players are now done
+                const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                if (allDone) {
+                  console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                  const phaseResult = game.advancePhase();
+                  if (phaseResult.success) {
+                    // Emit phase advancement to all players (same logic as player-done handler)
+                    io.to(`game-${gameCode}`).emit('game-event', {
+                      eventName: 'phase-advancing',
+                      payload: { fromPhase: game.currentPhase, toPhase: phaseResult.phase }
+                    });
+                  }
+                }
+              }
             }, 2000 + Math.random() * 1000);
           }
         }
@@ -783,6 +803,26 @@ io.on('connection', (socket) => {
                       });
                       console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
                     }
+                    
+                    // Mark bot as done with this phase
+                    if (game.setPlayerDone) {
+                      game.setPlayerDone(botPlayer.token);
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
+                      
+                      // Check if all players are now done
+                      const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                      if (allDone) {
+                        console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                        const phaseResult2 = game.advancePhase();
+                        if (phaseResult2.success) {
+                          // Trigger the same phase advancement logic as player-done event
+                          io.to(`game-${gameCode}`).emit('game-event', {
+                            eventName: 'phase-advancing',
+                            payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
+                          });
+                        }
+                      }
+                    }
                   }
                 }, 2000 + Math.random() * 1000); // 2-3 second delay
               }
@@ -990,6 +1030,26 @@ io.on('connection', (socket) => {
                         payload: { vote: action.vote }
                       });
                       console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                    }
+                    
+                    // Mark bot as done with this phase
+                    if (game.setPlayerDone) {
+                      game.setPlayerDone(botPlayer.token);
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
+                      
+                      // Check if all players are now done
+                      const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                      if (allDone) {
+                        console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                        const phaseResult2 = game.advancePhase();
+                        if (phaseResult2.success) {
+                          // Trigger the same phase advancement logic as player-done event
+                          io.to(`game-${gameCode}`).emit('game-event', {
+                            eventName: 'phase-advancing',
+                            payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
+                          });
+                        }
+                      }
                     }
                   }
                 }, 2000 + Math.random() * 1000); // 2-3 second delay
@@ -1245,6 +1305,26 @@ io.on('connection', (socket) => {
                         payload: { vote: action.vote }
                       });
                       console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                    }
+                    
+                    // Mark bot as done with this phase
+                    if (game.setPlayerDone) {
+                      game.setPlayerDone(botPlayer.token);
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
+                      
+                      // Check if all players are now done
+                      const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                      if (allDone) {
+                        console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                        const phaseResult2 = game.advancePhase();
+                        if (phaseResult2.success) {
+                          // Trigger the same phase advancement logic as player-done event
+                          io.to(`game-${gameCode}`).emit('game-event', {
+                            eventName: 'phase-advancing',
+                            payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
+                          });
+                        }
+                      }
                     }
                   }
                 }, 2000 + Math.random() * 1000); // 2-3 second delay

@@ -66,9 +66,36 @@ class Game {
         
         this.bindEvents();
         
-        // Show rejoin screen if there's an active session
+        // Auto-rejoin silently if there's an active session (don't show rejoin screen)
         if (!testToken && !this.isConnected) {
-            this.showRejoinScreenIfAvailable();
+            const sessionData = this.getSessionData();
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    // Check if session is recent (within 24 hours)
+                    const sessionAge = Date.now() - (session.createdAt || 0);
+                    const dayInMs = 24 * 60 * 60 * 1000;
+                    
+                    if (sessionAge < dayInMs) {
+                        // Valid session - load it and auto-reconnect after connection
+                        this.playerToken = session.playerToken;
+                        this.gameCode = session.gameCode;
+                        this.playerName = session.playerName;
+                        console.log(`[AUTO-REJOIN] Loaded session for ${this.playerName} in game ${this.gameCode}`);
+                        // Will auto-reconnect in connect() when socket connects
+                    } else {
+                        // Session expired - show home screen
+                        this.clearSession();
+                        this.showScreen('home-screen');
+                    }
+                } catch (e) {
+                    console.error('Error parsing session:', e);
+                    this.showScreen('home-screen');
+                }
+            } else {
+                // No session - show home screen
+                this.showScreen('home-screen');
+            }
         }
         
         this.connect();
