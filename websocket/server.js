@@ -407,19 +407,11 @@ io.on('connection', (socket) => {
               
               if (action) {
                 if (action.type === 'nightVote') {
-                  io.to(`game-${gameCode}`).emit('game-event', {
-                    playerToken: botPlayer.token,
-                    eventName: 'night-vote',
-                    payload: { target: action.target }
-                  });
-                  console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                  const result = gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
+                  console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`, result);
                 } else if (action.type === 'bodyguardProtect') {
-                  io.to(`game-${gameCode}`).emit('game-event', {
-                    playerToken: botPlayer.token,
-                    eventName: 'bodyguard-protect',
-                    payload: { targetToken: action.target }
-                  });
-                  console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                  const result = gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+                  console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`, result);
                 }
               }
               
@@ -822,8 +814,6 @@ io.on('connection', (socket) => {
                           });
                         }
                       }
-                    }
-                  }
                 }, 2000 + Math.random() * 1000); // 2-3 second delay
               }
               
@@ -1003,33 +993,17 @@ io.on('connection', (socket) => {
                   // Emit the bot action
                   if (action) {
                     if (action.type === 'nightVote') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'night-vote',
-                        payload: { target: action.target }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`, result);
                     } else if (action.type === 'bodyguardProtect') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'bodyguard-protect',
-                        payload: { targetToken: action.target }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`, result);
                     } else if (action.type === 'accusationVote') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'accusation-vote',
-                        payload: { target: action.target }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'accusation-vote', { target: action.target });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`, result);
                     } else if (action.type === 'trialVote') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'trial-vote',
-                        payload: { vote: action.vote }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'trial-vote', { vote: action.vote });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`, result);
                     }
                     
                     // Mark bot as done with this phase
@@ -1278,33 +1252,17 @@ io.on('connection', (socket) => {
                   // Emit the bot action
                   if (action) {
                     if (action.type === 'nightVote') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'night-vote',
-                        payload: { target: action.target }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`, result);
                     } else if (action.type === 'bodyguardProtect') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'bodyguard-protect',
-                        payload: { targetToken: action.target }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`, result);
                     } else if (action.type === 'accusationVote') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'accusation-vote',
-                        payload: { target: action.target }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'accusation-vote', { target: action.target });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`, result);
                     } else if (action.type === 'trialVote') {
-                      io.to(`game-${gameCode}`).emit('game-event', {
-                        playerToken: botPlayer.token,
-                        eventName: 'trial-vote',
-                        payload: { vote: action.vote }
-                      });
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                      const result = gameServer.handleGameEvent(botPlayer.token, 'trial-vote', { vote: action.vote });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`, result);
                     }
                     
                     // Mark bot as done with this phase
