@@ -392,45 +392,47 @@ io.on('connection', (socket) => {
           // Auto-perform bot actions for night phase (phase 1)
           const botPlayersNight = game.getBotPlayers ? game.getBotPlayers() : [];
           for (const botPlayer of botPlayersNight) {
-            console.log(`[${gameCode}] Auto-performing night action for bot ${botPlayer.name} (${botPlayer.token})`);
             const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
             const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
             
+            console.log(`[${gameCode}] Processing bot ${botPlayer.name} [${botRole}]`);
+            
             let action = null;
             
-            // Use getBotAction if available (preferred approach)
+            // Get bot action based on role and phase
             if (game.getBotAction) {
-              action = game.getBotAction(botPlayer.token, 1); // phase 1 = night phase
-            } else {
-              // Fallback to specific methods
-              if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
-                action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-              } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
-                action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
-              }
+              action = game.getBotAction(botPlayer.token, 'night'); // night phase for getBotAction
+            } else if (game.getBotSyndicateNightAction && botRole === 'Syndicate') {
+              action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+            } else if (game.getBotBodyGuardAction && botRole === 'BodyGuard') {
+              action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
             }
             
+            // Execute action if bot has one
             if (action) {
+              console.log(`[${gameCode}] Bot ${botPlayer.name} executing action:`, action);
               if (action.type === 'nightVote') {
-                const result = gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
-                console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`, result);
+                gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
               } else if (action.type === 'bodyguardProtect') {
-                const result = gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
-                console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`, result);
+                gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
               }
+            } else {
+              console.log(`[${gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for night phase (OK - passive role)`);
             }
             
-            // Always mark bot as done with this phase AFTER making decision
+            // Always mark bot as done - whether they had an action or not
             if (game.setPlayerDone) {
               game.setPlayerDone(botPlayer.token);
-              console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
+              console.log(`[${gameCode}] Bot ${botPlayer.name} marked done for phase`);
             }
           }
           
-          // After all bots have made decisions and marked themselves done, check if all players are ready
+          // Check if all players are done
           const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+          console.log(`[${gameCode}] All players done check: ${allDone}`);
+          
           if (allDone) {
-            console.log(`[${gameCode}] ALL PLAYERS DONE (including all bots)! Auto-advancing phase`);
+            console.log(`[${gameCode}] AUTO-ADVANCING PHASE!`);
             const phaseResult = game.advancePhase();
             if (phaseResult.success) {
               io.to(`game-${gameCode}`).emit('game-event', {
