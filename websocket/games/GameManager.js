@@ -134,17 +134,22 @@ class GameManager {
             'Specter', 'Whisper', 'Wraith', 'Shade', 'Reaper', 'Oracle', 'Sentinel'
         ];
         
-        const addedBots = [];
-        let attemptedCount = 0;
-        
-        for (let i = 0; i < count && attemptedCount < count * 2; i++) {
-            attemptedCount++;
-            
-            // Generate unique bot name
-            let botName = botNames[i % botNames.length];
-            if (i >= botNames.length) {
-                botName += ` ${Math.floor(i / botNames.length)}`;
+        // Get existing bot names to avoid duplicates
+        const existingBotNames = new Set();
+        for (const player of this.players.values()) {
+            if (player.isBot) {
+                existingBotNames.add(player.name);
             }
+        }
+        
+        // Find available names
+        const availableNames = botNames.filter(name => !existingBotNames.has(name));
+        
+        const addedBots = [];
+        
+        for (let i = 0; i < count && availableNames.length > 0; i++) {
+            // Get next available bot name
+            const botName = availableNames.shift();
             
             // Generate unique token for bot
             const botToken = `bot_${this.gameCode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

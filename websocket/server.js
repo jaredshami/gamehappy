@@ -388,6 +388,42 @@ io.on('connection', (socket) => {
               console.log(`[${gameCode}] Sent on-phase-start to player ${playerToken} with role: ${playerGameState.playerRole}`);
             }
           }
+          
+          // Auto-perform bot actions for night phase (phase 1)
+          const botPlayersNight = game.getBotPlayers ? game.getBotPlayers() : [];
+          for (const botPlayer of botPlayersNight) {
+            setTimeout(() => {
+              console.log(`[${gameCode}] Auto-performing night action for bot ${botPlayer.name} (${botPlayer.token})`);
+              const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+              const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+              
+              let action = null;
+              
+              if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+              } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+              }
+              
+              if (action) {
+                if (action.type === 'nightVote') {
+                  io.to(`game-${gameCode}`).emit('game-event', {
+                    playerToken: botPlayer.token,
+                    eventName: 'night-vote',
+                    payload: { target: action.target }
+                  });
+                  console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                } else if (action.type === 'bodyguardProtect') {
+                  io.to(`game-${gameCode}`).emit('game-event', {
+                    playerToken: botPlayer.token,
+                    eventName: 'bodyguard-protect',
+                    payload: { targetToken: action.target }
+                  });
+                  console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                }
+              }
+            }, 2000 + Math.random() * 1000);
+          }
         }
 
         console.log(`[${gameCode}] Successfully added ${result.count} bot(s)`);
@@ -693,6 +729,64 @@ io.on('connection', (socket) => {
                 }
               }
               
+              // Auto-perform bot actions for the new phase
+              const botPlayers = game.getBotPlayers ? game.getBotPlayers() : [];
+              for (const botPlayer of botPlayers) {
+                // Schedule bot action after a small delay to simulate thinking
+                setTimeout(() => {
+                  console.log(`[${game.gameCode}] Auto-performing action for bot ${botPlayer.name} (${botPlayer.token}) in phase ${phaseResult.phase}`);
+                  const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+                  const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+                  
+                  let action = null;
+                  
+                  if (phaseResult.phase === 'night') {
+                    if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                      action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                    } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                      action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                    }
+                  } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
+                    action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
+                  } else if (phaseResult.phase === 'verdict' && game.getBotTrialVote) {
+                    action = game.getBotTrialVote(botPlayer.token, alivePlayers);
+                  }
+                  
+                  // Emit the bot action
+                  if (action) {
+                    if (action.type === 'nightVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'night-vote',
+                        payload: { target: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                    } else if (action.type === 'bodyguardProtect') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'bodyguard-protect',
+                        payload: { targetToken: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                    } else if (action.type === 'accusationVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'accusation-vote',
+                        payload: { target: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`);
+                    } else if (action.type === 'trialVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'trial-vote',
+                        payload: { vote: action.vote }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                    }
+                  }
+                }, 2000 + Math.random() * 1000); // 2-3 second delay
+              }
+              
               // Clear playersDone for the new phase
               game.playersDone.clear();
               console.log(`[${game.gameCode}] Cleared playersDone tracker for new phase (from player-done)`);
@@ -841,6 +935,64 @@ io.on('connection', (socket) => {
                     console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${pToken}`);
                   }
                 }
+              }
+              
+              // Auto-perform bot actions for the new phase
+              const botPlayers = game.getBotPlayers ? game.getBotPlayers() : [];
+              for (const botPlayer of botPlayers) {
+                // Schedule bot action after a small delay to simulate thinking
+                setTimeout(() => {
+                  console.log(`[${game.gameCode}] Auto-performing action for bot ${botPlayer.name} (${botPlayer.token}) in phase ${phaseResult.phase}`);
+                  const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+                  const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+                  
+                  let action = null;
+                  
+                  if (phaseResult.phase === 'night') {
+                    if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                      action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                    } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                      action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                    }
+                  } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
+                    action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
+                  } else if (phaseResult.phase === 'verdict' && game.getBotTrialVote) {
+                    action = game.getBotTrialVote(botPlayer.token, alivePlayers);
+                  }
+                  
+                  // Emit the bot action
+                  if (action) {
+                    if (action.type === 'nightVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'night-vote',
+                        payload: { target: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                    } else if (action.type === 'bodyguardProtect') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'bodyguard-protect',
+                        payload: { targetToken: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                    } else if (action.type === 'accusationVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'accusation-vote',
+                        payload: { target: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`);
+                    } else if (action.type === 'trialVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'trial-vote',
+                        payload: { vote: action.vote }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                    }
+                  }
+                }, 2000 + Math.random() * 1000); // 2-3 second delay
               }
               
               // Clear elimination trackers after sending events
@@ -1038,6 +1190,64 @@ io.on('connection', (socket) => {
                     console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${pToken}`);
                   }
                 }
+              }
+              
+              // Auto-perform bot actions for the new phase
+              const botPlayers = game.getBotPlayers ? game.getBotPlayers() : [];
+              for (const botPlayer of botPlayers) {
+                // Schedule bot action after a small delay to simulate thinking
+                setTimeout(() => {
+                  console.log(`[${game.gameCode}] Auto-performing action for bot ${botPlayer.name} (${botPlayer.token}) in phase ${phaseResult.phase}`);
+                  const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+                  const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+                  
+                  let action = null;
+                  
+                  if (phaseResult.phase === 'night') {
+                    if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                      action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                    } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                      action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                    }
+                  } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
+                    action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
+                  } else if (phaseResult.phase === 'verdict' && game.getBotTrialVote) {
+                    action = game.getBotTrialVote(botPlayer.token, alivePlayers);
+                  }
+                  
+                  // Emit the bot action
+                  if (action) {
+                    if (action.type === 'nightVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'night-vote',
+                        payload: { target: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for night target ${action.target}`);
+                    } else if (action.type === 'bodyguardProtect') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'bodyguard-protect',
+                        payload: { targetToken: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} protecting ${action.target}`);
+                    } else if (action.type === 'accusationVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'accusation-vote',
+                        payload: { target: action.target }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted for accusation target ${action.target}`);
+                    } else if (action.type === 'trialVote') {
+                      io.to(`game-${gameCode}`).emit('game-event', {
+                        playerToken: botPlayer.token,
+                        eventName: 'trial-vote',
+                        payload: { vote: action.vote }
+                      });
+                      console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
+                    }
+                  }
+                }, 2000 + Math.random() * 1000); // 2-3 second delay
               }
               
               // CRITICAL: Clear tracking for new round
