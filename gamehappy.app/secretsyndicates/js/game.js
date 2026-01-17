@@ -17,6 +17,7 @@ class Game {
         this.reconnecting = false;
         this.startGameInProgress = false;
         this.isConnected = false;
+        this.isTestMode = false;  // Track if in test mode
         
         // Game state tracking for rejoin
         this.lastGameState = null;
@@ -47,6 +48,7 @@ class Game {
             this.playerToken = 'test-results-view';
             this.playerName = 'Results Viewer';
             this.isHost = true;  // Set as host for testing the button
+            this.isTestMode = true;  // Mark as test mode
             console.log(`[RESULTS VIEW] Showing ${winner} win for game ${gameCode}`);
             
             // Bind events first so socket listeners are set up
@@ -575,6 +577,12 @@ class Game {
                 console.log('[CONNECT] Socket.IO connected successfully');
                 this.isConnected = true;
                 this.updateConnectionStatus('connected');
+                
+                // Skip auto-rejoin in test mode
+                if (this.isTestMode) {
+                    console.log('[CONNECT] Test mode - skipping auto-rejoin');
+                    return;
+                }
                 
                 // Try to reconnect to existing game if we have a token
                 if (this.playerToken && this.gameCode) {
