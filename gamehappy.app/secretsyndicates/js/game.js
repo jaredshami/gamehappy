@@ -40,12 +40,13 @@ class Game {
         
         // Check for results view mode
         if (testToken === 'results') {
-            // Results-only view mode
+            // Results-only view mode - set as host for testing
             const winner = urlParams.get('winner') || 'innocent';
             const gameCode = urlParams.get('gameCode');
             this.gameCode = gameCode;
             this.playerToken = 'test-results-view';
             this.playerName = 'Results Viewer';
+            this.isHost = true;  // Set as host for testing the button
             console.log(`[RESULTS VIEW] Showing ${winner} win for game ${gameCode}`);
             
             // Skip normal connection and show results directly
@@ -3578,19 +3579,36 @@ class Game {
             playAgainHostOnly.style.display = 'block';
             waitingForHost.style.display = 'none';
             
-            const playAgainBtn = document.getElementById('btn-play-again');
-            console.log('[CREATE-RESULTS] playAgainBtn element:', playAgainBtn);
-            
-            if (playAgainBtn) {
-                console.log('[CREATE-RESULTS] Attaching click listener to btn-play-again');
-                playAgainBtn.addEventListener('click', (e) => {
-                    console.log('[PLAY-AGAIN-BTN] Click event fired!', e);
-                    this.playAgain();
-                });
-                console.log('[CREATE-RESULTS] Click listener attached successfully');
-            } else {
-                console.warn('[CREATE-RESULTS] btn-play-again not found in DOM after appending');
-            }
+            // Wait a tick to ensure button is in DOM
+            setTimeout(() => {
+                const playAgainBtn = document.getElementById('btn-play-again');
+                console.log('[CREATE-RESULTS] Looking for btn-play-again, found:', playAgainBtn);
+                
+                if (playAgainBtn) {
+                    console.log('[CREATE-RESULTS] Button found, checking properties');
+                    console.log('[CREATE-RESULTS] Button HTML:', playAgainBtn.outerHTML);
+                    console.log('[CREATE-RESULTS] Button visible:', playAgainBtn.offsetHeight > 0);
+                    
+                    console.log('[CREATE-RESULTS] Removing old listeners if any');
+                    const newBtn = playAgainBtn.cloneNode(true);
+                    playAgainBtn.parentNode.replaceChild(newBtn, playAgainBtn);
+                    
+                    const finalBtn = document.getElementById('btn-play-again');
+                    console.log('[CREATE-RESULTS] Final button element:', finalBtn);
+                    
+                    if (finalBtn) {
+                        console.log('[CREATE-RESULTS] Attaching click listener');
+                        finalBtn.addEventListener('click', (e) => {
+                            console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED ==========', e);
+                            this.playAgain();
+                        });
+                        console.log('[CREATE-RESULTS] Click listener attached successfully');
+                    }
+                } else {
+                    console.warn('[CREATE-RESULTS] btn-play-again NOT FOUND in DOM');
+                    console.warn('[CREATE-RESULTS] All button elements:', document.querySelectorAll('button'));
+                }
+            }, 100);
         } else {
             console.log('[CREATE-RESULTS] Non-host player - showing waiting message');
             playAgainHostOnly.style.display = 'none';
