@@ -3542,7 +3542,7 @@ class Game {
                     <div id="players-table-container" class="players-table-container"></div>
                     
                     <div class="results-actions" style="margin-top: 40px; text-align: center;">
-                        <button id="btn-play-again" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); color: var(--primary-gold); border: 2px solid var(--primary-gold); border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-weight: 600;">🔄 Play Again</button>
+                        <button id="btn-play-again" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); color: var(--primary-gold); border: 2px solid var(--primary-gold); border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-weight: 600;">Play Again</button>
                         <p id="play-again-status" style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;"></p>
                     </div>
                 </div>
