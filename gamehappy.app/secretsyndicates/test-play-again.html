@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Again Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #f093fb;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #e080e8;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .status-box {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .status-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .status-text {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .log-success {
+            color: #0f0;
+        }
+
+        .log-error {
+            color: #f44;
+        }
+
+        .log-info {
+            color: #0af;
+        }
+
+        .log-warning {
+            color: #fa0;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Play Again Test</h1>
+        <p class="subtitle">Simulate a full game and test the Play Again button</p>
+
+        <div class="info-box">
+            <strong>How it works:</strong> Creates a game with AI players, auto-progresses through phases, ends the game, shows results with Play Again button.
+        </div>
+
+        <div class="section">
+            <div class="section-title">Configuration</div>
+            <label for="numPlayers">Number of Players (3-6):</label>
+            <input type="number" id="numPlayers" min="3" max="6" value="4">
+            <label for="autoSpeed">Auto-progression Speed (ms):</label>
+            <input type="number" id="autoSpeed" min="500" max="5000" value="2000">
+        </div>
+
+        <div class="section">
+            <div class="button-group">
+                <button class="btn-primary" onclick="startGameTest()">Start Game Test</button>
+                <button class="btn-danger" onclick="stopGameTest()">Stop Test</button>
+            </div>
+            <button class="btn-success" onclick="skipToResults()" style="width: 100%;">⏭️ Skip to Results (Fast Test)</button>
+        </div>
+
+        <div class="status-box">
+            <div class="status-title">Status</div>
+            <div class="status-text" id="statusText">Ready to start test</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Console Log</div>
+            <div class="log-container" id="logContainer"></div>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px;">
+            <strong>After clicking "Start Game Test":</strong><br>
+            1. A new tab will open with the game<br>
+            2. AI players auto-complete actions<br>
+            3. Game phases auto-progress<br>
+            4. Game ends and results screen appears<br>
+            5. Click "Play Again" and check browser console
+        </div>
+    </div>
+
+    <script>
+        let gameTestActive = false;
+        let testTabWindows = [];
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        async function startGameTest() {
+            if (gameTestActive) {
+                log('Test already running', 'warning');
+                return;
+            }
+
+            gameTestActive = true;
+            const numPlayers = parseInt(document.getElementById('numPlayers').value);
+            const autoSpeed = parseInt(document.getElementById('autoSpeed').value);
+
+            if (numPlayers < 3 || numPlayers > 6) {
+                log('Invalid number of players', 'error');
+                gameTestActive = false;
+                return;
+            }
+
+            log(`Starting game test with ${numPlayers} players`, 'success');
+            updateStatus(`Creating game with ${numPlayers} players...`);
+
+            try {
+                // Request server to create test game
+                const response = await fetch(`https://gamehappy.app:8443/test-auto-game?players=${numPlayers}&autoSpeed=${autoSpeed}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to create test game');
+                }
+
+                log(`Game created: ${data.gameCode}`, 'success');
+                updateStatus(`Game created! Code: ${data.gameCode}`);
+
+                // Open tabs for each player
+                log(`Opening ${numPlayers} player tabs...`, 'info');
+                data.playerTokens.forEach((token, index) => {
+                    const url = `/secretsyndicates/?test=${token}&gameCode=${data.gameCode}&playerName=Player${index + 1}&autoplay=true&autoSpeed=${autoSpeed}`;
+                    const tab = window.open(url, `player-${index + 1}`);
+                    testTabWindows.push(tab);
+                });
+
+                updateStatus(`Tabs opened. Watch them auto-play...`);
+                log('All player tabs opened', 'success');
+
+            } catch (err) {
+                log(`Error: ${err.message}`, 'error');
+                gameTestActive = false;
+            }
+        }
+
+        async function skipToResults() {
+            updateStatus('Jumping to results screen...');
+            log('Skipping to results view', 'info');
+
+            try {
+                const response = await fetch('https://gamehappy.app:8443/test-results?winner=innocent');
+                const data = await response.json();
+
+                if (data.success) {
+                    const url = `/secretsyndicates/?test=results&winner=innocent&gameCode=${data.gameCode}`;
+                    window.open(url, 'results-test');
+                    log(`Results view opened: ${data.gameCode}`, 'success');
+                    updateStatus('Results view opened! Test the Play Again button.');
+                } else {
+                    throw new Error(data.message || 'Failed to create results');
+                }
+            } catch (err) {
+                log(`Error: ${err.message}`, 'error');
+            }
+        }
+
+        function stopGameTest() {
+            gameTestActive = false;
+            testTabWindows.forEach(tab => {
+                try {
+                    tab.close();
+                } catch (e) {}
+            });
+            testTabWindows = [];
+            log('Test stopped and tabs closed', 'warning');
+            updateStatus('Test stopped');
+        }
+
+        // Listen for messages from game tabs
+        window.addEventListener('message', (event) => {
+            if (event.origin !== 'https://gamehappy.app') return;
+            
+            if (event.data.type === 'game-event') {
+                log(`[${event.data.player}] ${event.data.message}`, event.data.level || 'info');
+            }
+        });
+
+        log('Test tool ready', 'success');
+    </script>
+</body>
+</html>

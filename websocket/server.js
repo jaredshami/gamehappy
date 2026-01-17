@@ -2317,6 +2317,48 @@ app.get('/test-results', (req, res) => {
     res.json({ success: false, message: 'Server error' });
   }
 });
+// Auto-game endpoint for Play Again testing
+app.get('/test-auto-game', (req, res) => {
+  try {
+    const playerCount = Math.min(Math.max(parseInt(req.query.players) || 4, 3), 6);
+    const autoSpeed = parseInt(req.query.autoSpeed) || 2000;
+    
+    const nameOptions = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank'];
+    const playerNames = nameOptions.slice(0, playerCount);
+    const playerTokens = [];
+    
+    // Create game
+    const createResult = gameServer.createGame('secretsyndicates', 'test-player-1', playerNames[0]);
+    if (!createResult.success) {
+      return res.json({ success: false, message: 'Failed to create game' });
+    }
+    
+    const gameCode = createResult.gameCode;
+    playerTokens.push('test-player-1');
+    
+    // Add remaining players
+    for (let i = 1; i < playerNames.length; i++) {
+      const token = `test-player-${i + 1}`;
+      gameServer.joinGame(gameCode, token, playerNames[i]);
+      playerTokens.push(token);
+    }
+    
+    // Start game
+    gameServer.startGame(gameCode, 'test-player-1');
+    
+    console.log(`[TEST-AUTO] Created auto-game ${gameCode} with ${playerCount} players`);
+    
+    res.json({
+      success: true,
+      gameCode: gameCode,
+      playerTokens: playerTokens,
+      autoSpeed: autoSpeed
+    });
+  } catch (err) {
+    console.error('[TEST-AUTO] Error:', err);
+    res.json({ success: false, message: 'Server error' });
+  }
+});
 
 const PORT = process.env.PORT || 8443;
 
