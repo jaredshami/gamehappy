@@ -49,8 +49,16 @@ class Game {
             this.isHost = true;  // Set as host for testing the button
             console.log(`[RESULTS VIEW] Showing ${winner} win for game ${gameCode}`);
             
-            // Skip normal connection and show results directly
-            this.showResultsScreenDirectly(winner);
+            // Bind events first so socket listeners are set up
+            this.bindEvents();
+            
+            // Initialize socket connection so button can emit events
+            this.connect();
+            
+            // Wait a bit for connection, then show results
+            setTimeout(() => {
+                this.showResultsScreenDirectly(winner);
+            }, 500);
             return;
         } else if (testToken) {
             // Test mode - use token from URL, and game info from URL params
