@@ -1482,6 +1482,40 @@ io.on('connection', (socket) => {
         }
         
         console.log(`[${game.gameCode}] [PLAYER-READY] Finished processing ${botPlayersPhase.length} bots`);
+        
+        // Special handling for verdict phase - bots need to acknowledge verdict
+        if (game.currentPhase === 'verdict') {
+          console.log(`[${game.gameCode}] [PLAYER-READY] In verdict phase - auto-acknowledging for bots`);
+          if (!game.verdictReadyPlayers) {
+            game.verdictReadyPlayers = new Set();
+          }
+          
+          for (const botPlayer of botPlayersPhase) {
+            if (!game.verdictReadyPlayers.has(botPlayer.token)) {
+              console.log(`[${game.gameCode}] [PLAYER-READY] Bot ${botPlayer.name} acknowledging verdict`);
+              game.verdictReadyPlayers.add(botPlayer.token);
+            }
+          }
+          
+          const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+          console.log(`[${game.gameCode}] [PLAYER-READY] Verdict ready: ${game.verdictReadyPlayers.size}/${alivePlayers.length}`);
+          
+          // Broadcast updated count
+          io.to(`game-${game.gameCode}`).emit('verdict-ready-count', {
+            readyCount: game.verdictReadyPlayers.size,
+            totalPlayers: alivePlayers.length
+          });
+          
+          // If all ready, mark all players done to advance phase
+          if (game.verdictReadyPlayers.size >= alivePlayers.length) {
+            console.log(`[${game.gameCode}] [PLAYER-READY] All players ready for verdict phase - marking all as done`);
+            for (const player of alivePlayers) {
+              if (game.setPlayerDone) {
+                game.setPlayerDone(player.token);
+              }
+            }
+          }
+        }
       } else {
         console.log(`[${game.gameCode}] Not all players ready yet`);
       }
