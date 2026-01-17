@@ -3780,31 +3780,71 @@ class Game {
         
         console.log('[PLAY-AGAIN-LOBBY] Using playerToken:', this.playerToken, 'for new game:', this.gameCode);
         
-        // Clear all game-specific state
+        // CRITICAL: Clear ALL game-specific state for new game
+        // This includes all phase states and ready flags
         this.isEliminated = false;
         this.eliminationData = null;
         this.phase3Done = false;
         this.phase4Voted = false;
         this.phase5Voted = false;
+        this.phase2Ready = false;  // Reset Phase 2 ready flag
+        this.verdictReady = false; // Reset verdict ready flag
         this.startGameInProgress = false;
         this.syndicateState = null;
         this.detectiveState = null;
         this.bystanderState = null;
         this.bodyGuardState = null;
         this.playerDone = false;
-        this.phase2Ready = false;
         this.caseNotes = {};
         this.selectedCaseNotesPlayer = null;
         this.role = null;
         this.playerRole = null;
         this.votingHistory = {};
         this.lastGameState = null;
+        this.phaseState = null;
+        this.caseNotesEventsBound = false;  // Reset case notes event binding flag
         
         // Save session with new game code and preserved playerToken
         this.saveSession();
         
-        // Show lobby
-        document.querySelectorAll('.screen').forEach(screen => screen.style.display = 'none');
+        // Hide ALL game screens to prevent any DOM state carryover
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.style.display = 'none';
+        });
+        
+        // Explicitly hide phase screens
+        const phaseScreens = [
+            'phase-screen',
+            'phase2-screen', 
+            'phase3-screen',
+            'phase4-screen',
+            'phase5-screen',
+            'role-screen',
+            'eliminated-screen',
+            'results-screen'
+        ];
+        phaseScreens.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        // Reset all game-specific button states
+        const readyButtons = document.querySelectorAll('[id*="ready"], [id*="done"]');
+        readyButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.textContent = btn.id.includes('ready') ? "I'm Ready" : "I'm Done";
+            btn.classList.remove('selected', 'confirmed');
+        });
+        
+        // Clear any case notes UI state
+        const caseNotesGrid = document.getElementById('case-notes-grid');
+        if (caseNotesGrid) {
+            caseNotesGrid.querySelectorAll('.case-note-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+        
+        // Show fresh lobby screen
         this.showScreen('lobby-screen');
         this.updateLobby(data.game);
         
