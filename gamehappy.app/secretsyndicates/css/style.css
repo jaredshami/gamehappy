@@ -132,6 +132,19 @@ body {
     transform: translateY(-2px);
 }
 
+.btn-warning {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--primary-gold);
+    border: 1px solid var(--primary-gold);
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+.btn-warning:hover {
+    background: rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+}
+
 .btn-back {
     background: none;
     border: none;
@@ -3138,3 +3151,61 @@ h3 {
     color: var(--primary-gold);
 }
 
+/* Rejoin Screens */
+.screen-description {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.rejoin-players-list {
+    display: grid;
+    gap: 10px;
+    margin: 30px 0;
+}
+
+.rejoin-player-item {
+    background: var(--card-bg);
+    border: 2px solid #333;
+    border-radius: 4px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rejoin-player-item:hover {
+    border-color: var(--primary-gold);
+    background: rgba(212, 175, 55, 0.05);
+    transform: translateX(5px);
+}
+
+.rejoin-player-info {
+    flex: 1;
+}
+
+.rejoin-player-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-gold);
+    margin-bottom: 5px;
+}
+
+.rejoin-player-status {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.rejoin-player-role {
+    font-size: 0.9rem;
+    color: #999;
+    margin-top: 3px;
+}
+
+.rejoin-player-icon {
+    font-size: 2rem;
+    margin-left: 15px;
+}

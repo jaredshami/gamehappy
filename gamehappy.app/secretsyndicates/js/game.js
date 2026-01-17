@@ -255,7 +255,7 @@ class Game {
     }
 
     getSessionData() {
-        return localStorage.getItem('secretSyndicatesSession');
+        return sessionStorage.getItem('secretSyndicatesSession');
     }
 
     saveSession() {
@@ -266,12 +266,12 @@ class Game {
                 playerName: this.playerName,
                 createdAt: Date.now()
             });
-            localStorage.setItem('secretSyndicatesSession', sessionData);
+            sessionStorage.setItem('secretSyndicatesSession', sessionData);
         }
     }
 
     clearSession() {
-        localStorage.removeItem('secretSyndicatesSession');
+        sessionStorage.removeItem('secretSyndicatesSession');
         this.playerToken = null;
     }
 
@@ -349,10 +349,186 @@ class Game {
     }
 
     // WebSocket Connection
+    setupSocketListeners() {
+        // Connection lifecycle events
+        this.socket.on('connect', () => {
+            console.log('[SOCKET] Connected to server');
+        });
+
+        this.socket.on('disconnect', (reason) => {
+            console.log('[SOCKET] Disconnected from server, reason:', reason);
+            this.updateConnectionStatus('disconnected');
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('[SOCKET] Connection error:', error);
+            this.updateConnectionStatus('disconnected');
+        });
+
+        this.socket.on('error', (error) => {
+            console.error('[SOCKET] Socket error:', error);
+            this.updateConnectionStatus('disconnected');
+        });
+
+        // Listen for game events from server
+        this.socket.on('game-created', (data) => {
+            console.log('Game created:', data);
+            this.gameCode = data.gameCode;
+            this.isHost = data.isHost;
+            this.saveSession();
+            this.updateLobby(data.game);
+        });
+
+        this.socket.on('player-joined', (data) => {
+            console.log('Player joined:', data);
+            this.updateLobby(data.game);
+        });
+
+        this.socket.on('game-started', (data) => {
+            console.log('Game started:', data);
+            this.showScreen('role-screen');
+            this.displayRoleIntro(data.gameState);
+        });
+
+        this.socket.on('game-state-updated', (data) => {
+            console.log('Game state updated:', data);
+            this.handleGameStateUpdate(data.gameState, data.eventResult);
+        });
+
+        this.socket.on('player-ready-updated', (data) => {
+            console.log('Ready count updated:', data);
+            this.updateReadyStatus(data.playerCount, data.totalPlayers);
+        });
+
+        this.socket.on('on-phase-start', (data) => {
+            console.log('Phase start received:', data);
+            this.onPhaseStart(data);
+        });
+
+        this.socket.on('phase4-vote-update', (data) => {
+            console.log('Phase 4 vote update received:', data);
+            this.onPhase4VoteUpdate(data);
+        });
+
+        this.socket.on('phase5-vote-update', (data) => {
+            console.log('Phase 5 vote update received:', data);
+            this.onPhase5VoteUpdate(data);
+        });
+
+        this.socket.on('verdict-result', (data) => {
+            console.log('Verdict result received:', data);
+            this.displayVerdictScreen(data);
+        });
+
+        // Syndicate real-time updates
+        this.socket.on('syndicate-recommendations-update', (data) => {
+            console.log('Syndicate recommendations update received:', data);
+            this.onSyndicateRecommendationsUpdate(data);
+        });
+
+        this.socket.on('syndicate-lock-update', (data) => {
+            console.log('Syndicate lock update received:', data);
+            this.onSyndicateLockInUpdate(data);
+        });
+        
+        this.socket.on('assassin-recommendations-update', (data) => {
+            console.log('Assassin recommendations update received:', data);
+            this.onAssassinRecommendationsUpdate(data);
+        });
+
+        this.socket.on('all-players-done', (data) => {
+            console.log('All players done, advancing to next phase:', data);
+            // Server will handle phase advancement, just wait for next on-phase-start event
+        });
+
+        // Bot action notifications
+        this.socket.on('player-done-notification', (data) => {
+            console.log('Player done notification received:', data);
+            // Update the done counter if we have an element for it
+            this.updateDoneCounter();
+        });
+
+        // Bot action performed notifications
+        this.socket.on('game-event', (data) => {
+            console.log('Game event received:', data);
+            if (data.eventName === 'bot-action-performed') {
+                console.log(`Bot action: ${data.payload.playerName} ${data.payload.action}`);
+                this.showBotActionNotification(data.payload);
+            } else if (data.eventName === 'phase-advancing') {
+                console.log('Phase advancing:', data.payload);
+            }
+        });
+
+        this.socket.on('player-left', (data) => {
+            console.log('Player left:', data);
+            this.updateLobby(data.game);
+        });
+
+        this.socket.on('player-disconnected', (data) => {
+            console.log('Player disconnected:', data);
+            this.updateLobby(data.game);
+        });
+
+        this.socket.on('rejoin-accepted', (data) => {
+            console.log('[REJOIN] Rejoin accepted, returning to game:', data);
+            console.log('[REJOIN] gameState:', data.gameState);
+            console.log('[REJOIN] gameState.currentPhase:', data.gameState?.currentPhase);
+            this.reconnecting = false;
+            this.updateConnectionStatus('connected');
+            
+            // Restore game state - gameState is an object with gameState, currentPhase, playerRole
+            if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
+                // Game is in progress, show role screen
+                console.log('[REJOIN] Game is in progress, showing role screen');
+                this.showScreen('role-screen');
+                this.displayRoleIntro(data.gameState);
+            } else {
+                // Game hasn't started yet, show lobby
+                console.log('[REJOIN] Game not started, showing lobby');
+                this.updateLobby(data.game);
+            }
+        });
+
+        this.socket.on('rejoin-rejected', (data) => {
+            console.log('[REJOIN] Rejoin rejected:', data.message);
+            this.reconnecting = false;
+            this.clearSession();
+            this.gameCode = null;
+            this.playerToken = null;
+            this.showScreen('home-screen');
+        });
+
+        this.socket.on('player-eliminated', (data) => {
+            console.log('Player eliminated event received:', data);
+            // Only process elimination event if not already eliminated
+            if (!this.isEliminated) {
+                this.isEliminated = true;
+                this.eliminationData = data;
+                this.showEliminationScreen(data);
+            } else {
+                console.log('Already eliminated, ignoring redundant elimination event');
+            }
+        });
+
+        this.socket.on('game-ended', (data) => {
+            console.log('Game ended event received:', data);
+            this.handleGameEnded(data);
+        });
+        
+        this.socket.on('play-again-lobby', (data) => {
+            console.log('Play again - moving to new lobby:', data);
+            this.handlePlayAgainLobby(data);
+        });
+    }
+
     connect() {
         this.updateConnectionStatus('connecting');
 
         try {
+            console.log('[CONNECT] Initiating Socket.IO connection to wss://gamehappy.app');
+            console.log('[CONNECT] Player token:', this.playerToken);
+            console.log('[CONNECT] Game code:', this.gameCode);
+
             // Connect to Socket.IO server with correct path
             this.socket = io('wss://gamehappy.app', {
                 path: '/websocket',
@@ -365,186 +541,44 @@ class Game {
                 reconnectionAttempts: 5
             });
 
+            // Set up all socket event listeners FIRST before any events fire
+            console.log('[CONNECT] Setting up socket listeners');
+            this.setupSocketListeners();
+
+            // Connection event - fires when socket successfully connects
             this.socket.on('connect', () => {
-                console.log('Connected to server via Socket.IO');
+                console.log('[CONNECT] Socket.IO connected successfully');
                 this.isConnected = true;
                 this.updateConnectionStatus('connected');
                 
                 // Try to reconnect to existing game if we have a token
                 if (this.playerToken && this.gameCode) {
+                    console.log('[CONNECT] Auto-rejoining game:', this.gameCode);
                     this.attemptReconnect();
-                }
-            });
-
-            // Listen for game events from server
-            this.socket.on('game-created', (data) => {
-                console.log('Game created:', data);
-                this.gameCode = data.gameCode;
-                this.isHost = data.isHost;
-                this.saveSession();
-                this.updateLobby(data.game);
-            });
-
-            this.socket.on('player-joined', (data) => {
-                console.log('Player joined:', data);
-                this.updateLobby(data.game);
-            });
-
-            this.socket.on('game-started', (data) => {
-                console.log('Game started:', data);
-                this.showScreen('role-screen');
-                this.displayRoleIntro(data.gameState);
-            });
-
-            this.socket.on('game-state-updated', (data) => {
-                console.log('Game state updated:', data);
-                this.handleGameStateUpdate(data.gameState, data.eventResult);
-            });
-
-            this.socket.on('player-ready-updated', (data) => {
-                console.log('Ready count updated:', data);
-                this.updateReadyStatus(data.playerCount, data.totalPlayers);
-            });
-
-            this.socket.on('on-phase-start', (data) => {
-                console.log('Phase start received:', data);
-                this.onPhaseStart(data);
-            });
-
-            this.socket.on('phase4-vote-update', (data) => {
-                console.log('Phase 4 vote update received:', data);
-                this.onPhase4VoteUpdate(data);
-            });
-
-            this.socket.on('phase5-vote-update', (data) => {
-                console.log('Phase 5 vote update received:', data);
-                this.onPhase5VoteUpdate(data);
-            });
-
-            this.socket.on('verdict-result', (data) => {
-                console.log('Verdict result received:', data);
-                this.displayVerdictScreen(data);
-            });
-
-            // Syndicate real-time updates
-            this.socket.on('syndicate-recommendations-update', (data) => {
-                console.log('Syndicate recommendations update received:', data);
-                this.onSyndicateRecommendationsUpdate(data);
-            });
-
-            this.socket.on('syndicate-lock-update', (data) => {
-                console.log('Syndicate lock update received:', data);
-                this.onSyndicateLockInUpdate(data);
-            });
-            
-            this.socket.on('assassin-recommendations-update', (data) => {
-                console.log('Assassin recommendations update received:', data);
-                this.onAssassinRecommendationsUpdate(data);
-            });
-
-            this.socket.on('all-players-done', (data) => {
-                console.log('All players done, advancing to next phase:', data);
-                // Server will handle phase advancement, just wait for next on-phase-start event
-            });
-
-            // Bot action notifications
-            this.socket.on('player-done-notification', (data) => {
-                console.log('Player done notification received:', data);
-                // Update the done counter if we have an element for it
-                this.updateDoneCounter();
-            });
-
-            // Bot action performed notifications
-            this.socket.on('game-event', (data) => {
-                console.log('Game event received:', data);
-                if (data.eventName === 'bot-action-performed') {
-                    console.log(`Bot action: ${data.payload.playerName} ${data.payload.action}`);
-                    this.showBotActionNotification(data.payload);
-                } else if (data.eventName === 'phase-advancing') {
-                    console.log('Phase advancing:', data.payload);
-                }
-            });
-
-            this.socket.on('player-left', (data) => {
-                console.log('Player left:', data);
-                this.updateLobby(data.game);
-            });
-
-            this.socket.on('player-disconnected', (data) => {
-                console.log('Player disconnected:', data);
-                this.updateLobby(data.game);
-            });
-
-            this.socket.on('rejoin-accepted', (data) => {
-                console.log('Rejoin accepted, returning to game:', data);
-                console.log('gameState:', data.gameState);
-                console.log('gameState.currentPhase:', data.gameState?.currentPhase);
-                this.reconnecting = false;
-                this.updateConnectionStatus('connected');
-                
-                // Restore game state - gameState is an object with gameState, currentPhase, playerRole
-                if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
-                    // Game is in progress, show role screen
-                    console.log('Game is in progress, showing role screen');
-                    this.showScreen('role-screen');
-                    this.displayRoleIntro(data.gameState);
                 } else {
-                    // Game hasn't started yet, show lobby
-                    console.log('Game not started, showing lobby');
-                    this.updateLobby(data.game);
+                    console.log('[CONNECT] No session to rejoin (token:', this.playerToken, 'code:', this.gameCode, ')');
                 }
             });
 
-            this.socket.on('rejoin-rejected', (data) => {
-                console.log('Rejoin rejected:', data.message);
-                this.reconnecting = false;
-                this.clearSession();
-                this.gameCode = null;
-                this.playerToken = null;
-                this.showScreen('home-screen');
-            });
-
-            this.socket.on('player-eliminated', (data) => {
-                console.log('Player eliminated event received:', data);
-                // Only process elimination event if not already eliminated
-                if (!this.isEliminated) {
-                    this.isEliminated = true;
-                    this.eliminationData = data;
-                    this.showEliminationScreen(data);
-                } else {
-                    console.log('Already eliminated, ignoring redundant elimination event');
-                }
-            });
-
-            this.socket.on('game-ended', (data) => {
-                console.log('Game ended event received:', data);
-                this.handleGameEnded(data);
-            });
-            
-            this.socket.on('play-again-lobby', (data) => {
-                console.log('Play again - moving to new lobby:', data);
-                this.handlePlayAgainLobby(data);
-            });
-
-            this.socket.on('disconnect', () => {
-                console.log('Disconnected from server');
-                this.updateConnectionStatus('disconnected');
-            });
-
-            this.socket.on('error', (error) => {
-                console.error('Socket.IO error:', error);
-                this.updateConnectionStatus('disconnected');
+            // Connection error event
+            this.socket.on('connect_error', (error) => {
+                console.error('[CONNECT_ERROR]', error);
+                this.updateConnectionStatus('connection-error');
             });
 
         } catch (error) {
-            console.error('Failed to connect:', error);
+            console.error('[CONNECT] Failed to initialize Socket.IO:', error);
             this.updateConnectionStatus('disconnected');
         }
     }
 
     attemptReconnect() {
-        if (!this.playerToken || !this.gameCode) return;
+        if (!this.playerToken || !this.gameCode) {
+            console.log('[RECONNECT] Missing credentials - token:', this.playerToken, 'code:', this.gameCode);
+            return;
+        }
         
+        console.log('[RECONNECT] Attempting to rejoin game:', this.gameCode, 'with token:', this.playerToken);
         this.reconnecting = true;
         this.updateConnectionStatus('reconnecting');
         
@@ -552,7 +586,73 @@ class Game {
         this.socket.emit('rejoin-game', {
             gameCode: this.gameCode,
             playerToken: this.playerToken
+        }, (response) => {
+            console.log('[RECONNECT] Rejoin response:', response);
         });
+    }
+
+    searchRejoinGame() {
+        const gameCode = document.getElementById('rejoin-code').value.toUpperCase();
+        const errorEl = document.getElementById('rejoin-code-error');
+        
+        if (!gameCode || gameCode.length !== 4) {
+            errorEl.textContent = 'Please enter a 4-letter game code';
+            return;
+        }
+
+        console.log('[REJOIN-SEARCH] Searching for disconnected players in game:', gameCode);
+        
+        this.socket.emit('get-disconnected-players', { gameCode }, (response) => {
+            if (response.error) {
+                console.error('[REJOIN-SEARCH] Error:', response.error);
+                errorEl.textContent = response.error;
+                return;
+            }
+
+            if (!response.players || response.players.length === 0) {
+                errorEl.textContent = 'No players found in this game';
+                return;
+            }
+
+            console.log('[REJOIN-SEARCH] Found players:', response.players);
+            this.showRejoinPlayerSelection(response.players, gameCode);
+        });
+    }
+
+    showRejoinPlayerSelection(players, gameCode) {
+        const container = document.getElementById('rejoin-players-list');
+        container.innerHTML = '';
+
+        players.forEach(player => {
+            const playerEl = document.createElement('div');
+            playerEl.className = 'rejoin-player-item';
+            playerEl.innerHTML = `
+                <div class="rejoin-player-info">
+                    <div class="rejoin-player-name">${player.name}</div>
+                    <div class="rejoin-player-status">Game Code: ${gameCode}</div>
+                    <div class="rejoin-player-role">${player.role} ${player.isAlive ? '(Alive)' : '(Eliminated)'}</div>
+                </div>
+                <div class="rejoin-player-icon">🎭</div>
+            `;
+            playerEl.addEventListener('click', () => {
+                this.rejoinAsPlayer(gameCode, player.token);
+            });
+            container.appendChild(playerEl);
+        });
+
+        this.showScreen('rejoin-player-screen');
+    }
+
+    rejoinAsPlayer(gameCode, playerToken) {
+        console.log('[REJOIN-SELECT] Rejoin as player:', playerToken, 'in game:', gameCode);
+        
+        // Save session
+        this.playerToken = playerToken;
+        this.gameCode = gameCode;
+        this.saveSession();
+
+        // Attempt to reconnect with these credentials
+        this.attemptReconnect();
     }
 
     updateConnectionStatus(status) {
@@ -631,6 +731,13 @@ class Game {
             this.showScreen('join-screen');
         });
 
+        // Rejoin Game button (from home screen)
+        document.getElementById('btn-rejoin-available').addEventListener('click', () => {
+            this.showScreen('rejoin-code-screen');
+            document.getElementById('rejoin-code').value = '';
+            document.getElementById('rejoin-code-error').textContent = '';
+        });
+
         // How to Play button
         document.getElementById('btn-how-to-play').addEventListener('click', () => {
             this.showScreen('how-to-play-screen');
@@ -645,6 +752,16 @@ class Game {
         document.getElementById('btn-back-join').addEventListener('click', () => {
             this.showScreen('home-screen');
             this.clearErrors();
+        });
+
+        document.getElementById('btn-back-rejoin-code').addEventListener('click', () => {
+            this.showScreen('home-screen');
+            document.getElementById('rejoin-code-error').textContent = '';
+        });
+
+        document.getElementById('btn-back-rejoin-player').addEventListener('click', () => {
+            this.showScreen('rejoin-code-screen');
+            document.getElementById('rejoin-player-error').textContent = '';
         });
 
         document.getElementById('btn-back-how-to-play').addEventListener('click', () => {
@@ -681,6 +798,11 @@ class Game {
         // Join game
         document.getElementById('btn-join-lobby').addEventListener('click', () => {
             this.joinGame();
+        });
+
+        // Rejoin by code search
+        document.getElementById('btn-rejoin-search').addEventListener('click', () => {
+            this.searchRejoinGame();
         });
 
         // Start game

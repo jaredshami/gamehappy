@@ -25,6 +25,7 @@
                 <button id="btn-create-game" class="btn btn-primary">Create Game</button>
                 <button id="btn-join-game" class="btn btn-secondary">Join Game</button>
             </div>
+            <button id="btn-rejoin-available" class="btn btn-warning">Rejoin Game</button>
             <button id="btn-how-to-play" class="btn-link">How to Play</button>
         </div>
 
@@ -282,6 +283,30 @@
             </div>
             <button id="btn-join-lobby" class="btn btn-primary">Join Lobby</button>
             <div id="join-error" class="error-message"></div>
+        </div>
+
+        <!-- Rejoin by Code Screen -->
+        <div id="rejoin-code-screen" class="screen">
+            <button class="btn-back" id="btn-back-rejoin-code">&larr; Back</button>
+            <h2>Rejoin Game</h2>
+            <p class="screen-description">Enter the game code to find your active game session</p>
+            <div class="form-group">
+                <label for="rejoin-code">Game Code</label>
+                <input type="text" id="rejoin-code" placeholder="Enter 4-letter code" maxlength="4" autocomplete="off">
+            </div>
+            <button id="btn-rejoin-search" class="btn btn-primary">Search</button>
+            <div id="rejoin-code-error" class="error-message"></div>
+        </div>
+
+        <!-- Rejoin Player Selection Screen -->
+        <div id="rejoin-player-screen" class="screen">
+            <button class="btn-back" id="btn-back-rejoin-player">&larr; Back</button>
+            <h2>Select Your Player</h2>
+            <p class="screen-description">Click your name to rejoin the game</p>
+            <div id="rejoin-players-list" class="rejoin-players-list">
+                <!-- Players will be populated here -->
+            </div>
+            <div id="rejoin-player-error" class="error-message"></div>
         </div>
 
         <!-- Lobby Screen -->

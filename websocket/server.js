@@ -1689,6 +1689,43 @@ io.on('connection', (socket) => {
     }
   });
 
+  /**
+   * Get disconnected players for rejoin
+   */
+  socket.on('get-disconnected-players', (data, callback) => {
+    try {
+      const { gameCode } = data;
+      console.log(`[REJOIN] Getting disconnected players for game: ${gameCode}`);
+
+      if (!gameCode) {
+        return callback({ error: 'Game code required' });
+      }
+
+      const game = gameServer.games.get(gameCode);
+      if (!game) {
+        return callback({ error: 'Game not found' });
+      }
+
+      // Get all players in the game (including disconnected ones)
+      const allPlayers = Array.from(game.players.values()).map(player => ({
+        token: player.token,
+        name: player.name,
+        role: game.getPlayerRole(player.token),
+        isAlive: !game.eliminatedPlayers?.has(player.token)
+      }));
+
+      console.log(`[REJOIN] Found ${allPlayers.length} players in game ${gameCode}`);
+      callback({ 
+        success: true, 
+        players: allPlayers,
+        gameCode: gameCode
+      });
+    } catch (err) {
+      console.error('Error getting disconnected players:', err);
+      callback({ error: 'Server error' });
+    }
+  });
+
   // ===== FLAG GUARDIANS GAME EVENTS =====
 
   /**
