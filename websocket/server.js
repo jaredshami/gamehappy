@@ -1918,13 +1918,14 @@ io.on('connection', (socket) => {
    * Disconnect handler
    */
   socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id}`);
+    console.log(`Player disconnected: ${socket.id}, token: ${playerToken}`);
     
-    // Remove player from game
+    // Don't remove player from game - they might rejoin!
+    // Just notify other players they disconnected
     const game = gameServer.getPlayerGame(playerToken);
     if (game) {
       const gameCode = game.gameCode;
-      gameServer.removePlayerFromGame(playerToken);
+      console.log(`[DISCONNECT] Player ${playerToken} left game ${gameCode} but remains for rejoin`);
       
       // Notify other players
       io.to(`game-${gameCode}`).emit('player-disconnected', {
