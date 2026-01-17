@@ -794,8 +794,11 @@ class Game {
             });
         } else if (data.action === 'verdictReady') {
             console.log('============ SENDING VERDICT-READY EVENT ============');
-            this.socket.emit('verdictReady', {});
-            console.log('verdictReady event emitted to server');
+            this.socket.emit('game-event', {
+                eventName: 'verdictReady',
+                payload: {}
+            });
+            console.log('verdictReady game-event emitted to server');
         } else {
             console.warn('Unknown action in sendMessage:', data.action);
         }
