@@ -3595,40 +3595,27 @@ class Game {
             playAgainHostOnly.style.display = 'block';
             waitingForHost.style.display = 'none';
             
-            // Attach listener immediately without setTimeout
-            const playAgainBtn = document.getElementById('btn-play-again');
-            console.log('[CREATE-RESULTS] Button element:', playAgainBtn);
-            console.log('[CREATE-RESULTS] Button styles:', {
-                display: window.getComputedStyle(playAgainBtn).display,
-                pointerEvents: window.getComputedStyle(playAgainBtn).pointerEvents,
-                visibility: window.getComputedStyle(playAgainBtn).visibility,
-                opacity: window.getComputedStyle(playAgainBtn).opacity
-            });
+            // Use event delegation on the container
+            const container = document.querySelector('.container');
+            const self = this;
             
-            if (playAgainBtn) {
-                const self = this;
-                console.log('[CREATE-RESULTS] Attaching click listener');
-                
-                // Remove any existing listeners by cloning
-                const newBtn = playAgainBtn.cloneNode(true);
-                playAgainBtn.parentNode.replaceChild(newBtn, playAgainBtn);
-                
-                // Add test listener first
-                newBtn.addEventListener('mousedown', function(e) {
-                    console.log('[PLAY-AGAIN-BTN] MOUSEDOWN fired!', e);
-                });
-                
-                // Add listener to new button
-                newBtn.addEventListener('click', function(e) {
+            const delegateListener = function(e) {
+                const btn = e.target.closest('#btn-play-again');
+                if (btn) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED ==========');
+                    console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED VIA DELEGATION ==========');
                     self.playAgain();
-                });
-                
-                console.log('[CREATE-RESULTS] Click listener attached successfully');
+                    return false;
+                }
+            };
+            
+            if (container) {
+                console.log('[CREATE-RESULTS] Attaching event delegation listener to container');
+                container.addEventListener('click', delegateListener, true); // Use capture phase
+                console.log('[CREATE-RESULTS] Event delegation listener attached');
             } else {
-                console.warn('[CREATE-RESULTS] btn-play-again NOT FOUND');
+                console.warn('[CREATE-RESULTS] No container found for event delegation');
             }
         } else {
             console.log('[CREATE-RESULTS] Non-host player - showing waiting message');
