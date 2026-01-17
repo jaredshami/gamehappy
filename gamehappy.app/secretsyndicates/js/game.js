@@ -2796,6 +2796,10 @@ class Game {
     displayVerdictScreen(data) {
         console.log('Displaying verdict screen with data:', data);
         
+        // Always set up the listener so counter updates show for all players
+        // This needs to happen regardless of elimination status
+        this.setupVerdictReadyListener();
+        
         // If player is eliminated, don't show verdict screen - show elimination screen instead
         if (this.isEliminated) {
             console.log('Player is eliminated - not showing verdict screen');
@@ -2850,9 +2854,6 @@ class Game {
             // Add new click handler
             newBtn.addEventListener('click', () => this.handleVerdictReady());
         }
-        
-        // Listen for verdict ready updates
-        this.setupVerdictReadyListener();
     }
 
     handleVerdictReady() {
