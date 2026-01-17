@@ -939,6 +939,11 @@ class Game {
             console.log('============ SENDING VERDICT-READY EVENT ============');
             this.socket.emit('verdictReady', {});
             console.log('verdictReady event emitted to server');
+        } else if (data.action === 'bystanderSelect') {
+            this.socket.emit('game-event', {
+                eventName: 'bystander-select',
+                payload: { targetToken: data.targetId }
+            });
         } else {
             console.warn('Unknown action in sendMessage:', data.action);
         }
@@ -3796,6 +3801,12 @@ class Game {
         
         // Save new session with cleared gameState
         this.saveSession();
+        
+        // Notify server of new game room
+        if (this.socket && this.socket.connected) {
+            console.log('[PLAY-AGAIN-LOBBY] Notifying server of game change:', this.gameCode);
+            this.socket.emit('join-game', { gameCode: this.gameCode });
+        }
         
         // Hide all screens
         document.querySelectorAll('.screen').forEach(screen => {
