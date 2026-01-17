@@ -10,12 +10,16 @@ class Game {
         this.gameCode = null;
         this.playerName = null;
         this.playerToken = null;
+        this.playerRole = null;
         this.players = [];
         this.role = null;
         this.isReady = false;
         this.reconnecting = false;
         this.startGameInProgress = false;
         this.isConnected = false;
+        
+        // Game state tracking for rejoin
+        this.lastGameState = null;
         
         // Elimination tracking
         this.isEliminated = false;
@@ -81,7 +85,10 @@ class Game {
                         this.playerToken = session.playerToken;
                         this.gameCode = session.gameCode;
                         this.playerName = session.playerName;
+                        this.playerRole = session.playerRole;
+                        this.lastGameState = session.gameState;
                         console.log(`[AUTO-REJOIN] Loaded session for ${this.playerName} in game ${this.gameCode}`);
+                        console.log(`[AUTO-REJOIN] Restoring to phase: ${this.lastGameState?.currentPhase}`);
                         // Will auto-reconnect in connect() when socket connects
                     } else {
                         // Session expired - show home screen
@@ -264,6 +271,8 @@ class Game {
                 playerToken: this.playerToken,
                 gameCode: this.gameCode,
                 playerName: this.playerName,
+                playerRole: this.playerRole,
+                gameState: this.lastGameState || null,
                 createdAt: Date.now()
             });
             sessionStorage.setItem('secretSyndicatesSession', sessionData);
@@ -475,6 +484,13 @@ class Game {
             console.log('[REJOIN] gameState.currentPhase:', data.gameState?.currentPhase);
             this.reconnecting = false;
             this.updateConnectionStatus('connected');
+            
+            // Save the gameState to session for potential future refreshes
+            if (data.gameState) {
+                this.lastGameState = data.gameState;
+                this.playerRole = data.gameState.playerRole || data.gameState.role;
+                this.saveSession();
+            }
             
             // Restore game state - gameState is an object with gameState, currentPhase, playerRole
             if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
@@ -1625,6 +1641,12 @@ class Game {
             console.log('onPhaseStart phaseName:', data.phaseName);
             console.log('onPhaseStart phaseState:', data.phaseState, 'type:', typeof data.phaseState);
             console.log('onPhaseStart condition check: data.phase === 1?', data.phase === 1, 'data.phaseState?', !!data.phaseState);
+            
+            // Save current game state for rejoin recovery
+            if (data.phaseState) {
+                this.lastGameState = data.phaseState;
+                this.saveSession();
+            }
             
             document.getElementById('current-phase').textContent = data.phase;
             document.getElementById('phase-name').textContent = data.phaseName || '';
