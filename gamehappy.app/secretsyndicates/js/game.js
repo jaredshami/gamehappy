@@ -2502,6 +2502,13 @@ class Game {
     checkActionsComplete() {
         let complete = false;
         const hint = document.getElementById('done-hint');
+        const btn = document.getElementById('btn-im-done');
+        
+        // Safety check - if button doesn't exist, we're not on Phase 1 screen
+        if (!btn) {
+            console.log('checkActionsComplete: btn-im-done not found, likely not on Phase 1 screen');
+            return false;
+        }
         
         switch (this.role) {
             case 'Syndicate':
@@ -2516,7 +2523,7 @@ class Game {
                 // Both must be locked in
                 complete = hasTarget && hasAssassin && targetLocked && assassinLocked;
                 
-                if (!complete) {
+                if (!complete && hint) {
                     if (!hasTarget) {
                         hint.textContent = 'Choose a target first';
                     } else if (!targetLocked) {
@@ -2532,7 +2539,7 @@ class Game {
             case 'Detective':
                 // Detective is done when investigation is locked in
                 complete = this.detectiveState?.lockedIn === true;
-                if (!complete) {
+                if (!complete && hint) {
                     hint.textContent = 'Lock in your investigation to enable';
                 }
                 break;
@@ -2542,7 +2549,7 @@ class Game {
                 const isProtecting = this.bodyGuardState?.protecting !== null && this.bodyGuardState?.protecting !== undefined;
                 const hasVoted = this.bodyGuardState?.bystanderVote !== null && this.bodyGuardState?.bystanderVote !== undefined;
                 complete = isProtecting && hasVoted;
-                if (!complete) {
+                if (!complete && hint) {
                     if (!isProtecting && !hasVoted) {
                         hint.textContent = 'Choose someone to protect and make your selection';
                     } else if (!isProtecting) {
@@ -2556,16 +2563,17 @@ class Game {
             default: // Bystander, Eye Witness
                 // Bystander is done when they've voted
                 complete = this.bystanderState?.myVote !== null && this.bystanderState?.myVote !== undefined;
-                if (!complete) {
+                if (!complete && hint) {
                     hint.textContent = 'Make your selection to enable';
                 }
                 break;
         }
         
-        const btn = document.getElementById('btn-im-done');
-        if (complete && !this.playerDone) {
+        if (complete && !this.playerDone && btn) {
             btn.disabled = false;
-            hint.textContent = 'Click when you\'re ready to proceed';
+            if (hint) {
+                hint.textContent = 'Click when you\'re ready to proceed';
+            }
         }
         
         return complete;
@@ -3851,20 +3859,71 @@ class Game {
             if (el) el.style.display = 'none';
         });
         
-        // Reset all game-specific button states
-        const readyButtons = document.querySelectorAll('[id*="ready"], [id*="done"]');
-        readyButtons.forEach(btn => {
-            btn.disabled = false;
-            btn.textContent = btn.id.includes('ready') ? "I'm Ready" : "I'm Done";
-            btn.classList.remove('selected', 'confirmed');
-        });
+        // Reset ALL phase UI elements (counters, buttons, etc.)
+        // Phase 1
+        const doneBtn = document.getElementById('btn-im-done');
+        if (doneBtn) {
+            doneBtn.disabled = true;
+            doneBtn.textContent = "I'm Done";
+            doneBtn.classList.remove('selected', 'confirmed');
+        }
+        const doneTotal = document.getElementById('done-total');
+        const doneCount = document.getElementById('done-count');
+        if (doneTotal) doneTotal.textContent = '0';
+        if (doneCount) doneCount.textContent = '0';
         
-        // Clear any case notes UI state
-        const caseNotesGrid = document.getElementById('case-notes-grid');
-        if (caseNotesGrid) {
-            caseNotesGrid.querySelectorAll('.case-note-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+        // Phase 2
+        const phase2ReadyBtn = document.getElementById('btn-phase2-ready');
+        if (phase2ReadyBtn) {
+            phase2ReadyBtn.disabled = true;
+            phase2ReadyBtn.textContent = "I'm Ready";
+            phase2ReadyBtn.classList.remove('selected', 'confirmed');
+        }
+        const phase2Total = document.getElementById('phase2-ready-total');
+        const phase2Count = document.getElementById('phase2-ready-count');
+        if (phase2Total) phase2Total.textContent = '0';
+        if (phase2Count) phase2Count.textContent = '0';
+        
+        // Phase 3
+        const phase3DoneBtn = document.getElementById('btn-phase3-done');
+        if (phase3DoneBtn) {
+            phase3DoneBtn.disabled = true;
+            phase3DoneBtn.textContent = "I'm Done";
+            phase3DoneBtn.classList.remove('selected', 'confirmed');
+        }
+        const phase3Total = document.getElementById('phase3-done-total');
+        const phase3Count = document.getElementById('phase3-done-count');
+        if (phase3Total) phase3Total.textContent = '0';
+        if (phase3Count) phase3Count.textContent = '0';
+        
+        // Phase 4 & 5 voting buttons
+        const guiltyBtn = document.getElementById('btn-guilty');
+        const notGuiltyBtn = document.getElementById('btn-not-guilty');
+        if (guiltyBtn) {
+            guiltyBtn.disabled = false;
+            guiltyBtn.classList.remove('selected', 'confirmed');
+        }
+        if (notGuiltyBtn) {
+            notGuiltyBtn.disabled = false;
+            notGuiltyBtn.classList.remove('selected', 'confirmed');
+        }
+        
+        // Verdict ready button
+        const verdictBtn = document.getElementById('btn-verdict-ready');
+        if (verdictBtn) {
+            verdictBtn.disabled = true;
+            verdictBtn.textContent = "I Understand";
+            verdictBtn.classList.remove('selected', 'confirmed');
+        }
+        const verdictReadyCount = document.getElementById('verdict-ready-count');
+        if (verdictReadyCount) verdictReadyCount.textContent = '0';
+        
+        // Lobby Start Game button - CRITICAL: Reset to default state
+        const startBtn = document.getElementById('btn-start-game');
+        if (startBtn) {
+            startBtn.disabled = data.game.playerCount < 5;
+            startBtn.textContent = 'Start Game';  // Ensure it says "Start Game" not "Starting..."
+            startBtn.classList.remove('selected', 'confirmed');
         }
         
         // Show fresh lobby screen
