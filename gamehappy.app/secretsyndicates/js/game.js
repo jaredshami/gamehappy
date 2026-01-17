@@ -630,7 +630,6 @@ class Game {
                 <div class="rejoin-player-info">
                     <div class="rejoin-player-name">${player.name}</div>
                     <div class="rejoin-player-status">Game Code: ${gameCode}</div>
-                    <div class="rejoin-player-role">${player.role} ${player.isAlive ? '(Alive)' : '(Eliminated)'}</div>
                 </div>
                 <div class="rejoin-player-icon">🎭</div>
             `;
