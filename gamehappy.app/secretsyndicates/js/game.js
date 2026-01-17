@@ -2450,29 +2450,52 @@ class Game {
         
         // Set total players (only count alive players)
         const alivePlayers = state.players.filter(p => p.alive !== false);
-        document.getElementById('done-total').textContent = alivePlayers.length;
-        document.getElementById('done-count').textContent = state.doneCount || 0;
+        const totalEl = document.getElementById('done-total');
+        const countEl = document.getElementById('done-count');
+        
+        // Explicitly update counter elements
+        if (totalEl) {
+            totalEl.textContent = alivePlayers.length;
+        }
+        if (countEl) {
+            countEl.textContent = state.doneCount || 0;
+        }
+        
+        // Also update the status display
+        const statusEl = document.getElementById('done-status');
+        if (statusEl) {
+            statusEl.innerHTML = `<span id="done-count">${state.doneCount || 0}</span>/<span id="done-total">${alivePlayers.length}</span> players ready for next phase`;
+        }
         
         // Bind button event (remove old listener first)
         const btn = document.getElementById('btn-im-done');
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        // Reset button state for new round
-        newBtn.disabled = true; // Will be enabled by checkActionsComplete
-        newBtn.textContent = "I'm Done";
-        document.getElementById('done-hint').textContent = 'Complete your actions first';
-        
-        newBtn.addEventListener('click', () => this.markDone());
-        
-        // Check if already done (reconnection case)
-        if (state.amDone) {
-            this.playerDone = true;
-            newBtn.disabled = true;
-            newBtn.textContent = "✓ Done";
-            document.getElementById('done-hint').textContent = 'Waiting for other players...';
-        } else {
-            this.checkActionsComplete();
+        if (btn) {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Reset button state for new round
+            newBtn.disabled = true; // Will be enabled by checkActionsComplete
+            newBtn.textContent = "I'm Done";
+            newBtn.classList.remove('selected', 'confirmed');
+            
+            const hintEl = document.getElementById('done-hint');
+            if (hintEl) {
+                hintEl.textContent = 'Complete your actions first';
+            }
+            
+            newBtn.addEventListener('click', () => this.markDone());
+            
+            // Check if already done (reconnection case)
+            if (state.amDone) {
+                this.playerDone = true;
+                newBtn.disabled = true;
+                newBtn.textContent = "✓ Done";
+                if (hintEl) {
+                    hintEl.textContent = 'Waiting for other players...';
+                }
+            } else {
+                this.checkActionsComplete();
+            }
         }
     }
 
