@@ -792,6 +792,12 @@ class Game {
                 eventName: 'bodyguard-protect',
                 payload: { targetToken: data.targetId }
             });
+        } else if (data.action === 'verdictReady') {
+            console.log('============ SENDING VERDICT-READY EVENT ============');
+            this.socket.emit('verdictReady', {});
+            console.log('verdictReady event emitted to server');
+        } else {
+            console.warn('Unknown action in sendMessage:', data.action);
         }
     }
 
@@ -2846,17 +2852,52 @@ class Game {
         
         // Setup "I Understand" button
         const verdictReadyBtn = document.getElementById('btn-verdict-ready');
+        console.log('verdictReadyBtn element found:', !!verdictReadyBtn);
+        console.log('verdictReadyBtn element details:', verdictReadyBtn);
+        
         if (verdictReadyBtn) {
+            console.log('Button initial disabled state:', verdictReadyBtn.disabled);
+            
             // Remove any existing click handlers by cloning
             const newBtn = verdictReadyBtn.cloneNode(true);
-            verdictReadyBtn.parentNode.replaceChild(newBtn, verdictReadyBtn);
+            console.log('Button cloned');
             
-            // Add new click handler
-            newBtn.addEventListener('click', () => this.handleVerdictReady());
+            // Replace in DOM
+            verdictReadyBtn.parentNode.replaceChild(newBtn, verdictReadyBtn);
+            console.log('Button replaced in DOM');
+            
+            // EXPLICITLY enable the button
+            newBtn.disabled = false;
+            console.log('Button disabled property set to:', newBtn.disabled);
+            
+            // Remove any disabled HTML attribute
+            newBtn.removeAttribute('disabled');
+            console.log('Button disabled HTML attribute removed');
+            
+            // Verify button is enabled
+            const actualDisabledState = newBtn.getAttribute('disabled');
+            console.log('Button disabled HTML attribute after removal:', actualDisabledState);
+            
+            // Add new click handler with explicit logging
+            newBtn.addEventListener('click', (e) => {
+                console.log('============ BUTTON CLICK EVENT FIRED ============');
+                console.log('Event:', e);
+                console.log('Button clicked! Calling handleVerdictReady()');
+                this.handleVerdictReady();
+            });
+            
+            // Test that click handler works
+            console.log('Button click handler attached successfully');
+            console.log('Button element after setup:', newBtn);
+            console.log('Button is now ready for clicks');
+        } else {
+            console.error('ERROR: Could not find verdict-ready button element with ID btn-verdict-ready');
         }
     }
 
     handleVerdictReady() {
+        console.log('handleVerdictReady called. verdictReady=', this.verdictReady);
+        
         if (this.verdictReady) {
             console.warn('Already marked as ready for verdict');
             return;
@@ -2867,31 +2908,52 @@ class Game {
         
         // Disable button
         const btn = document.getElementById('btn-verdict-ready');
-        if (btn) btn.disabled = true;
+        console.log('Button element for disabling:', btn);
+        if (btn) {
+            btn.disabled = true;
+            console.log('Button disabled');
+        }
         
         // Send verdict-ready message to server
+        console.log('Sending verdictReady action to server');
         this.sendMessage({
             action: 'verdictReady'
         });
+        console.log('Message sent');
     }
 
     setupVerdictReadyListener() {
+        console.log('Setting up verdict-ready-count listener');
+        
         // Listen for verdict-ready-count updates from server
         if (this.verdictReadyListener) {
+            console.log('Removing old verdict-ready-count listener');
             this.socket.removeListener('verdict-ready-count', this.verdictReadyListener);
         }
         
         this.verdictReadyListener = (data) => {
-            console.log('Verdict ready count updated:', data);
-            document.getElementById('verdict-ready-count').textContent = data.readyCount || 0;
+            console.log('============ VERDICT-READY-COUNT RECEIVED ============');
+            console.log('Data from server:', data);
+            console.log('Ready count:', data.readyCount, 'Total players:', data.totalPlayers);
+            
+            const countEl = document.getElementById('verdict-ready-count');
+            console.log('verdict-ready-count element:', countEl);
+            
+            if (countEl) {
+                countEl.textContent = data.readyCount || 0;
+                console.log('Updated counter text to:', data.readyCount || 0);
+            } else {
+                console.error('ERROR: Could not find verdict-ready-count element');
+            }
             
             // Check if all players are ready
             if (data.readyCount >= data.totalPlayers) {
-                console.log('All players ready, waiting for server to advance phase');
+                console.log('All players ready! Server should advance phase');
             }
         };
         
         this.socket.on('verdict-ready-count', this.verdictReadyListener);
+        console.log('verdict-ready-count listener attached');
     }
     
     onPlayerEliminated(data) {
