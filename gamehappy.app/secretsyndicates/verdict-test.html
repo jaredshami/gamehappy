@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verdict Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .test-container {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 2px solid #d4af37;
+        }
+
+        h1 {
+            text-align: center;
+            color: #d4af37;
+            margin-bottom: 30px;
+        }
+
+        .verdict-screen {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .verdict-result {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .counter-display {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .ready-count {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #d4af37, rgba(212, 175, 55, 0.8));
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .button:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.9), #d4af37);
+            transform: scale(1.05);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .logs {
+            background: #000;
+            border: 1px solid #d4af37;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #0f0;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+
+        .log-entry.success {
+            color: #0f0;
+        }
+
+        .log-entry.error {
+            color: #f00;
+        }
+
+        .log-entry.info {
+            color: #0ff;
+        }
+
+        .test-status {
+            background: #1a3a52;
+            border-left: 4px solid #d4af37;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .status-ok {
+            color: #0f0;
+        }
+
+        .status-error {
+            color: #f00;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 Verdict Button Test</h1>
+
+        <div class="verdict-screen">
+            <div class="verdict-result">
+                <strong>John Doe</strong> has been found <span style="color: #d4af37;">GUILTY</span> by a vote of 3 to 1 and has been eliminated from the game.
+            </div>
+
+            <div class="counter-display">
+                <div style="font-size: 14px; color: #ccc; margin-bottom: 5px;">Players Ready</div>
+                <span id="verdict-ready-count" class="ready-count">0</span>/<span id="verdict-ready-total">1</span>
+            </div>
+
+            <button id="btn-verdict-ready" class="button">I Understand</button>
+
+            <div id="next-phase-button" style="display: none;">
+                <button class="button" onclick="goNextPhase()">Game Continues...</button>
+            </div>
+        </div>
+
+        <div class="test-status">
+            <div id="status" class="status-ok">✓ Test Ready - Click "I Understand" to test</div>
+        </div>
+
+        <div class="logs">
+            <div id="logs-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let verdictReady = false;
+
+        function log(message, type = 'info') {
+            const logsContainer = document.getElementById('logs-container');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logsContainer.appendChild(entry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function updateStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'status-error' : 'status-ok';
+        }
+
+        function setupVerdictReadyListener() {
+            log('Setting up verdict-ready-count listener', 'info');
+            
+            // Simulate receiving verdict-ready-count updates
+            window.simulateCounterUpdate = (readyCount) => {
+                log(`============ VERDICT-READY-COUNT RECEIVED ============`, 'success');
+                log(`Ready count: ${readyCount} / 1`, 'info');
+                
+                const countEl = document.getElementById('verdict-ready-count');
+                if (countEl) {
+                    countEl.textContent = readyCount;
+                    log(`Updated counter to: ${readyCount}`, 'success');
+                    
+                    if (readyCount >= 1) {
+                        log('All players ready! Advancing to next phase...', 'success');
+                        document.getElementById('next-phase-button').style.display = 'block';
+                        document.getElementById('btn-verdict-ready').style.display = 'none';
+                    }
+                } else {
+                    log('ERROR: Could not find verdict-ready-count element', 'error');
+                }
+            };
+        }
+
+        function handleVerdictReady() {
+            log('handleVerdictReady called', 'info');
+            
+            if (verdictReady) {
+                log('Already marked as ready for verdict', 'error');
+                return;
+            }
+            
+            log('Player clicked I Understand button', 'success');
+            verdictReady = true;
+            
+            // Disable button
+            const btn = document.getElementById('btn-verdict-ready');
+            if (btn) {
+                btn.disabled = true;
+                log('Button disabled', 'info');
+            }
+            
+            // Simulate sending to server
+            log('============ SENDING VERDICT-READY EVENT ============', 'success');
+            log('Message: { action: "verdictReady" }', 'info');
+            
+            // Simulate server response after 500ms
+            setTimeout(() => {
+                log('Simulating server response...', 'info');
+                window.simulateCounterUpdate(1);
+            }, 500);
+        }
+
+        function goNextPhase() {
+            log('Game advancing to next phase!', 'success');
+            updateStatus('✓ Test Complete - Verdict button works!');
+        }
+
+        // Setup button click handler
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Page loaded', 'info');
+            
+            const verdictReadyBtn = document.getElementById('btn-verdict-ready');
+            log('verdictReadyBtn element found: ' + !!verdictReadyBtn, 'info');
+            
+            if (verdictReadyBtn) {
+                // Clone to remove any old handlers
+                const newBtn = verdictReadyBtn.cloneNode(true);
+                verdictReadyBtn.parentNode.replaceChild(newBtn, verdictReadyBtn);
+                
+                // Ensure button is enabled
+                newBtn.disabled = false;
+                log('Button cloned and enabled', 'info');
+                
+                // Add click handler
+                newBtn.addEventListener('click', (e) => {
+                    log('============ BUTTON CLICK EVENT FIRED ============', 'success');
+                    handleVerdictReady();
+                });
+                
+                log('Button click handler attached', 'success');
+            } else {
+                log('ERROR: Could not find verdict button', 'error');
+            }
+            
+            // Setup listener
+            setupVerdictReadyListener();
+            
+            updateStatus('✓ Test Ready - Click "I Understand" to test');
+        });
+    </script>
+</body>
+</html>
