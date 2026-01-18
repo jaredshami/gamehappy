@@ -1,53 +1,67 @@
 <?php
 // Save contact form submissions to JSON file
-header('Content-Type: application/json');
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors directly, log them instead
+// This script handles form data (POST from HTML form)
 
+// Set JSON response header
+header('Content-Type: application/json');
+
+// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
 
-// Get JSON data from request
-$json = file_get_contents('php://input');
-if (empty($json)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'No data provided']);
-    exit;
-}
-
-$data = json_decode($json, true);
-if ($data === null) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid JSON format']);
-    exit;
-}
+// Get form data from POST
+$name = isset($_POST['name']) ? trim($_POST['name']) : '';
+$email = isset($_POST['email']) ? trim($_POST['email']) : '';
+$subject = isset($_POST['subject']) ? trim($_POST['subject']) : '';
+$message = isset($_POST['message']) ? trim($_POST['message']) : '';
 
 // Validate required fields
-$required_fields = ['name', 'email', 'subject', 'message'];
-foreach ($required_fields as $field) {
-    if (empty($data[$field])) {
-        http_response_code(400);
-        echo json_encode(['error' => "Missing required field: {$field}"]);
-        exit;
-    }
+if (empty($name)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Name is required']);
+    exit;
+}
+
+if (empty($email)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Email is required']);
+    exit;
+}
+
+if (empty($subject)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Subject is required']);
+    exit;
+}
+
+if (empty($message)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Message is required']);
+    exit;
 }
 
 // Validate email format
-if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid email format']);
     exit;
 }
+
+// Sanitize inputs
+$name = sanitize_input($name);
+$email = sanitize_input($email);
+$subject = sanitize_input($subject);
+$message = sanitize_input($message);
 
 // Directory to store contact submissions
 $submissions_dir = __DIR__ . '/data/contact-submissions';
 
 // Create directory if it doesn't exist
 if (!is_dir($submissions_dir)) {
-    if (!mkdir($submissions_dir, 0755, true)) {
+    if (!@mkdir($submissions_dir, 0755, true)) {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to create submissions directory']);
         exit;
@@ -56,7 +70,7 @@ if (!is_dir($submissions_dir)) {
 
 // Check if directory is writable
 if (!is_writable($submissions_dir)) {
-    chmod($submissions_dir, 0755);
+    @chmod($submissions_dir, 0755);
     if (!is_writable($submissions_dir)) {
         http_response_code(500);
         echo json_encode(['error' => 'Submissions directory is not writable']);
@@ -66,20 +80,21 @@ if (!is_writable($submissions_dir)) {
 
 // Create filename based on timestamp with microseconds for uniqueness
 $timestamp = date('Y-m-d_H-i-s');
-$microseconds = str_pad(microtime(true) * 1000000 % 1000000, 6, '0', STR_PAD_LEFT);
-$filename = $submissions_dir . '/' . $timestamp . '_' . $microseconds . '_' . md5($data['email']) . '.json';
+$microseconds = str_pad((microtime(true) * 1000000) % 1000000, 6, '0', STR_PAD_LEFT);
+$email_hash = md5(strtolower($email));
+$filename = $submissions_dir . '/' . $timestamp . '_' . $microseconds . '_' . $email_hash . '.json';
 
 // Prepare data to save
 $submission = [
     'id' => uniqid('contact_'),
-    'name' => sanitize_input($data['name']),
-    'email' => sanitize_input($data['email']),
-    'subject' => sanitize_input($data['subject']),
-    'message' => sanitize_input($data['message']),
-    'timestamp' => $data['timestamp'] ?? null,
+    'name' => $name,
+    'email' => $email,
+    'subject' => $subject,
+    'message' => $message,
     'received_at' => date('Y-m-d H:i:s'),
-    'user_agent' => sanitize_input($data['userAgent'] ?? ''),
-    'ip_address' => get_client_ip()
+    'user_agent' => sanitize_input($_SERVER['HTTP_USER_AGENT'] ?? ''),
+    'ip_address' => get_client_ip(),
+    'timestamp' => date('c') // ISO 8601 format
 ];
 
 // Save to JSON file
@@ -90,23 +105,23 @@ if ($json_content === false) {
     exit;
 }
 
-$bytes_written = file_put_contents($filename, $json_content);
+$bytes_written = @file_put_contents($filename, $json_content);
 if ($bytes_written === false) {
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to save submission to file']);
+    echo json_encode(['error' => 'Failed to save submission']);
     exit;
 }
 
 // Also append to a master log file for easier reading
 $log_file = $submissions_dir . '/contact_log.jsonl';
 $log_entry = json_encode($submission) . "\n";
-$log_result = file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+@file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
 
-// Return success regardless of log file result (log file is optional)
+// Return success
 http_response_code(200);
 echo json_encode([
     'success' => true,
-    'message' => 'Contact form submitted successfully',
+    'message' => 'Thank you for your message! We have received your contact information and will respond shortly.',
     'id' => $submission['id']
 ]);
 exit;
@@ -118,7 +133,10 @@ function sanitize_input($input) {
     if (is_array($input)) {
         return array_map('sanitize_input', $input);
     }
-    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+    $input = trim($input);
+    $input = strip_tags($input);
+    $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+    return $input;
 }
 
 /**
@@ -132,11 +150,11 @@ function get_client_ip() {
         $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         $ip = trim($ips[0]);
     } else {
-        $ip = $_SERVER['REMOTE_ADDR'];
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     }
     
     // Validate IP address
-    if (filter_var($ip, FILTER_VALIDATE_IP)) {
+    if (!empty($ip) && filter_var($ip, FILTER_VALIDATE_IP)) {
         return $ip;
     }
     return 'unknown';

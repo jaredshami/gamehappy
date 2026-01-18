@@ -217,7 +217,7 @@
                 An error occurred while sending your message. Please try again later.
             </div>
 
-            <form id="contactForm">
+            <form id="contactForm" method="POST" action="./save-contact.php">
                 <div class="form-group">
                     <label for="name">Full Name</label>
                     <input type="text" id="name" name="name" required placeholder="Enter your name">
@@ -258,30 +258,29 @@
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
 
+        // Handle form submission
         contactForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Collect form data
-            const formData = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                subject: document.getElementById('subject').value,
-                message: document.getElementById('message').value,
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent
-            };
+            // Create FormData object
+            const formData = new FormData(contactForm);
 
             try {
-                // Send to backend to save as JSON
+                // Send form data to backend
                 const response = await fetch('./save-contact.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
+                    body: formData
                 });
 
-                const result = await response.json();
+                const responseText = await response.text();
+                
+                // Try to parse as JSON, fallback to text
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    result = { message: responseText };
+                }
 
                 if (response.ok) {
                     // Show success message
@@ -296,11 +295,11 @@
                         successMessage.style.display = 'none';
                     }, 5000);
                 } else {
-                    throw new Error(result.error || 'Failed to send message');
+                    throw new Error(result.error || result.message || 'Failed to send message');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                errorMessage.textContent = 'Error: ' + error.message || 'An error occurred while sending your message. Please try again later.';
+                errorMessage.textContent = 'Error: ' + error.message;
                 errorMessage.style.display = 'block';
                 successMessage.style.display = 'none';
             }
