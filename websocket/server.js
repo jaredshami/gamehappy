@@ -425,15 +425,7 @@ io.on('connection', (socket) => {
             
             let action = null;
             
-            // Get bot action for CURRENT PHASE
-            const currentPhase = game.currentPhase;
-            if (game.getBotAction) {
-              action = game.getBotAction(botPlayer.token, currentPhase); 
-            } else if (game.getBotSyndicateNightAction && botRole === 'Syndicate') {
-              action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-            } else if (game.getBotBodyGuardAction && botRole === 'BodyGuard') {
-              action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
-            }
+            // Bot support has been removed
             
             console.log(`[${gameCode}] [ADD-BOTS] Action result: ${action ? JSON.stringify(action) : 'null'}`);
             
@@ -790,22 +782,7 @@ io.on('connection', (socket) => {
                   
                   let action = null;
                   
-                  if (phaseResult.phase === 'night') {
-                    // Use getBotAction if available (preferred approach)
-                    if (game.getBotAction) {
-                      action = game.getBotAction(botPlayer.token, 'night');
-                    } else {
-                      if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
-                        action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-                      } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
-                        action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
-                      }
-                    }
-                  } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
-                    action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
-                  } else if (phaseResult.phase === 'verdict' && game.getBotTrialVote) {
-                    action = game.getBotTrialVote(botPlayer.token, alivePlayers);
-                  }
+                  // Bot support has been removed
                   
                   // Emit the bot action
                   if (action) {
@@ -1433,15 +1410,7 @@ io.on('connection', (socket) => {
           
           let action = null;
           
-          // Get bot action for CURRENT PHASE, not always 'night'
-          const currentPhase = game.currentPhase;
-          if (game.getBotAction) {
-            action = game.getBotAction(botPlayer.token, currentPhase); 
-          } else if (game.getBotSyndicateNightAction && botRole === 'Syndicate') {
-            action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-          } else if (game.getBotBodyGuardAction && botRole === 'BodyGuard') {
-            action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
-          }
+          // Bot support has been removed
           
           console.log(`[${game.gameCode}] [PLAYER-READY] Action result: ${action ? JSON.stringify(action) : 'null'}`);
           
@@ -2401,3 +2370,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[UNHANDLED REJECTION] Promise:', promise, 'Reason:', reason);
 });
+
