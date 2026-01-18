@@ -3140,12 +3140,13 @@ class Game {
         console.log('Player clicked I Understand button');
         this.verdictReady = true;
         
-        // Disable button
+        // Disable button and update text
         const btn = document.getElementById('btn-verdict-ready');
         console.log('Button element for disabling:', btn);
         if (btn) {
             btn.disabled = true;
-            console.log('Button disabled');
+            btn.textContent = '✓ Understood';
+            console.log('Button disabled and text updated');
         }
         
         // Send verdict-ready message to server
@@ -3928,7 +3929,7 @@ class Game {
         // Verdict ready button
         const verdictBtn = document.getElementById('btn-verdict-ready');
         if (verdictBtn) {
-            verdictBtn.disabled = true;
+            verdictBtn.disabled = false;  // Enable for new game
             verdictBtn.textContent = "I Understand";
             verdictBtn.classList.remove('selected', 'confirmed');
         }
