@@ -1,6 +1,8 @@
 <?php
 // Save contact form submissions to JSON file
 header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display errors directly, log them instead
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -10,7 +12,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Get JSON data from request
 $json = file_get_contents('php://input');
+if (empty($json)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'No data provided']);
+    exit;
+}
+
 $data = json_decode($json, true);
+if ($data === null) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid JSON format']);
+    exit;
+}
 
 // Validate required fields
 $required_fields = ['name', 'email', 'subject', 'message'];
@@ -34,20 +47,27 @@ $submissions_dir = __DIR__ . '/data/contact-submissions';
 
 // Create directory if it doesn't exist
 if (!is_dir($submissions_dir)) {
-    mkdir($submissions_dir, 0755, true);
+    if (!mkdir($submissions_dir, 0755, true)) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to create submissions directory']);
+        exit;
+    }
 }
 
-// Create filename based on timestamp
+// Check if directory is writable
+if (!is_writable($submissions_dir)) {
+    chmod($submissions_dir, 0755);
+    if (!is_writable($submissions_dir)) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Submissions directory is not writable']);
+        exit;
+    }
+}
+
+// Create filename based on timestamp with microseconds for uniqueness
 $timestamp = date('Y-m-d_H-i-s');
-$filename = $submissions_dir . '/' . $timestamp . '_' . md5($data['email']) . '.json';
-
-// Ensure the file doesn't already exist (add microseconds if needed)
-$counter = 0;
-$base_filename = $filename;
-while (file_exists($filename) && $counter < 100) {
-    $counter++;
-    $filename = substr($base_filename, 0, -5) . '_' . $counter . '.json';
-}
+$microseconds = str_pad(microtime(true) * 1000000 % 1000000, 6, '0', STR_PAD_LEFT);
+$filename = $submissions_dir . '/' . $timestamp . '_' . $microseconds . '_' . md5($data['email']) . '.json';
 
 // Prepare data to save
 $submission = [
@@ -56,24 +76,40 @@ $submission = [
     'email' => sanitize_input($data['email']),
     'subject' => sanitize_input($data['subject']),
     'message' => sanitize_input($data['message']),
-    'timestamp' => $data['timestamp'],
+    'timestamp' => $data['timestamp'] ?? null,
     'received_at' => date('Y-m-d H:i:s'),
     'user_agent' => sanitize_input($data['userAgent'] ?? ''),
     'ip_address' => get_client_ip()
 ];
 
 // Save to JSON file
-if (file_put_contents($filename, json_encode($submission, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))) {
-    // Also append to a master log file for easier reading
-    $log_file = $submissions_dir . '/contact_log.jsonl';
-    file_put_contents($log_file, json_encode($submission) . "\n", FILE_APPEND);
-    
-    http_response_code(200);
-    echo json_encode(['success' => true, 'message' => 'Contact form submitted successfully']);
-} else {
+$json_content = json_encode($submission, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+if ($json_content === false) {
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to save submission']);
+    echo json_encode(['error' => 'Failed to encode submission data']);
+    exit;
 }
+
+$bytes_written = file_put_contents($filename, $json_content);
+if ($bytes_written === false) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Failed to save submission to file']);
+    exit;
+}
+
+// Also append to a master log file for easier reading
+$log_file = $submissions_dir . '/contact_log.jsonl';
+$log_entry = json_encode($submission) . "\n";
+$log_result = file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+
+// Return success regardless of log file result (log file is optional)
+http_response_code(200);
+echo json_encode([
+    'success' => true,
+    'message' => 'Contact form submitted successfully',
+    'id' => $submission['id']
+]);
+exit;
 
 /**
  * Sanitize user input

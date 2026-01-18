@@ -273,13 +273,15 @@
 
             try {
                 // Send to backend to save as JSON
-                const response = await fetch('/save-contact.php', {
+                const response = await fetch('./save-contact.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
+
+                const result = await response.json();
 
                 if (response.ok) {
                     // Show success message
@@ -294,10 +296,11 @@
                         successMessage.style.display = 'none';
                     }, 5000);
                 } else {
-                    throw new Error('Failed to send message');
+                    throw new Error(result.error || 'Failed to send message');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                errorMessage.textContent = 'Error: ' + error.message || 'An error occurred while sending your message. Please try again later.';
                 errorMessage.style.display = 'block';
                 successMessage.style.display = 'none';
             }
