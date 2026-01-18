@@ -848,29 +848,6 @@ class Game {
             this.startGame();
         });
 
-        // Bot controls
-        const btn1Bot = document.getElementById('btn-add-1-bot');
-        const btn2Bots = document.getElementById('btn-add-2-bots');
-        const btn3Bots = document.getElementById('btn-add-3-bots');
-
-        if (btn1Bot) {
-            btn1Bot.addEventListener('click', () => {
-                this.addBots(1);
-            });
-        }
-
-        if (btn2Bots) {
-            btn2Bots.addEventListener('click', () => {
-                this.addBots(2);
-            });
-        }
-
-        if (btn3Bots) {
-            btn3Bots.addEventListener('click', () => {
-                this.addBots(3);
-            });
-        }
-
         // Ready button
         document.getElementById('btn-ready').addEventListener('click', () => {
             this.setReady();
@@ -1125,50 +1102,6 @@ class Game {
         }, 5000);
     }
 
-    addBots(count) {
-        if (!this.isHost) {
-            console.warn('Only host can add bots');
-            return;
-        }
-
-        console.log(`Requesting to add ${count} bot(s) to game ${this.gameCode}`);
-
-        // Show loading status
-        const statusEl = document.getElementById('bot-status-message');
-        if (statusEl) {
-            statusEl.textContent = `Adding ${count} bot(s)...`;
-            statusEl.style.display = 'block';
-        }
-
-        // Emit add-bots event to server
-        this.socket.emit('add-bots', {
-            gameCode: this.gameCode,
-            botCount: count
-        }, (response) => {
-            if (response.success) {
-                console.log('Bots added successfully:', response.botsAdded);
-                if (statusEl) {
-                    statusEl.textContent = `✓ Added ${response.count} bot(s). Total players: ${response.totalPlayers}`;
-                    statusEl.style.color = 'var(--success-green)';
-                    setTimeout(() => {
-                        statusEl.style.display = 'none';
-                        statusEl.style.color = 'var(--text-muted)';
-                    }, 3000);
-                }
-            } else {
-                console.error('Failed to add bots:', response.message);
-                if (statusEl) {
-                    statusEl.textContent = `✗ ${response.message}`;
-                    statusEl.style.color = 'var(--error-red)';
-                    setTimeout(() => {
-                        statusEl.style.display = 'none';
-                        statusEl.style.color = 'var(--text-muted)';
-                    }, 3000);
-                }
-            }
-        });
-    }
-
     setReady() {
         if (this.isReady) return;
 
@@ -1375,16 +1308,10 @@ class Game {
         // Show/hide host controls
         const hostControls = document.getElementById('host-controls');
         const guestMessage = document.getElementById('guest-message');
-        const botControls = document.getElementById('bot-controls');
         
         if (this.isHost) {
             if (hostControls) hostControls.style.display = 'block';
             if (guestMessage) guestMessage.style.display = 'none';
-            
-            // Show bot controls if we have fewer than 5 players
-            if (botControls) {
-                botControls.style.display = playerCount < 5 ? 'block' : 'none';
-            }
         } else {
             if (hostControls) hostControls.style.display = 'none';
             if (guestMessage) guestMessage.style.display = 'block';
