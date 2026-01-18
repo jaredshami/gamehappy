@@ -252,12 +252,12 @@ class Game {
         if (savedSession) {
             try {
                 const session = JSON.parse(savedSession);
-                // Check if session is not too old (1 hour)
+                // Check if session is not too old (24 hours - same as in init())
                 const sessionAge = Date.now() - (session.createdAt || 0);
-                const maxSessionAge = 60 * 60 * 1000; // 1 hour
+                const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
                 
                 if (sessionAge > maxSessionAge) {
-                    console.log('Session expired');
+                    console.log('Session expired (older than 24 hours)');
                     this.clearSession();
                     return;
                 }
