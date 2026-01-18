@@ -611,16 +611,25 @@ class Game {
             return;
         }
         
-        console.log('[RECONNECT] Attempting to rejoin game:', this.gameCode, 'with token:', this.playerToken);
+        console.log('[RECONNECT] Attempting to rejoin game:', this.gameCode, 'with token:', this.playerToken, 'as player:', this.playerName);
         this.reconnecting = true;
         this.updateConnectionStatus('reconnecting');
         
         // Emit rejoin event to server
         this.socket.emit('rejoin-game', {
             gameCode: this.gameCode,
-            playerToken: this.playerToken
+            playerToken: this.playerToken,
+            playerName: this.playerName
         }, (response) => {
             console.log('[RECONNECT] Rejoin response:', response);
+            if (response.success) {
+                console.log('[RECONNECT] Successfully rejoined game');
+            } else {
+                console.error('[RECONNECT] Failed to rejoin:', response.message);
+                // Clear invalid session and show home screen
+                this.clearSession();
+                this.showScreen('home-screen');
+            }
         });
     }
 
@@ -1450,6 +1459,12 @@ class Game {
         this.gameCode = data.gameCode;
         this.playerToken = data.playerToken;
         this.players = data.players;
+        
+        // Update playerName if it was set before joining
+        if (!this.playerName && data.playerName) {
+            this.playerName = data.playerName;
+        }
+        
         this.saveSession();
 
         try {
