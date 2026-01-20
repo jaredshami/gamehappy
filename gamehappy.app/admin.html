@@ -730,15 +730,67 @@
         </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
         let updateInterval;
+        let socket;
         let data = {
             activeUsers: 0,
             activeGames: 0,
             messages: [],
             games: {},
-            stats: {}
+            stats: {},
+            liveGames: []
         };
+
+        // Connect to websocket server for real-time updates
+        function connectWebsocket() {
+            socket = io('https://gamehappy.app:8443', {
+                path: '/websocket',
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: Infinity
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected to websocket server');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from websocket server');
+            });
+
+            socket.on('gameUpdated', (gameData) => {
+                console.log('Game updated:', gameData);
+                updateLiveGamesDisplay();
+                loadData();
+            });
+
+            socket.on('gameCreated', (gameData) => {
+                console.log('Game created:', gameData);
+                updateLiveGamesDisplay();
+                loadData();
+            });
+
+            socket.on('gameEnded', (gameData) => {
+                console.log('Game ended:', gameData);
+                updateLiveGamesDisplay();
+                loadData();
+            });
+
+            socket.on('playerJoined', (data) => {
+                console.log('Player joined:', data);
+                loadData();
+            });
+
+            socket.on('activeGames', (games) => {
+                console.log('Active games received:', games);
+                data.liveGames = games;
+                updateLiveGamesDisplay();
+                updateStats();
+            });
+        }
 
         // Check authentication on page load
         async function checkAuth() {
@@ -768,7 +820,47 @@
             }
         }
 
-        function switchTab(tabName) {
+        function updateLiveGamesDisplay() {
+            const container = document.getElementById('liveGames');
+            if (!data.liveGames || data.liveGames.length === 0) {
+                container.innerHTML = '<p class="no-data">No active games</p>';
+                return;
+            }
+
+            container.innerHTML = data.liveGames
+                .map((game, idx) => `
+                    <div class="game-item">
+                        <div class="game-header">
+                            <span class="game-title">${game.gameType || 'Unknown'} - Game #${game.gameId}</span>
+                            <span class="status-badge badge-active">In Progress</span>
+                        </div>
+                        <div class="game-players">
+                            <div class="player-stat">
+                                <span class="player-stat-label">Players:</span>
+                                <span class="player-stat-value">${game.players?.length || 0}</span>
+                            </div>
+                            <div class="player-stat">
+                                <span class="player-stat-label">Round:</span>
+                                <span class="player-stat-value">${game.currentRound || 0}</span>
+                            </div>
+                            <div class="player-stat">
+                                <span class="player-stat-label">Duration:</span>
+                                <span class="player-stat-value">${formatDuration(new Date(game.createdAt))}</span>
+                            </div>
+                        </div>
+                        ${game.players ? '<div style="font-size: 12px; color: #666; margin-top: 8px;">Players: ' + (game.players.join(', ') || 'N/A') + '</div>' : ''}
+                    </div>
+                `)
+                .join('');
+        }
+
+        function formatDuration(startTime) {
+            const now = new Date();
+            const diff = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+            return `${minutes}m ${seconds}s`;
+        }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
@@ -894,6 +986,7 @@
 
         function init() {
             checkAuth();
+            connectWebsocket();
             loadMessages();
             loadData();
             updateInterval = setInterval(() => {

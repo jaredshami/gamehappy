@@ -1722,6 +1722,9 @@ io.on('connection', (socket) => {
           isHost: result.isHost
         });
 
+        // Broadcast to admin dashboard
+        broadcastActiveGames();
+
         console.log(`[GAME:CREATE] Sending callback with success`);
         callback({ 
           success: true, 
@@ -2329,6 +2332,33 @@ app.get('/test-auto-game', (req, res) => {
     res.json({ success: false, message: 'Server error' });
   }
 });
+
+// Broadcast active games to admin dashboard
+function broadcastActiveGames() {
+  const activeGames = [];
+  
+  // Collect active Secret Syndicates games
+  if (gameServer.games && gameServer.games.secret_syndicates) {
+    Object.values(gameServer.games.secret_syndicates).forEach(game => {
+      if (game && game.state !== 'ended') {
+        activeGames.push({
+          gameType: 'Secret Syndicates',
+          gameId: game.gameCode,
+          players: game.players?.map(p => p.name) || [],
+          currentRound: game.round || 1,
+          createdAt: game.createdAt || new Date(),
+          playerCount: game.players?.length || 0
+        });
+      }
+    });
+  }
+
+  // Broadcast to all connected clients
+  io.emit('activeGames', activeGames);
+}
+
+// Broadcast active games every 5 seconds
+setInterval(broadcastActiveGames, 5000);
 
 const PORT = process.env.PORT || 8443;
 
