@@ -826,7 +826,8 @@
             messages: [],
             games: {},
             stats: {},
-            liveGames: []
+            liveGames: [],
+            userHistory: []
         };
 
         // Connect to websocket server for real-time updates
@@ -899,6 +900,12 @@
                     activeUsers: stats.activeUsers,
                     activeGames: stats.activeGames
                 });
+                
+                // Store user history from server
+                if (stats.userHistory && stats.userHistory.length > 0) {
+                    data.userHistory = stats.userHistory;
+                }
+                
                 updateUI();  // Update UI with new active user count
             });
         }
@@ -1236,23 +1243,90 @@
             return labels;
         }
 
-        function updateActivityChart() {
-            // Update chart with real data based on current active users
-            const chartContainer = document.getElementById('userActivityChart');
-            const activeUserCount = data.stats?.activeUsers || 0;
-            const timeLabels = getTimeLabels(currentTimelineView);
+        function aggregateUserHistory(view) {
+            // Aggregate historical data based on time view
+            if (!data.userHistory || data.userHistory.length === 0) {
+                // Return current user count if no history
+                return Array(10).fill(data.stats?.activeUsers || 0);
+            }
             
-            // Create bars with time labels
-            const numBars = timeLabels.length;
+            const now = Date.now();
+            const aggregated = [];
+            let timeRanges = [];
+            
+            if (view === 'day') {
+                // 10 minutes per bar
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'week') {
+                // 1 hour per bar (last 10 hours)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 3600000);
+                    const startTime = endTime - 3600000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'month') {
+                // 1 day per bar (last 10 days)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 86400000);
+                    const startTime = endTime - 86400000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'year') {
+                // 1 week per bar (last 10 weeks)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 604800000);
+                    const startTime = endTime - 604800000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'all') {
+                // 1 month per bar (last 10 months)
+                for (let i = 9; i >= 0; i--) {
+                    const endDate = new Date(now);
+                    endDate.setMonth(endDate.getMonth() - i);
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    timeRanges.push({ start: startDate.getTime(), end: endDate.getTime() });
+                }
+            }
+            
+            // Calculate average for each time range
+            timeRanges.forEach(range => {
+                const pointsInRange = data.userHistory.filter(point => 
+                    point.timestamp >= range.start && point.timestamp < range.end
+                );
+                
+                if (pointsInRange.length > 0) {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + p.userCount, 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else {
+                    aggregated.push(0);
+                }
+            });
+            
+            return aggregated;
+        }
+
+        function updateActivityChart() {
+            // Update chart with historical data from user history
+            const chartContainer = document.getElementById('userActivityChart');
+            const timeLabels = getTimeLabels(currentTimelineView);
+            const chartData = aggregateUserHistory(currentTimelineView);
+            
+            // Find max value for scaling
+            const maxValue = Math.max(...chartData, 1);
+            
             let html = '';
             
-            // Generate bars - the last bar represents current activity
-            for (let i = 0; i < numBars; i++) {
-                // Current bar (last one) shows actual active users
-                // Previous bars show decreasing activity for demo purposes
-                const isCurrentBar = i === numBars - 1;
-                const displayValue = isCurrentBar ? activeUserCount : Math.max(0, activeUserCount - (numBars - i - 1) * 2);
-                const height = Math.max(15, (displayValue / Math.max(activeUserCount, 10)) * 100);
+            // Generate bars with time labels
+            for (let i = 0; i < chartData.length; i++) {
+                const displayValue = chartData[i];
+                const height = Math.max(15, (displayValue / maxValue) * 100);
                 
                 html += `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 30px;">
                     <div class="chart-bar" style="height: 250px; background: linear-gradient(to top, #667eea, #764ba2); width: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative; border-radius: 4px 4px 0 0;">

@@ -161,6 +161,27 @@ let activeUsers = new Map(); // socket.id -> { connected: true, page: string, ti
 let activeSessions = new Set(); // Track unique user sessions (not socket connections)
 let adminUsers = new Set(); // Track admin socket IDs separately
 
+// Track historical user data - array of { timestamp, userCount }
+let userHistory = [];
+const MAX_HISTORY_SIZE = 10080; // Keep ~7 days of minute-level data (7 * 24 * 60)
+
+// Function to record user count in history
+function recordUserHistory() {
+  const userCount = activeSessions.size;
+  userHistory.push({
+    timestamp: Date.now(),
+    userCount: userCount
+  });
+  
+  // Keep only recent history to avoid memory bloat
+  if (userHistory.length > MAX_HISTORY_SIZE) {
+    userHistory = userHistory.slice(-MAX_HISTORY_SIZE);
+  }
+}
+
+// Record user history every minute
+setInterval(recordUserHistory, 60000); // 60 seconds
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
@@ -2509,6 +2530,10 @@ function broadcastActiveStats() {
     }
     
     console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
+    
+    // Include user history for chart updates
+    stats.userHistory = userHistory;
+    
     io.emit('activeStats', stats);
   } catch (err) {
     console.error(`[STATS] Error in broadcastActiveStats:`, err);
