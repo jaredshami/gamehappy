@@ -730,7 +730,36 @@
                     </div>
                 </div>
 
-                <!-- Performance Metrics -->
+                <!-- Users Per Game Breakdown -->
+                <div class="card">
+                    <h3>Users Per Game</h3>
+                    <div id="usersPerGameChart" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>GameHappy Home</span>
+                                <span id="analyticsHomeCount" style="font-weight: bold;">0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Secret Syndicates</span>
+                                <span id="analyticsSSUserCount" style="font-weight: bold;">0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Flag Guardians</span>
+                                <span id="analyticsFGUserCount" style="font-weight: bold;">0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Are We There Yet</span>
+                                <span id="analyticsAWTUserCount" style="font-weight: bold;">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="card">
                     <h3>Performance Metrics</h3>
                     <div id="performanceMetrics" style="display: flex; flex-direction: column; gap: 15px;">
@@ -902,9 +931,11 @@
             socket.on('activeStats', (stats) => {
                 console.log('Active stats received:', stats);
                 console.log('Stats includes userHistory:', !!stats.userHistory, 'length:', stats.userHistory?.length || 0);
+                console.log('Users per game:', stats.usersPerGame);
                 data.stats = Object.assign(data.stats || {}, {
                     activeUsers: stats.activeUsers,
-                    activeGames: stats.activeGames
+                    activeGames: stats.activeGames,
+                    usersPerGame: stats.usersPerGame
                 });
                 
                 // Store user history from server
@@ -913,7 +944,7 @@
                     data.userHistory = stats.userHistory;
                 }
                 
-                updateUI();  // Update UI with new active user count
+                updateUI();  // Update UI with new active user count and users per game
             });
         }
 
@@ -1146,6 +1177,15 @@
             document.getElementById('websocketConnections').textContent = activeUserCount;
             document.getElementById('totalGamesPlayed').textContent = (stats.total_games || 0) + (stats.ss_total || 0);
             document.getElementById('serverUptime').textContent = getServerUptime();
+
+            // Update Users Per Game card
+            if (stats.usersPerGame) {
+                console.log('[updateUI] Updating users per game:', stats.usersPerGame);
+                document.getElementById('analyticsHomeCount').textContent = stats.usersPerGame.home || 0;
+                document.getElementById('analyticsSSUserCount').textContent = stats.usersPerGame.secretSyndicates || 0;
+                document.getElementById('analyticsFGUserCount').textContent = stats.usersPerGame.flagGuardians || 0;
+                document.getElementById('analyticsAWTUserCount').textContent = stats.usersPerGame.areWeThereYet || 0;
+            }
 
             // Update Analytics tab - Game Statistics Table
             document.getElementById('analyticsSSActiveGames').textContent = stats.ss_active || 0;

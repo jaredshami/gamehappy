@@ -2517,7 +2517,13 @@ function broadcastActiveStats() {
     const stats = {
       activeUsers: Math.max(0, regularUserCount),
       activeGames: 0,
-      timestamp: new Date()
+      timestamp: new Date(),
+      usersPerGame: {
+        home: 0,
+        secretSyndicates: 0,
+        flagGuardians: 0,
+        areWeThereYet: 0
+      }
     };
     
     // Count active games (with safety check)
@@ -2525,9 +2531,24 @@ function broadcastActiveStats() {
       for (const [gameCode, game] of gameServer.games) {
         if (game && game.state !== 'ended') {
           stats.activeGames++;
+          // Count players in each game type
+          if (game.players && Array.isArray(game.players)) {
+            const playerCount = game.players.length;
+            if (game.gameType === 'Secret Syndicates' || game.gameType === 'secretsyndicates') {
+              stats.usersPerGame.secretSyndicates += playerCount;
+            } else if (game.gameType === 'Flag Guardians' || game.gameType === 'flagguardians') {
+              stats.usersPerGame.flagGuardians += playerCount;
+            } else if (game.gameType === 'Are We There Yet' || game.gameType === 'arewethereyet') {
+              stats.usersPerGame.areWeThereYet += playerCount;
+            }
+          }
         }
       }
     }
+    
+    // Users on home page = total users minus users in games
+    const usersInGames = stats.usersPerGame.secretSyndicates + stats.usersPerGame.flagGuardians + stats.usersPerGame.areWeThereYet;
+    stats.usersPerGame.home = Math.max(0, stats.activeUsers - usersInGames);
     
     console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
     
