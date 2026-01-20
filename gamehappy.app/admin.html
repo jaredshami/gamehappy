@@ -77,6 +77,27 @@
             background: #dc2626;
         }
 
+        .view-toggle {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .view-toggle:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .view-toggle.active {
+            background: white;
+            color: #667eea;
+        }
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -636,59 +657,129 @@
 
         <!-- Analytics Tab -->
         <div id="analytics" class="tab-content">
+            <!-- Current Users Summary -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Active Players Right Now</h4>
+                    <div class="value" id="analyticsCurrentUsers">0</div>
+                    <div class="change">on gamehappy</div>
+                </div>
+                <div class="stat-card secondary">
+                    <h4>Total Active Games</h4>
+                    <div class="value" id="analyticsCurrentGames">0</div>
+                    <div class="change">in progress</div>
+                </div>
+            </div>
+
             <div class="grid">
-                <div class="card">
-                    <h3>User Activity Over Time</h3>
-                    <div id="userActivityChart" class="chart-container">
-                        <div class="chart-bar" style="height: 0%"><span>0</span></div>
-                        <div class="chart-bar" style="height: 0%"><span>0</span></div>
-                        <div class="chart-bar" style="height: 0%"><span>0</span></div>
-                        <div class="chart-bar" style="height: 0%"><span>0</span></div>
+                <!-- User Activity Timeline -->
+                <div class="card" style="grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>User Activity Timeline</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="view-toggle" onclick="switchTimelineView('day')" id="btn-day">Day</button>
+                            <button class="view-toggle" onclick="switchTimelineView('week')" id="btn-week">Week</button>
+                            <button class="view-toggle" onclick="switchTimelineView('month')" id="btn-month">Month</button>
+                            <button class="view-toggle" onclick="switchTimelineView('year')" id="btn-year">Year</button>
+                            <button class="view-toggle" onclick="switchTimelineView('all')" id="btn-all">Historical</button>
+                        </div>
+                    </div>
+                    <div id="userActivityChart" class="chart-container" style="height: 300px; display: flex; align-items: flex-end; gap: 5px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                        <div class="chart-bar" style="height: 20%; background: linear-gradient(to top, #667eea, #764ba2); flex: 1; min-width: 30px;"><span style="font-size: 11px;">0</span></div>
+                        <div class="chart-bar" style="height: 30%; background: linear-gradient(to top, #667eea, #764ba2); flex: 1; min-width: 30px;"><span style="font-size: 11px;">0</span></div>
+                        <div class="chart-bar" style="height: 40%; background: linear-gradient(to top, #667eea, #764ba2); flex: 1; min-width: 30px;"><span style="font-size: 11px;">0</span></div>
+                        <div class="chart-bar" style="height: 35%; background: linear-gradient(to top, #667eea, #764ba2); flex: 1; min-width: 30px;"><span style="font-size: 11px;">0</span></div>
+                        <div class="chart-bar" style="height: 50%; background: linear-gradient(to top, #667eea, #764ba2); flex: 1; min-width: 30px;"><span style="font-size: 11px;">0</span></div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                        <span id="timelineLabel">Today's Activity</span>
                     </div>
                 </div>
+
+                <!-- Game Distribution -->
                 <div class="card">
-                    <h3>Game Type Distribution</h3>
-                    <div id="gameTypeChart">
-                        <table>
-                            <tr>
-                                <th>Game</th>
-                                <th>Active</th>
-                                <th>Total</th>
-                            </tr>
-                            <tr>
-                                <td>Secret Syndicates</td>
-                                <td id="analyticsSSActive">0</td>
-                                <td id="analyticsSTotal">0</td>
-                            </tr>
-                            <tr>
-                                <td>Flag Guardians</td>
-                                <td id="analyticsFGActive">0</td>
-                                <td id="analyticsFGTotal">0</td>
-                            </tr>
-                            <tr>
-                                <td>Are We There Yet</td>
-                                <td id="analyticsAWTActive">0</td>
-                                <td id="analyticsAWTTotal">0</td>
-                            </tr>
-                        </table>
+                    <h3>Players Per Game</h3>
+                    <div id="gameDistributionChart" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Secret Syndicates</span>
+                                <span id="analyticsSSCount" style="font-weight: bold;">0</span>
+                            </div>
+                            <div style="background: #e0e0e0; height: 20px; border-radius: 4px; overflow: hidden;">
+                                <div id="analyticsSSBar" style="background: linear-gradient(to right, #667eea, #764ba2); height: 100%; width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Flag Guardians</span>
+                                <span id="analyticsFGCount" style="font-weight: bold;">0</span>
+                            </div>
+                            <div style="background: #e0e0e0; height: 20px; border-radius: 4px; overflow: hidden;">
+                                <div id="analyticsFGBar" style="background: linear-gradient(to right, #667eea, #764ba2); height: 100%; width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Are We There Yet</span>
+                                <span id="analyticsAWTCount" style="font-weight: bold;">0</span>
+                            </div>
+                            <div style="background: #e0e0e0; height: 20px; border-radius: 4px; overflow: hidden;">
+                                <div id="analyticsAWTBar" style="background: linear-gradient(to right, #667eea, #764ba2); height: 100%; width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="card">
+                    <h3>Performance Metrics</h3>
+                    <div id="performanceMetrics" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div class="metric">
+                            <span class="metric-label">Server Uptime</span>
+                            <span class="metric-value" id="serverUptime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Websocket Connections</span>
+                            <span class="metric-value" id="websocketConnections">0</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Games Played</span>
+                            <span class="metric-value" id="totalGamesPlayed">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card">
-                <h3>Performance Metrics</h3>
-                <div id="performanceMetrics">
-                    <div class="metric">
-                        <span class="metric-label">Server Uptime</span>
-                        <span class="metric-value" id="serverUptime">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Average Response Time</span>
-                        <span class="metric-value" id="avgResponseTime">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Database Size</span>
-                        <span class="metric-value" id="dbSize">-</span>
-                    </div>
+
+            <!-- Game Distribution Table -->
+            <div class="card" style="grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Game Statistics</h3>
+                <div id="gameTypeChart">
+                    <table>
+                        <tr>
+                            <th>Game</th>
+                            <th>Active Games</th>
+                            <th>Total Played</th>
+                            <th>Players in Progress</th>
+                        </tr>
+                        <tr>
+                            <td>Secret Syndicates</td>
+                            <td id="analyticsSSActiveGames">0</td>
+                            <td id="analyticsSTotal">0</td>
+                            <td id="analyticsSPlayers">0</td>
+                        </tr>
+                        <tr>
+                            <td>Flag Guardians</td>
+                            <td id="analyticsFGActiveGames">0</td>
+                            <td id="analyticsFGTotal">0</td>
+                            <td id="analyticsFGPlayers">0</td>
+                        </tr>
+                        <tr>
+                            <td>Are We There Yet</td>
+                            <td id="analyticsAWTActiveGames">0</td>
+                            <td id="analyticsAWTTotal">0</td>
+                            <td id="analyticsAWTPlayers">0</td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
@@ -982,7 +1073,7 @@
             
             console.log('[updateUI] Setting active users:', activeUserCount, 'active games:', activeGameCount);
             
-            // Update DOM elements in Overview and Secret Syndicates tabs
+            // Update Overview tab
             const userElements = [
                 document.getElementById('overviewActiveUsers'),
                 document.getElementById('activeUsers')
@@ -1001,7 +1092,7 @@
                 if (el) el.textContent = activeGameCount;
             });
 
-            // Update Secret Syndicates stats in Secret Syndicates tab
+            // Update Secret Syndicates stats
             const ssTotal = document.getElementById('ssTotal');
             if (ssTotal) ssTotal.textContent = stats.ss_total || 0;
             
@@ -1019,27 +1110,96 @@
             const ssActivePlayers = document.getElementById('ssActivePlayers');
             if (ssActivePlayers) ssActivePlayers.textContent = totalActivePlayers || 0;
 
-            // Update Analytics tab elements
-            const analyticsSSActive = document.getElementById('analyticsSSActive');
-            if (analyticsSSActive) analyticsSSActive.textContent = activeGameCount;
+            // Update Analytics tab - Current Users Summary
+            document.getElementById('analyticsCurrentUsers').textContent = activeUserCount;
+            document.getElementById('analyticsCurrentGames').textContent = activeGameCount;
             
-            const analyticsSTotal = document.getElementById('analyticsSTotal');
-            if (analyticsSTotal) analyticsSTotal.textContent = stats.ss_total || 0;
+            // Update Analytics tab - Player Distribution Bars
+            const totalPlayers = totalActivePlayers || activeUserCount;
+            const maxPlayers = Math.max(totalPlayers, 1);
             
-            const analyticsFGActive = document.getElementById('analyticsFGActive');
-            if (analyticsFGActive) analyticsFGActive.textContent = stats.fg_active || 0;
+            // Secret Syndicates distribution
+            const ssPlayers = stats.ss_players || 0;
+            document.getElementById('analyticsSSCount').textContent = ssPlayers;
+            document.getElementById('analyticsSSBar').style.width = (ssPlayers / maxPlayers * 100) + '%';
             
-            const analyticsFGTotal = document.getElementById('analyticsFGTotal');
-            if (analyticsFGTotal) analyticsFGTotal.textContent = stats.fg_total || 0;
+            // Flag Guardians distribution
+            const fgPlayers = stats.fg_players || 0;
+            document.getElementById('analyticsFGCount').textContent = fgPlayers;
+            document.getElementById('analyticsFGBar').style.width = (fgPlayers / maxPlayers * 100) + '%';
             
-            const analyticsAWTActive = document.getElementById('analyticsAWTActive');
-            if (analyticsAWTActive) analyticsAWTActive.textContent = stats.awt_active || 0;
+            // Are We There Yet distribution
+            const awtPlayers = stats.awt_players || 0;
+            document.getElementById('analyticsAWTCount').textContent = awtPlayers;
+            document.getElementById('analyticsAWTBar').style.width = (awtPlayers / maxPlayers * 100) + '%';
+
+            // Update Analytics tab - Performance Metrics
+            document.getElementById('websocketConnections').textContent = activeUserCount;
+            document.getElementById('totalGamesPlayed').textContent = (stats.total_games || 0) + (stats.ss_total || 0);
+            document.getElementById('serverUptime').textContent = getServerUptime();
+
+            // Update Analytics tab - Game Statistics Table
+            document.getElementById('analyticsSSActiveGames').textContent = stats.ss_active || 0;
+            document.getElementById('analyticsSTotal').textContent = stats.ss_total || 0;
+            document.getElementById('analyticsSPlayers').textContent = ssPlayers;
             
-            const analyticsAWTTotal = document.getElementById('analyticsAWTTotal');
-            if (analyticsAWTTotal) analyticsAWTTotal.textContent = stats.awt_total || 0;
+            document.getElementById('analyticsFGActiveGames').textContent = stats.fg_active || 0;
+            document.getElementById('analyticsFGTotal').textContent = stats.fg_total || 0;
+            document.getElementById('analyticsFGPlayers').textContent = fgPlayers;
+            
+            document.getElementById('analyticsAWTActiveGames').textContent = stats.awt_active || 0;
+            document.getElementById('analyticsAWTTotal').textContent = stats.awt_total || 0;
+            document.getElementById('analyticsAWTPlayers').textContent = awtPlayers;
 
             const lastRefresh = document.getElementById('lastRefresh');
             if (lastRefresh) lastRefresh.textContent = new Date().toLocaleTimeString();
+        }
+
+        function getServerUptime() {
+            const startTime = localStorage.getItem('dashboardStartTime');
+            if (!startTime) {
+                localStorage.setItem('dashboardStartTime', Date.now().toString());
+                return '0h 0m';
+            }
+            const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
+            const hours = Math.floor(elapsed / 3600);
+            const minutes = Math.floor((elapsed % 3600) / 60);
+            return hours + 'h ' + minutes + 'm';
+        }
+
+        let currentTimelineView = 'day';
+        
+        function switchTimelineView(view) {
+            currentTimelineView = view;
+            // Update button states
+            document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + view).classList.add('active');
+            
+            // Update chart label
+            const labels = {
+                day: "Today's Activity (Hourly)",
+                week: "Weekly Activity",
+                month: "Monthly Activity",
+                year: "Yearly Activity",
+                all: "Historical Activity"
+            };
+            document.getElementById('timelineLabel').textContent = labels[view];
+            
+            // TODO: Load historical data and update chart
+            updateActivityChart();
+        }
+
+        function updateActivityChart() {
+            // Generate mock data - in production, this would fetch from server
+            const chartBars = document.querySelectorAll('#userActivityChart .chart-bar');
+            const numBars = chartBars.length;
+            
+            chartBars.forEach((bar, idx) => {
+                const height = Math.random() * 100;
+                const value = Math.floor(Math.random() * 50);
+                bar.style.height = (height / 100 * 100) + '%';
+                bar.querySelector('span').textContent = value;
+            });
         }
 
         async function clearOldGames() {
@@ -1079,6 +1239,10 @@
             connectWebsocket();
             loadMessages();
             loadData();  // Load static data once on init
+            
+            // Set "Day" view as active by default
+            document.getElementById('btn-day').classList.add('active');
+            updateActivityChart();
             
             // Only refresh messages periodically, NOT data (websocket provides real-time data)
             updateInterval = setInterval(() => {
