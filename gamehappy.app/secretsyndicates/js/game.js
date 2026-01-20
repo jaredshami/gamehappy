@@ -588,11 +588,13 @@ class Game {
                 
                 // Notify server that a regular user (not admin) is connected
                 const sessionId = localStorage.getItem('gamehappy-session-id');
+                console.log('[CONNECT] Emitting user:connect with page=secretsyndicates-home, sessionId=' + sessionId);
                 this.socket.emit('user:connect', {
                     timestamp: new Date(),
                     page: 'secretsyndicates-home',
                     sessionId: sessionId
                 });
+                console.log('[CONNECT] user:connect event emitted');
                 
                 // Skip auto-rejoin in test mode
                 if (this.isTestMode) {

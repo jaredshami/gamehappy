@@ -222,12 +222,15 @@
 
         socket.on('connect', () => {
             console.log('Connected to GameHappy tracking server');
+            const sessionId = getSessionId();
+            console.log('[HOME] Emitting user:connect with page=home, sessionId=' + sessionId);
             // Notify server that a user is on the homepage
             socket.emit('user:connect', {
                 timestamp: new Date(),
                 page: 'home',
-                sessionId: getSessionId()
+                sessionId: sessionId
             });
+            console.log('[HOME] user:connect event emitted');
         });
 
         socket.on('disconnect', () => {
