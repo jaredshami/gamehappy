@@ -158,6 +158,7 @@ ensureGameHistoryFile();
 
 // Track active users
 let activeUsers = new Map(); // socket.id -> { connected: true, page: string, timestamp: Date }
+let adminUsers = new Set(); // Track admin socket IDs separately
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -166,7 +167,8 @@ io.on('connection', (socket) => {
   // Track this user as active on connection
   activeUsers.set(socket.id, {
     connected: true,
-    timestamp: new Date()
+    timestamp: new Date(),
+    isAdmin: false
   });
   console.log(`[USERS] Total active users: ${activeUsers.size}`);
   
@@ -1934,9 +1936,10 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}, token: ${playerToken}`);
     
-    // Remove from active users tracking
+    // Remove from active users tracking and admin tracking
     activeUsers.delete(socket.id);
-    console.log(`[USERS] Total active users: ${activeUsers.size}`);
+    adminUsers.delete(socket.id);
+    console.log(`[USERS] Total active users: ${activeUsers.size - adminUsers.size}`);
     
     // Broadcast updated user count (with safety check)
     try {
@@ -1957,6 +1960,22 @@ io.on('connection', (socket) => {
         playerToken,
         game: gameServer.getGameLobbyInfo(gameCode)
       });
+    }
+  });
+
+  /**
+   * Admin connection - track admin users separately so they don't count toward active users
+   */
+  socket.on('admin:connect', (data) => {
+    console.log(`[ADMIN] Admin dashboard connected from ${socket.id}`);
+    adminUsers.add(socket.id);
+    activeUsers.get(socket.id).isAdmin = true;
+    
+    // Broadcast updated stats (excluding admin from user count)
+    try {
+      broadcastActiveStats();
+    } catch (err) {
+      console.error('[ADMIN] Error broadcasting stats:', err);
     }
   });
 
@@ -2422,8 +2441,11 @@ function broadcastActiveGames() {
 // Broadcast active user and game stats to admin dashboard
 function broadcastActiveStats() {
   try {
+    // Count active users excluding admin connections
+    const regularUserCount = activeUsers.size - adminUsers.size;
+    
     const stats = {
-      activeUsers: activeUsers.size,
+      activeUsers: Math.max(0, regularUserCount),  // Don't go negative
       activeGames: 0,
       timestamp: new Date()
     };
@@ -2437,7 +2459,7 @@ function broadcastActiveStats() {
       }
     }
     
-    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users, ${stats.activeGames} games`);
+    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
     io.emit('activeStats', stats);
   } catch (err) {
     console.error(`[STATS] Error in broadcastActiveStats:`, err);

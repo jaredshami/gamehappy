@@ -755,6 +755,11 @@
 
             socket.on('connect', () => {
                 console.log('Connected to websocket server');
+                // Identify this connection as admin so active user count excludes admins
+                socket.emit('admin:connect', {
+                    timestamp: new Date(),
+                    page: 'admin-dashboard'
+                });
             });
 
             socket.on('disconnect', () => {
