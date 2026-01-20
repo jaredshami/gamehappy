@@ -788,6 +788,7 @@
                 console.log('Active games received:', games);
                 data.liveGames = games;
                 updateLiveGamesDisplay();
+                updateUI();  // Update stats with new player counts
             });
         }
 
@@ -939,16 +940,22 @@
         function updateUI() {
             const stats = data.stats;
             
-            document.getElementById('overviewActiveUsers').textContent = stats.activeUsers || 0;
-            document.getElementById('overviewActiveGames').textContent = stats.activeGames || 0;
-            document.getElementById('activeUsers').textContent = stats.activeUsers || 0;
-            document.getElementById('activeGames').textContent = stats.activeGames || 0;
+            // Calculate active users from live games
+            let totalActivePlayers = 0;
+            if (data.liveGames && data.liveGames.length > 0) {
+                totalActivePlayers = data.liveGames.reduce((sum, game) => sum + (game.playerCount || 0), 0);
+            }
+            
+            document.getElementById('overviewActiveUsers').textContent = totalActivePlayers || stats.activeUsers || 0;
+            document.getElementById('overviewActiveGames').textContent = data.liveGames?.length || stats.activeGames || 0;
+            document.getElementById('activeUsers').textContent = totalActivePlayers || stats.activeUsers || 0;
+            document.getElementById('activeGames').textContent = data.liveGames?.length || stats.activeGames || 0;
 
             // Update Secret Syndicates stats
             document.getElementById('ssTotal').textContent = stats.ss_total || 0;
-            document.getElementById('ssActive').textContent = stats.ss_active || 0;
+            document.getElementById('ssActive').textContent = data.liveGames?.length || stats.ss_active || 0;
             document.getElementById('ssTotalRounds').textContent = stats.ss_rounds || 0;
-            document.getElementById('ssActivePlayers').textContent = stats.ss_players || 0;
+            document.getElementById('ssActivePlayers').textContent = totalActivePlayers || stats.ss_players || 0;
 
             document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
         }
