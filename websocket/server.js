@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const https = require('https');
 const express = require('express');
 const { Server } = require('socket.io');
@@ -729,6 +729,13 @@ io.on('connection', (socket) => {
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }
                 }
+                // Broadcast updated stats to admin dashboard after game ends
+                try {
+                  broadcastActiveGames();
+                  broadcastActiveStats();
+                } catch (err) {
+                  console.error('[GAME-END] Error broadcasting updated stats:', err);
+                }
                 return;
               }
               
@@ -939,6 +946,13 @@ io.on('connection', (socket) => {
                     });
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }
+                }
+                // Broadcast updated stats to admin dashboard after game ends
+                try {
+                  broadcastActiveGames();
+                  broadcastActiveStats();
+                } catch (err) {
+                  console.error('[GAME-END] Error broadcasting updated stats:', err);
                 }
                 return;
               }
@@ -1207,6 +1221,13 @@ io.on('connection', (socket) => {
                     });
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }
+                }
+                // Broadcast updated stats to admin dashboard after game ends
+                try {
+                  broadcastActiveGames();
+                  broadcastActiveStats();
+                } catch (err) {
+                  console.error('[GAME-END] Error broadcasting updated stats:', err);
                 }
                 return;
               }
@@ -2469,4 +2490,5 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[UNHANDLED REJECTION] Promise:', promise, 'Reason:', reason);
 });
+
 
