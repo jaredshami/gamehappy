@@ -894,7 +894,17 @@
                 const response = await fetch('./api/admin/stats.php');
                 if (!response.ok) throw new Error('Failed to load stats');
                 const json = await response.json();
+                
+                // Preserve activeUsers and activeGames from websocket - don't overwrite with API
+                const preservedActiveUsers = data.stats?.activeUsers;
+                const preservedActiveGames = data.stats?.activeGames;
+                
                 data.stats = json;
+                
+                // Restore websocket values if they exist
+                if (preservedActiveUsers !== undefined) data.stats.activeUsers = preservedActiveUsers;
+                if (preservedActiveGames !== undefined) data.stats.activeGames = preservedActiveGames;
+                
                 updateUI();
             } catch (error) {
                 console.error('Error loading stats:', error);
