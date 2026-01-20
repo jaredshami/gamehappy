@@ -861,6 +861,8 @@
             const seconds = diff % 60;
             return `${minutes}m ${seconds}s`;
         }
+
+        function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
