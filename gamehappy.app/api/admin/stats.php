@@ -1,6 +1,14 @@
 <?php
+session_start();
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+
+// Check authentication
+if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
 
 $data_dir = '/var/www/gamehappy.app/data';
 $contact_dir = $data_dir . '/contact-submissions';

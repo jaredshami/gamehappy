@@ -61,6 +61,22 @@
             text-transform: uppercase;
         }
 
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -476,7 +492,10 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎮 GameHappy Admin Dashboard</h1>
+            <div>
+                <h1>🎮 GameHappy Admin Dashboard</h1>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">Welcome, <strong id="adminUsername">Admin</strong></div>
+            </div>
             <div class="header-stats">
                 <div class="stat-badge">
                     <div class="stat-value" id="activeUsers">0</div>
@@ -490,6 +509,7 @@
                     <div class="stat-value" id="totalMessages">0</div>
                     <div class="stat-label">Messages</div>
                 </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
         </header>
 
@@ -720,6 +740,34 @@
             stats: {}
         };
 
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('./auth/check-session.php');
+                const result = await response.json();
+                if (!result.authenticated) {
+                    window.location.href = './login.html';
+                } else {
+                    document.getElementById('adminUsername').textContent = result.username || 'Admin';
+                }
+            } catch (error) {
+                window.location.href = './login.html';
+            }
+        }
+
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            try {
+                const response = await fetch('./auth/logout.php');
+                const result = await response.json();
+                if (result.success) {
+                    window.location.href = './login.html';
+                }
+            } catch (error) {
+                alert('Error logging out');
+            }
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -845,6 +893,7 @@
         }
 
         function init() {
+            checkAuth();
             loadMessages();
             loadData();
             updateInterval = setInterval(() => {
