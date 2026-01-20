@@ -1730,6 +1730,7 @@
             return aggregated;
         }
 
+        function aggregateGameMetrics(view, historyData, type) {
             if (!historyData || historyData.length === 0) {
                 return Array(10).fill(0);
             }
