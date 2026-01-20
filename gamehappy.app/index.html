@@ -194,5 +194,35 @@
             </div>
         </div>
     </div>
+
+    <!-- Socket.IO for user tracking -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Connect to websocket server to track active users
+        const socket = io('https://gamehappy.app:8443', {
+            path: '/websocket',
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: Infinity
+        });
+
+        socket.on('connect', () => {
+            console.log('Connected to GameHappy tracking server');
+            // Notify server that a user is on the homepage
+            socket.emit('user:connect', {
+                timestamp: new Date(),
+                page: 'gamehappy-homepage'
+            });
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from tracking server');
+        });
+
+        socket.on('error', (error) => {
+            console.error('Connection error:', error);
+        });
+    </script>
 </body>
 </html>
