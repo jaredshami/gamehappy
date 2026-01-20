@@ -195,18 +195,16 @@ function recordGameMetrics() {
       areWeThereYet: 0
     };
     
-    // Count players in each game type
-    if (gameServer && gameServer.games && gameServer.games.size > 0) {
-      for (const [gameCode, game] of gameServer.games) {
-        if (game && game.gameState !== 'ended' && game.players && Array.isArray(game.players)) {
-          const playerCount = game.players.length;
-          if (game.gameType === 'Secret Syndicates' || game.gameType === 'secretsyndicates') {
-            metrics.secretSyndicates += playerCount;
-          } else if (game.gameType === 'Flag Guardians' || game.gameType === 'flagguardians') {
-            metrics.flagGuardians += playerCount;
-          } else if (game.gameType === 'Are We There Yet' || game.gameType === 'arewethereyet') {
-            metrics.areWeThereYet += playerCount;
-          }
+    // Count users by page they're on (from activeUsers tracking)
+    for (const [socketId, user] of activeUsers) {
+      if (user && user.sessionId && activeSessions.has(user.sessionId)) {
+        const page = user.page || 'home';
+        if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
+          metrics.secretSyndicates++;
+        } else if (page === 'flagguardians-home' || page === 'flagguardians') {
+          metrics.flagGuardians++;
+        } else if (page === 'arewethereyet-home' || page === 'arewethereyet') {
+          metrics.areWeThereYet++;
         }
       }
     }
@@ -218,6 +216,8 @@ function recordGameMetrics() {
     
     // Record users per game
     const totalUsers = activeSessions.size;
+    const usersInGames = metrics.secretSyndicates + metrics.flagGuardians + metrics.areWeThereYet;
+    // Calculate home users
     const usersInGames = metrics.secretSyndicates + metrics.flagGuardians + metrics.areWeThereYet;
     const usersMetrics = {
       timestamp: Date.now(),
@@ -2123,8 +2123,13 @@ io.on('connection', (socket) => {
    */
   socket.on('user:connect', (data) => {
     console.log(`[USER] Regular user connected from ${socket.id} at ${data?.page || 'unknown'}`);
-    // Just confirm user is tracked - no need to do anything else since they're already in activeUsers
-    // and NOT in adminUsers by default
+    
+    // Update user tracking with page information
+    if (activeUsers.has(socket.id)) {
+      const user = activeUsers.get(socket.id);
+      user.page = data?.page || 'home';
+      console.log(`[USER] Updated user page to: ${user.page}`);
+    }
     
     // Broadcast updated stats
     try {
@@ -2611,39 +2616,35 @@ function broadcastActiveStats() {
       }
     };
     
-    // Track which sessionIds are in games to avoid double-counting
-    const usersInGames = new Set();
-    
-    // Count active games and users per game (with safety check)
-    if (gameServer && gameServer.games && gameServer.games.size > 0) {
-      for (const [gameCode, game] of gameServer.games) {
-        if (game && game.gameState !== 'ended') {
-          stats.activeGames++;
-          // Count players in each game type
-          if (game.players && Array.isArray(game.players)) {
-            for (const player of game.players) {
-              if (player && player.token) {
-                usersInGames.add(player.token);
-              }
-            }
-            
-            const playerCount = game.players.length;
-            if (game.gameType === 'Secret Syndicates' || game.gameType === 'secretsyndicates') {
-              stats.usersPerGame.secretSyndicates += playerCount;
-            } else if (game.gameType === 'Flag Guardians' || game.gameType === 'flagguardians') {
-              stats.usersPerGame.flagGuardians += playerCount;
-            } else if (game.gameType === 'Are We There Yet' || game.gameType === 'arewethereyet') {
-              stats.usersPerGame.areWeThereYet += playerCount;
-            }
-          }
+    // First, count users by page they're on (from activeUsers tracking)
+    for (const [socketId, user] of activeUsers) {
+      if (user && user.sessionId && activeSessions.has(user.sessionId)) {
+        const page = user.page || 'home';
+        if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
+          stats.usersPerGame.secretSyndicates++;
+        } else if (page === 'flagguardians-home' || page === 'flagguardians') {
+          stats.usersPerGame.flagGuardians++;
+        } else if (page === 'arewethereyet-home' || page === 'arewethereyet') {
+          stats.usersPerGame.areWeThereYet++;
+        } else {
+          stats.usersPerGame.home++;
         }
       }
     }
     
-    // Users on home page = total users minus users in games
-    stats.usersPerGame.home = Math.max(0, stats.activeUsers - usersInGames.size);
+    // Track which sessionIds are in games to avoid double-counting
+    const usersInGames = new Set();
     
-    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games, ${usersInGames.size} users in games`);
+    // Count active games
+    if (gameServer && gameServer.games && gameServer.games.size > 0) {
+      for (const [gameCode, game] of gameServer.games) {
+        if (game && game.gameState !== 'ended') {
+          stats.activeGames++;
+        }
+      }
+    }
+    
+    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
     console.log(`[STATS] Users per game - Home: ${stats.usersPerGame.home}, SS: ${stats.usersPerGame.secretSyndicates}, FG: ${stats.usersPerGame.flagGuardians}, AWT: ${stats.usersPerGame.areWeThereYet}`);
     
     // Include user history and game metrics for chart updates
