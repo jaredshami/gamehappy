@@ -954,12 +954,15 @@
             socket.on('activeStats', (stats) => {
                 console.log('Active stats received:', stats);
                 console.log('Stats includes userHistory:', !!stats.userHistory, 'length:', stats.userHistory?.length || 0);
-                console.log('Users per game:', stats.usersPerGame);
-                data.stats = Object.assign(data.stats || {}, {
+                console.log('Users per game from server:', stats.usersPerGame);
+                
+                // Properly update data.stats with all received fields
+                data.stats = {
                     activeUsers: stats.activeUsers,
                     activeGames: stats.activeGames,
-                    usersPerGame: stats.usersPerGame
-                });
+                    usersPerGame: stats.usersPerGame,
+                    timestamp: stats.timestamp
+                };
                 
                 // Store user history from server
                 if (stats.userHistory && stats.userHistory.length > 0) {
@@ -975,6 +978,7 @@
                     data.usersPerGameHistory = stats.usersPerGameHistory;
                 }
                 
+                console.log('[WebSocket] Updated data.stats:', data.stats);
                 updateUI();  // Update UI with new active user count and users per game
             });
         }
@@ -1137,9 +1141,10 @@
         function updateUI() {
             const stats = data.stats;
             console.log('[updateUI] Current stats:', stats);
+            console.log('[updateUI] usersPerGame:', stats?.usersPerGame);
             
             // Use the real active users count from websocket server
-            const activeUserCount = stats.activeUsers !== undefined ? stats.activeUsers : 0;
+            const activeUserCount = stats?.activeUsers !== undefined ? stats.activeUsers : 0;
             const activeGameCount = stats.activeGames !== undefined ? stats.activeGames : (data.liveGames?.length || 0);
             
             console.log('[updateUI] Setting active users:', activeUserCount, 'active games:', activeGameCount);
