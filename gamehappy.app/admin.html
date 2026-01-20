@@ -1178,21 +1178,26 @@
         
         function switchTimelineView(view) {
             currentTimelineView = view;
+            console.log('[View] Switching to timeline view:', view);
+            
             // Update button states
             document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
             document.getElementById('btn-' + view).classList.add('active');
             
             // Update chart label
             const labels = {
-                day: "Today's Activity (Hourly)",
-                week: "Weekly Activity",
-                month: "Monthly Activity",
-                year: "Yearly Activity",
-                all: "Historical Activity"
+                day: "Today's Activity (Per Minute)",
+                week: "Weekly Activity (Per Hour)",
+                month: "Monthly Activity (Per Day)",
+                year: "Yearly Activity (Per Week)",
+                all: "Historical Activity (Per Month)"
             };
             document.getElementById('timelineLabel').textContent = labels[view];
             
-            // TODO: Load historical data and update chart
+            console.log('[View] Updated label to:', labels[view]);
+            
+            // Update chart with new view
+
             updateActivityChart();
         }
 
@@ -1248,9 +1253,13 @@
         function aggregateUserHistory(view) {
             // Aggregate historical data based on time view
             if (!data.userHistory || data.userHistory.length === 0) {
-                // Return current user count if no history
-                return Array(10).fill(data.stats?.activeUsers || 0);
+                // If no history, create demo data showing current trend
+                const current = data.stats?.activeUsers || 0;
+                console.log('[Chart] No history available, using current user count:', current);
+                return Array(10).fill(current);
             }
+            
+            console.log('[Chart] Aggregating', data.userHistory.length, 'history points for view:', view);
             
             const now = Date.now();
             const aggregated = [];
@@ -1258,6 +1267,7 @@
             
             if (view === 'day') {
                 // 10 minutes per bar
+
                 for (let i = 9; i >= 0; i--) {
                     const endTime = now - (i * 60000);
                     const startTime = endTime - 60000;
