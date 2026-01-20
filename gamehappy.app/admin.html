@@ -511,6 +511,22 @@
         .modal-close:hover {
             color: #333;
         }
+
+        .game-selector {
+            transition: all 0.3s ease;
+        }
+
+        .game-selector:hover {
+            background: #e8ecff !important;
+            border-color: #667eea !important;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .game-selector.active {
+            border-color: #667eea !important;
+            background: #e8ecff !important;
+        }
     </style>
 </head>
 <body>
@@ -731,32 +747,24 @@
                 </div>
 
                 <!-- Users Per Game Breakdown -->
-                <div class="card" onclick="openDetailedChart('usersPerGameBreakdown')" style="cursor: pointer; transition: all 0.3s;">
+                <div class="card">
                     <h3>Users Per Game</h3>
-                    <div id="usersPerGameChart" style="display: flex; flex-direction: column; gap: 15px;">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span>GameHappy Home</span>
-                                <span id="analyticsHomeCount" style="font-weight: bold;">0</span>
-                            </div>
+                    <div id="usersPerGameChart" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="game-selector" onclick="showGameHistory('home')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">GameHappy Home</span>
+                            <span id="analyticsHomeCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
                         </div>
-                        <div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span>Secret Syndicates</span>
-                                <span id="analyticsSSUserCount" style="font-weight: bold;">0</span>
-                            </div>
+                        <div class="game-selector" onclick="showGameHistory('secretSyndicates')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">Secret Syndicates</span>
+                            <span id="analyticsSSUserCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
                         </div>
-                        <div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span>Flag Guardians</span>
-                                <span id="analyticsFGUserCount" style="font-weight: bold;">0</span>
-                            </div>
+                        <div class="game-selector" onclick="showGameHistory('flagGuardians')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">Flag Guardians</span>
+                            <span id="analyticsFGUserCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
                         </div>
-                        <div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span>Are We There Yet</span>
-                                <span id="analyticsAWTUserCount" style="font-weight: bold;">0</span>
-                            </div>
+                        <div class="game-selector" onclick="showGameHistory('areWeThereYet')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">Are We There Yet</span>
+                            <span id="analyticsAWTUserCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
                         </div>
                     </div>
                 </div>
@@ -1497,8 +1505,44 @@
 
         let currentDetailedView = 'day';
         let currentDetailedChart = 'usersPerGame';
+        let currentGameFilter = null; // Track which game is selected
+
+        function showGameHistory(gameKey) {
+            currentGameFilter = gameKey;
+            currentDetailedView = 'day';
+            
+            const titles = {
+                'home': 'GameHappy Home - User History',
+                'secretSyndicates': 'Secret Syndicates - User History',
+                'flagGuardians': 'Flag Guardians - User History',
+                'areWeThereYet': 'Are We There Yet - User History'
+            };
+            
+            // Update all game selector buttons - remove active from all
+            document.querySelectorAll('.game-selector').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Add active class to clicked element (need to find it)
+            const gameNameMap = {
+                'home': 'GameHappy Home',
+                'secretSyndicates': 'Secret Syndicates',
+                'flagGuardians': 'Flag Guardians',
+                'areWeThereYet': 'Are We There Yet'
+            };
+            
+            document.getElementById('detailedChartTitle').textContent = titles[gameKey] || 'Chart Details';
+            document.getElementById('detailedChartModal').style.display = 'block';
+            
+            // Set day as active button
+            document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('detail-btn-day').classList.add('active');
+            
+            updateGameHistoryChart();
+        }
 
         function openDetailedChart(chartType) {
+            currentGameFilter = null; // Reset game filter
             currentDetailedChart = chartType;
             currentDetailedView = 'day';
             
@@ -1525,7 +1569,13 @@
             currentDetailedView = view;
             document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`#detailedChartModal [onclick*="'${view}'"]`).classList.add('active');
-            updateDetailedChart();
+            
+            // Call the appropriate update function based on whether we're viewing game history or other metrics
+            if (currentGameFilter) {
+                updateGameHistoryChart();
+            } else {
+                updateDetailedChart();
+            }
         }
 
         function updateDetailedChart() {
@@ -1563,7 +1613,123 @@
             document.getElementById('detailedChartLabel').textContent = currentDetailedView.charAt(0).toUpperCase() + currentDetailedView.slice(1) + ' view';
         }
 
-        function aggregateGameMetrics(view, historyData, type) {
+        function updateGameHistoryChart() {
+            const chartContainer = document.getElementById('detailedChart');
+            const timeLabels = getTimeLabels(currentDetailedView);
+            let chartData = [];
+
+            if (currentGameFilter === 'home') {
+                // Get home user history from usersPerGameHistory
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'home');
+            } else if (currentGameFilter === 'secretSyndicates') {
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'secretSyndicates');
+            } else if (currentGameFilter === 'flagGuardians') {
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'flagGuardians');
+            } else if (currentGameFilter === 'areWeThereYet') {
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'areWeThereYet');
+            }
+
+            console.log('[Game History] Filter:', currentGameFilter, 'View:', currentDetailedView, 'Data:', chartData);
+
+            const maxValue = Math.max(...chartData, 1);
+            const containerHeight = chartContainer.clientHeight || 400;
+
+            let html = '';
+            for (let i = 0; i < chartData.length; i++) {
+                const value = chartData[i];
+                const percentage = (value / maxValue) * 100;
+                const height = (percentage / 100) * (containerHeight - 40);
+                const label = timeLabels[i] || '';
+                
+                html += `
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                        <div style="background: linear-gradient(to top, #667eea, #764ba2); width: 100%; height: ${height}px; border-radius: 4px; margin-bottom: 5px; position: relative;" title="${value}">
+                            <span style="position: absolute; top: -20px; font-size: 10px; width: 100%; text-align: center;">${value}</span>
+                        </div>
+                        <div style="font-size: 10px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+                    </div>
+                `;
+            }
+
+            chartContainer.innerHTML = html;
+            document.getElementById('detailedChartLabel').textContent = currentDetailedView.charAt(0).toUpperCase() + currentDetailedView.slice(1) + ' view';
+        }
+
+        function aggregateGameSpecificMetrics(view, historyData, gameKey) {
+            if (!historyData || historyData.length === 0) {
+                console.log('[aggregateGameSpecificMetrics] No history data for', gameKey);
+                return Array(10).fill(0);
+            }
+
+            const now = Date.now();
+            const aggregated = [];
+            let timeRanges = [];
+
+            if (view === 'minute') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 6000);
+                    const startTime = endTime - 6000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'hour') {
+                for (let i = 59; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'day') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 8640000);
+                    const startTime = endTime - 8640000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'week') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 3600000);
+                    const startTime = endTime - 3600000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'month') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 86400000);
+                    const startTime = endTime - 86400000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'year') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 604800000);
+                    const startTime = endTime - 604800000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'all') {
+                for (let i = 9; i >= 0; i--) {
+                    const endDate = new Date(now);
+                    endDate.setMonth(endDate.getMonth() - i);
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    timeRanges.push({ start: startDate.getTime(), end: endDate.getTime() });
+                }
+            }
+
+            // Aggregate values for this specific game
+            timeRanges.forEach(range => {
+                const pointsInRange = historyData.filter(point => 
+                    point.timestamp >= range.start && point.timestamp < range.end
+                );
+                
+                if (pointsInRange.length > 0) {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + (p[gameKey] || 0), 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else {
+                    aggregated.push(0);
+                }
+            });
+
+            return aggregated;
+        }
+
             if (!historyData || historyData.length === 0) {
                 return Array(10).fill(0);
             }
