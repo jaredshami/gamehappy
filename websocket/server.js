@@ -1980,6 +1980,22 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Regular user connection - ensure they're tracked as active users (not admin)
+   */
+  socket.on('user:connect', (data) => {
+    console.log(`[USER] Regular user connected from ${socket.id} at ${data?.page || 'unknown'}`);
+    // Just confirm user is tracked - no need to do anything else since they're already in activeUsers
+    // and NOT in adminUsers by default
+    
+    // Broadcast updated stats
+    try {
+      broadcastActiveStats();
+    } catch (err) {
+      console.error('[USER] Error broadcasting stats:', err);
+    }
+  });
+
+  /**
    * Play Again - Create new lobby with same players
    */
   socket.on('play-again', (data) => {

@@ -578,6 +578,12 @@ class Game {
                 this.isConnected = true;
                 this.updateConnectionStatus('connected');
                 
+                // Notify server that a regular user (not admin) is connected
+                this.socket.emit('user:connect', {
+                    timestamp: new Date(),
+                    page: 'secretsyndicates-home'
+                });
+                
                 // Skip auto-rejoin in test mode
                 if (this.isTestMode) {
                     console.log('[CONNECT] Test mode - skipping auto-rejoin');
