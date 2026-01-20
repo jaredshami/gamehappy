@@ -157,20 +157,30 @@ const gameServer = new GameServer();
 ensureGameHistoryFile();
 
 // Track active users
-let activeUsers = new Map(); // socket.id -> { connected: true, page: string, timestamp: Date }
+let activeUsers = new Map(); // socket.id -> { connected: true, page: string, timestamp: Date, sessionId }
+let activeSessions = new Set(); // Track unique user sessions (not socket connections)
 let adminUsers = new Set(); // Track admin socket IDs separately
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
   
+  // Get session ID from query params (for identifying unique users)
+  const sessionId = socket.handshake.query.sessionId || socket.id;
+  
   // Track this user as active on connection
   activeUsers.set(socket.id, {
     connected: true,
     timestamp: new Date(),
-    isAdmin: false
+    isAdmin: false,
+    sessionId: sessionId
   });
-  console.log(`[USERS] Total active users: ${activeUsers.size}`);
+  
+  // Add to active sessions (for unique user count)
+  activeSessions.add(sessionId);
+  
+  console.log(`[USERS] Socket ${socket.id} connected with session ${sessionId}`);
+  console.log(`[USERS] Total active sessions: ${activeSessions.size}`);
   
   // Broadcast updated stats immediately (with safety check)
   try {
@@ -1936,10 +1946,27 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}, token: ${playerToken}`);
     
+    // Get the session ID from this socket
+    const userSocket = activeUsers.get(socket.id);
+    const sessionId = userSocket?.sessionId;
+    const wasAdmin = adminUsers.has(socket.id);
+    
     // Remove from active users tracking and admin tracking
     activeUsers.delete(socket.id);
     adminUsers.delete(socket.id);
-    console.log(`[USERS] Total active users: ${activeUsers.size - adminUsers.size}`);
+    
+    // Only remove session if no other sockets have this sessionId AND it wasn't admin
+    if (sessionId && !wasAdmin) {
+      const hasOtherSockets = Array.from(activeUsers.values()).some(user => 
+        user.sessionId === sessionId && !user.isAdmin
+      );
+      if (!hasOtherSockets) {
+        activeSessions.delete(sessionId);
+        console.log(`[USERS] Session ${sessionId} removed (no more active sockets)`);
+      }
+    }
+    
+    console.log(`[USERS] Total active sessions: ${activeSessions.size}`);
     
     // Broadcast updated user count (with safety check)
     try {
@@ -1947,7 +1974,6 @@ io.on('connection', (socket) => {
     } catch (err) {
       console.error(`[BROADCAST] Error broadcasting stats on disconnect:`, err);
     }
-    
     // Don't remove player from game - they might rejoin!
     // Just notify other players they disconnected
     const game = gameServer.getPlayerGame(playerToken);
@@ -1969,7 +1995,14 @@ io.on('connection', (socket) => {
   socket.on('admin:connect', (data) => {
     console.log(`[ADMIN] Admin dashboard connected from ${socket.id}`);
     adminUsers.add(socket.id);
-    activeUsers.get(socket.id).isAdmin = true;
+    
+    const userSocket = activeUsers.get(socket.id);
+    if (userSocket) {
+      userSocket.isAdmin = true;
+      // Remove admin's sessionId from active user sessions
+      activeSessions.delete(userSocket.sessionId);
+      console.log(`[ADMIN] Removed admin sessionId ${userSocket.sessionId} from active sessions`);
+    }
     
     // Broadcast updated stats (excluding admin from user count)
     try {
@@ -2457,11 +2490,11 @@ function broadcastActiveGames() {
 // Broadcast active user and game stats to admin dashboard
 function broadcastActiveStats() {
   try {
-    // Count active users excluding admin connections
-    const regularUserCount = activeUsers.size - adminUsers.size;
+    // Count unique active user sessions (not socket connections)
+    const regularUserCount = activeSessions.size;
     
     const stats = {
-      activeUsers: Math.max(0, regularUserCount),  // Don't go negative
+      activeUsers: Math.max(0, regularUserCount),
       activeGames: 0,
       timestamp: new Date()
     };
