@@ -982,7 +982,7 @@
             
             console.log('[updateUI] Setting active users:', activeUserCount, 'active games:', activeGameCount);
             
-            // Update DOM elements
+            // Update DOM elements in Overview and Secret Syndicates tabs
             const userElements = [
                 document.getElementById('overviewActiveUsers'),
                 document.getElementById('activeUsers')
@@ -1001,7 +1001,7 @@
                 if (el) el.textContent = activeGameCount;
             });
 
-            // Update Secret Syndicates stats
+            // Update Secret Syndicates stats in Secret Syndicates tab
             const ssTotal = document.getElementById('ssTotal');
             if (ssTotal) ssTotal.textContent = stats.ss_total || 0;
             
@@ -1018,6 +1018,25 @@
             }
             const ssActivePlayers = document.getElementById('ssActivePlayers');
             if (ssActivePlayers) ssActivePlayers.textContent = totalActivePlayers || 0;
+
+            // Update Analytics tab elements
+            const analyticsSSActive = document.getElementById('analyticsSSActive');
+            if (analyticsSSActive) analyticsSSActive.textContent = activeGameCount;
+            
+            const analyticsSTotal = document.getElementById('analyticsSTotal');
+            if (analyticsSTotal) analyticsSTotal.textContent = stats.ss_total || 0;
+            
+            const analyticsFGActive = document.getElementById('analyticsFGActive');
+            if (analyticsFGActive) analyticsFGActive.textContent = stats.fg_active || 0;
+            
+            const analyticsFGTotal = document.getElementById('analyticsFGTotal');
+            if (analyticsFGTotal) analyticsFGTotal.textContent = stats.fg_total || 0;
+            
+            const analyticsAWTActive = document.getElementById('analyticsAWTActive');
+            if (analyticsAWTActive) analyticsAWTActive.textContent = stats.awt_active || 0;
+            
+            const analyticsAWTTotal = document.getElementById('analyticsAWTTotal');
+            if (analyticsAWTTotal) analyticsAWTTotal.textContent = stats.awt_total || 0;
 
             const lastRefresh = document.getElementById('lastRefresh');
             if (lastRefresh) lastRefresh.textContent = new Date().toLocaleTimeString();
