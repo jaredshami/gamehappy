@@ -857,11 +857,11 @@
                         <div class="game-players">
                             <div class="player-stat">
                                 <span class="player-stat-label">Players:</span>
-                                <span class="player-stat-value">${game.players?.length || 0}</span>
+                                <span class="player-stat-value">${game.playerCount || game.players?.length || 0}</span>
                             </div>
                             <div class="player-stat">
                                 <span class="player-stat-label">Round:</span>
-                                <span class="player-stat-value">${game.currentRound || 0}</span>
+                                <span class="player-stat-value">${game.currentRound || 1}</span>
                             </div>
                             <div class="player-stat">
                                 <span class="player-stat-label">Duration:</span>
