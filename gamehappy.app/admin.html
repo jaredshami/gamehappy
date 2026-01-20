@@ -679,7 +679,9 @@
                 <div class="card" style="grid-column: 1 / -1;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3>User Activity Timeline</h3>
-                        <div style="display: flex; gap: 10px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="view-toggle" onclick="switchTimelineView('minute')" id="btn-minute">Minute</button>
+                            <button class="view-toggle" onclick="switchTimelineView('hour')" id="btn-hour">Hour</button>
                             <button class="view-toggle" onclick="switchTimelineView('day')" id="btn-day">Day</button>
                             <button class="view-toggle" onclick="switchTimelineView('week')" id="btn-week">Week</button>
                             <button class="view-toggle" onclick="switchTimelineView('month')" id="btn-month">Month</button>
@@ -1219,7 +1221,27 @@
             const now = new Date();
             const labels = [];
             
-            if (view === 'day') {
+            if (view === 'minute') {
+                // Show last 60 seconds in 6-second intervals
+                for (let i = 9; i >= 0; i--) {
+                    labels.push((i * 6) + 's');
+                }
+            } else if (view === 'hour') {
+                // Show last 60 minutes in 6-minute intervals
+                for (let i = 9; i >= 0; i--) {
+                    labels.push((i * 6) + 'm');
+                }
+            } else if (view === 'day') {
+                // Show last 24 hours in 2.4-hour intervals
+                for (let i = 9; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setHours(time.getHours() - (i * 2.4));
+                    const hour = time.getHours();
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const displayHour = hour % 12 || 12;
+                    labels.push(displayHour + ampm);
+                }
+            } else if (view === 'week') {
                 // Show last 10 hours
                 for (let i = 9; i >= 0; i--) {
                     const time = new Date(now);
@@ -1229,7 +1251,7 @@
                     const displayHour = hour % 12 || 12;
                     labels.push(displayHour + ampm);
                 }
-            } else if (view === 'week') {
+            } else if (view === 'month') {
                 // Show last 7 days
                 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 for (let i = 6; i >= 0; i--) {
@@ -1279,12 +1301,25 @@
             const aggregated = [];
             let timeRanges = [];
             
-            if (view === 'day') {
-                // 10 minutes per bar
-
+            if (view === 'minute') {
+                // 6 seconds per bar (last 60 seconds in 10 bars)
                 for (let i = 9; i >= 0; i--) {
-                    const endTime = now - (i * 60000);
-                    const startTime = endTime - 60000;
+                    const endTime = now - (i * 6000);
+                    const startTime = endTime - 6000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'hour') {
+                // 6 minutes per bar (last 60 minutes in 10 bars)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 360000);
+                    const startTime = endTime - 360000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'day') {
+                // 2.4 hours per bar (last 24 hours in 10 bars)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 8640000);
+                    const startTime = endTime - 8640000;
                     timeRanges.push({ start: startTime, end: endTime });
                 }
             } else if (view === 'week') {
