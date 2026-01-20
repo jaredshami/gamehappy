@@ -1054,10 +1054,11 @@
             checkAuth();
             connectWebsocket();
             loadMessages();
-            loadData();
+            loadData();  // Load static data once on init
+            
+            // Only refresh messages periodically, NOT data (websocket provides real-time data)
             updateInterval = setInterval(() => {
                 loadMessages();
-                loadData();
             }, 5000);
         }
 
