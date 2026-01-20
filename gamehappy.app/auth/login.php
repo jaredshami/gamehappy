@@ -7,34 +7,11 @@ try {
     $username = $input['username'] ?? '';
     $password = $input['password'] ?? '';
 
-    // Load admin credentials from config file
-    $config_file = '/var/www/gamehappy.app/config/admin-credentials.json';
+    // Simple credentials check - hardcoded for now
+    $valid_username = 'admin';
+    $valid_password = 'admin123';
 
-    if (!file_exists($config_file)) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Admin configuration not found']);
-        exit;
-    }
-
-    $config = json_decode(file_get_contents($config_file), true);
-
-    if (!$config || !isset($config['admins'])) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Invalid admin configuration']);
-        exit;
-    }
-
-    // Verify credentials
-    $authenticated = false;
-
-    foreach ($config['admins'] as $admin) {
-        if ($admin['username'] === $username && password_verify($password, $admin['password_hash'])) {
-            $authenticated = true;
-            break;
-        }
-    }
-
-    if ($authenticated) {
+    if ($username === $valid_username && $password === $valid_password) {
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_username'] = $username;
         $_SESSION['login_time'] = time();
