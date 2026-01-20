@@ -198,7 +198,7 @@ function recordGameMetrics() {
     // Count players in each game type
     if (gameServer && gameServer.games && gameServer.games.size > 0) {
       for (const [gameCode, game] of gameServer.games) {
-        if (game && game.state !== 'ended' && game.players && Array.isArray(game.players)) {
+        if (game && game.gameState !== 'ended' && game.players && Array.isArray(game.players)) {
           const playerCount = game.players.length;
           if (game.gameType === 'Secret Syndicates' || game.gameType === 'secretsyndicates') {
             metrics.secretSyndicates += playerCount;
@@ -238,6 +238,34 @@ function recordGameMetrics() {
 
 // Record game metrics every minute
 setInterval(recordGameMetrics, 60000); // 60 seconds
+
+// Clean up old ended games every 5 minutes
+function cleanupEndedGames() {
+  try {
+    const now = Date.now();
+    const GAME_CLEANUP_TIME = 5 * 60 * 1000; // 5 minutes
+    
+    if (gameServer && gameServer.games && gameServer.games.size > 0) {
+      let cleanedCount = 0;
+      for (const [gameCode, game] of gameServer.games) {
+        if (game && game.gameState === 'ended') {
+          const gameAge = now - (game.endedAt || game.createdAt || now);
+          if (gameAge > GAME_CLEANUP_TIME) {
+            gameServer.games.delete(gameCode);
+            cleanedCount++;
+          }
+        }
+      }
+      if (cleanedCount > 0) {
+        console.log(`[CLEANUP] Removed ${cleanedCount} old ended games`);
+      }
+    }
+  } catch (err) {
+    console.error('[CLEANUP] Error cleaning up games:', err);
+  }
+}
+
+setInterval(cleanupEndedGames, 5 * 60 * 1000); // Every 5 minutes
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -2540,7 +2568,7 @@ function broadcastActiveGames() {
     // Collect all active games from the Map
     if (gameServer && gameServer.games && gameServer.games.size > 0) {
       for (const [gameCode, game] of gameServer.games) {
-        if (game && game.state !== 'ended') {
+        if (game && game.gameState !== 'ended') {
           try {
             activeGames.push({
               gameType: game.gameType || 'Secret Syndicates',
@@ -2583,13 +2611,22 @@ function broadcastActiveStats() {
       }
     };
     
-    // Count active games (with safety check)
+    // Track which sessionIds are in games to avoid double-counting
+    const usersInGames = new Set();
+    
+    // Count active games and users per game (with safety check)
     if (gameServer && gameServer.games && gameServer.games.size > 0) {
       for (const [gameCode, game] of gameServer.games) {
-        if (game && game.state !== 'ended') {
+        if (game && game.gameState !== 'ended') {
           stats.activeGames++;
           // Count players in each game type
           if (game.players && Array.isArray(game.players)) {
+            for (const player of game.players) {
+              if (player && player.token) {
+                usersInGames.add(player.token);
+              }
+            }
+            
             const playerCount = game.players.length;
             if (game.gameType === 'Secret Syndicates' || game.gameType === 'secretsyndicates') {
               stats.usersPerGame.secretSyndicates += playerCount;
@@ -2604,10 +2641,10 @@ function broadcastActiveStats() {
     }
     
     // Users on home page = total users minus users in games
-    const usersInGames = stats.usersPerGame.secretSyndicates + stats.usersPerGame.flagGuardians + stats.usersPerGame.areWeThereYet;
-    stats.usersPerGame.home = Math.max(0, stats.activeUsers - usersInGames);
+    stats.usersPerGame.home = Math.max(0, stats.activeUsers - usersInGames.size);
     
-    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
+    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games, ${usersInGames.size} users in games`);
+    console.log(`[STATS] Users per game - Home: ${stats.usersPerGame.home}, SS: ${stats.usersPerGame.secretSyndicates}, FG: ${stats.usersPerGame.flagGuardians}, AWT: ${stats.usersPerGame.areWeThereYet}`);
     
     // Include user history and game metrics for chart updates
     stats.userHistory = userHistory;
