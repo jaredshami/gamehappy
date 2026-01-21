@@ -23,7 +23,138 @@ class Game {
         this.currentRound = 1;
         this.gameStarted = false;
         
+        // Map and game mechanics
+        this.mapGraph = this.initializeMapGraph();
+        this.nodeControl = new Map(); // nodeId -> 'red', 'blue', or 'neutral'
+        this.gameLog = [];
+        
         this.init();
+    }
+
+    // ===== MAP INITIALIZATION =====
+    initializeMapGraph() {
+        /**
+         * Map Layout (top-down view):
+         * 
+         * NORTH SIDE (Red Team starts here)
+         * [N0] [N1] [N2] [N3] [N4] [N5]
+         * 
+         *       ════ ALLEYWAY ════
+         * 
+         * SOUTH SIDE (Blue Team starts here)
+         * [S0] [S1] [S2] [S3] [S4] [S5]
+         */
+        
+        const graph = {
+            nodes: [
+                // North side (6 houses)
+                { id: 'N0', x: 0, y: 0, side: 'north', label: 'N0' },
+                { id: 'N1', x: 1, y: 0, side: 'north', label: 'N1' },
+                { id: 'N2', x: 2, y: 0, side: 'north', label: 'N2' },
+                { id: 'N3', x: 3, y: 0, side: 'north', label: 'N3' },
+                { id: 'N4', x: 4, y: 0, side: 'north', label: 'N4' },
+                { id: 'N5', x: 5, y: 0, side: 'north', label: 'N5' },
+                
+                // South side (6 houses)
+                { id: 'S0', x: 0, y: 2, side: 'south', label: 'S0' },
+                { id: 'S1', x: 1, y: 2, side: 'south', label: 'S1' },
+                { id: 'S2', x: 2, y: 2, side: 'south', label: 'S2' },
+                { id: 'S3', x: 3, y: 2, side: 'south', label: 'S3' },
+                { id: 'S4', x: 4, y: 2, side: 'south', label: 'S4' },
+                { id: 'S5', x: 5, y: 2, side: 'south', label: 'S5' },
+                
+                // Alleyway nodes for connections
+                { id: 'A0', x: 0, y: 1, side: 'alley', label: 'A0' },
+                { id: 'A1', x: 1, y: 1, side: 'alley', label: 'A1' },
+                { id: 'A2', x: 2, y: 1, side: 'alley', label: 'A2' },
+                { id: 'A3', x: 3, y: 1, side: 'alley', label: 'A3' },
+                { id: 'A4', x: 4, y: 1, side: 'alley', label: 'A4' },
+                { id: 'A5', x: 5, y: 1, side: 'alley', label: 'A5' }
+            ],
+            edges: [
+                // North side connections (linear)
+                { from: 'N0', to: 'N1' },
+                { from: 'N1', to: 'N2' },
+                { from: 'N2', to: 'N3' },
+                { from: 'N3', to: 'N4' },
+                { from: 'N4', to: 'N5' },
+                
+                // South side connections (linear)
+                { from: 'S0', to: 'S1' },
+                { from: 'S1', to: 'S2' },
+                { from: 'S2', to: 'S3' },
+                { from: 'S3', to: 'S4' },
+                { from: 'S4', to: 'S5' },
+                
+                // Alleyway connections (linear)
+                { from: 'A0', to: 'A1' },
+                { from: 'A1', to: 'A2' },
+                { from: 'A2', to: 'A3' },
+                { from: 'A3', to: 'A4' },
+                { from: 'A4', to: 'A5' },
+                
+                // Cross connections (north to alley)
+                { from: 'N0', to: 'A0' },
+                { from: 'N1', to: 'A1' },
+                { from: 'N2', to: 'A2' },
+                { from: 'N3', to: 'A3' },
+                { from: 'N4', to: 'A4' },
+                { from: 'N5', to: 'A5' },
+                
+                // Cross connections (alley to south)
+                { from: 'A0', to: 'S0' },
+                { from: 'A1', to: 'S1' },
+                { from: 'A2', to: 'S2' },
+                { from: 'A3', to: 'S3' },
+                { from: 'A4', to: 'S4' },
+                { from: 'A5', to: 'S5' }
+            ]
+        };
+        
+        // Initialize all nodes as neutral
+        graph.nodes.forEach(node => {
+            this.nodeControl.set(node.id, 'neutral');
+        });
+        
+        // Red team starts with north side
+        for (let i = 0; i < 6; i++) {
+            this.nodeControl.set(`N${i}`, 'red');
+        }
+        
+        // Blue team starts with south side
+        for (let i = 0; i < 6; i++) {
+            this.nodeControl.set(`S${i}`, 'blue');
+        }
+        
+        return graph;
+    }
+
+    getNodeOwner(nodeId) {
+        return this.nodeControl.get(nodeId) || 'neutral';
+    }
+
+    getRedControlledNodes() {
+        const controlled = [];
+        this.nodeControl.forEach((owner, nodeId) => {
+            if (owner === 'red') controlled.push(nodeId);
+        });
+        return controlled;
+    }
+
+    getBlueControlledNodes() {
+        const controlled = [];
+        this.nodeControl.forEach((owner, nodeId) => {
+            if (owner === 'blue') controlled.push(nodeId);
+        });
+        return controlled;
+    }
+
+    getNeutralNodes() {
+        const neutral = [];
+        this.nodeControl.forEach((owner, nodeId) => {
+            if (owner === 'neutral') neutral.push(nodeId);
+        });
+        return neutral;
     }
 
     init() {
@@ -401,8 +532,18 @@ class Game {
     onGameStarted(data) {
         console.log('Game started:', data);
         this.gameStarted = true;
-        this.currentRound = 1;
+        this.redTeamPlayers = data.redTeam || [];
+        this.blueTeamPlayers = data.blueTeam || [];
+        this.currentRound = data.currentRound || 1;
+        this.redScore = data.scores?.red || 0;
+        this.blueScore = data.scores?.blue || 0;
+        
         this.showScreen('game-screen');
+        
+        // Render the game map
+        this.renderGameMap();
+        
+        // Update game screen content
         this.updateGameScreen();
     }
 
@@ -490,6 +631,107 @@ class Game {
         } else if (!this.playerTeam) {
             startBtn.textContent = 'Select a team first';
         }
+    }
+
+    // ===== GAME MAP RENDERING =====
+    renderGameMap() {
+        // Find or create map container
+        let mapContainer = document.getElementById('game-map-container');
+        
+        if (!mapContainer) {
+            // Create the map container if it doesn't exist
+            const gameContent = document.querySelector('.game-content');
+            mapContainer = document.createElement('div');
+            mapContainer.id = 'game-map-container';
+            mapContainer.className = 'game-map-container';
+            gameContent.insertBefore(mapContainer, gameContent.firstChild);
+        }
+        
+        // Build the HTML for the map grid
+        let mapHTML = '<div class="map-grid">';
+        
+        // Map labels for reference
+        const mapLabels = {
+            'N0': 'N0', 'N1': 'N1', 'N2': 'N2', 'N3': 'N3', 'N4': 'N4', 'N5': 'N5',
+            'A0': 'A', 'A1': 'A', 'A2': 'A', 'A3': 'A', 'A4': 'A', 'A5': 'A',
+            'S0': 'S0', 'S1': 'S1', 'S2': 'S2', 'S3': 'S3', 'S4': 'S4', 'S5': 'S5'
+        };
+        
+        // Row order: North (y=0), Alley (y=1), South (y=2)
+        const nodeOrder = [
+            ['N0', 'N1', 'N2', 'N3', 'N4', 'N5'],
+            ['A0', 'A1', 'A2', 'A3', 'A4', 'A5'],
+            ['S0', 'S1', 'S2', 'S3', 'S4', 'S5']
+        ];
+        
+        nodeOrder.forEach(row => {
+            mapHTML += '<div class="map-row">';
+            row.forEach(nodeId => {
+                const owner = this.getNodeOwner(nodeId);
+                const ownerClass = owner === 'red' ? 'owner-red' : owner === 'blue' ? 'owner-blue' : 'owner-neutral';
+                
+                mapHTML += `
+                    <div class="map-node ${ownerClass}" id="node-${nodeId}" data-node-id="${nodeId}">
+                        <div class="node-label">${mapLabels[nodeId]}</div>
+                        <div class="node-owner-indicator">
+                            ${owner === 'red' ? '🔴' : owner === 'blue' ? '🔵' : '⚪'}
+                        </div>
+                    </div>
+                `;
+            });
+            mapHTML += '</div>';
+        });
+        
+        mapHTML += '</div>';
+        mapContainer.innerHTML = mapHTML;
+        
+        // Add click handlers to nodes
+        document.querySelectorAll('.map-node').forEach(nodeElement => {
+            nodeElement.addEventListener('click', (e) => {
+                const nodeId = nodeElement.dataset.nodeId;
+                this.handleNodeClick(nodeId);
+            });
+        });
+    }
+
+    handleNodeClick(nodeId) {
+        console.log(`[NODE CLICK] Clicked node: ${nodeId}`);
+        const currentOwner = this.getNodeOwner(nodeId);
+        console.log(`[NODE CLICK] Current owner: ${currentOwner}, Your team: ${this.playerTeam}`);
+        
+        // Send action to server
+        this.socket.emit('game:node-action', {
+            gameCode: this.gameCode,
+            nodeId: nodeId,
+            action: 'capture'
+        }, (response) => {
+            if (response.success) {
+                this.addGameLog(`You attempted to capture ${nodeId}!`);
+            } else {
+                this.addGameLog(`Cannot capture ${nodeId}: ${response.message}`);
+            }
+        });
+    }
+
+    addGameLog(message) {
+        const gameLog = document.getElementById('game-log');
+        if (gameLog) {
+            const logEntry = document.createElement('p');
+            logEntry.className = 'message-info';
+            logEntry.textContent = message;
+            gameLog.appendChild(logEntry);
+            gameLog.scrollTop = gameLog.scrollHeight;
+        }
+    }
+
+    updateGameMap(nodeControl) {
+        // Update node control map
+        Object.entries(nodeControl).forEach(([nodeId, owner]) => {
+            this.nodeControl.set(nodeId, owner);
+        });
+        
+        // Re-render map
+        this.renderGameMap();
     }
 
     updateGameScreen() {

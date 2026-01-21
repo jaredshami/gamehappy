@@ -761,6 +761,99 @@ input::placeholder {
     gap: 12px;
 }
 
+/* ===== GAME MAP GRID ===== */
+.game-map-container {
+    width: 100%;
+    background: rgba(10, 14, 26, 0.9);
+    border: 2px solid var(--accent-gold);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.map-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 100%;
+}
+
+.map-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    justify-content: center;
+}
+
+.map-node {
+    aspect-ratio: 1;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 60px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.map-node:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+.map-node.owner-red {
+    background: linear-gradient(135deg, rgba(255, 59, 59, 0.3) 0%, rgba(204, 0, 0, 0.2) 100%);
+    border-color: var(--red-light);
+    box-shadow: inset 0 0 8px rgba(255, 59, 59, 0.2);
+}
+
+.map-node.owner-red:hover {
+    box-shadow: 0 0 12px rgba(255, 59, 59, 0.8), inset 0 0 8px rgba(255, 59, 59, 0.3);
+}
+
+.map-node.owner-blue {
+    background: linear-gradient(135deg, rgba(59, 126, 255, 0.3) 0%, rgba(0, 82, 204, 0.2) 100%);
+    border-color: var(--blue-light);
+    box-shadow: inset 0 0 8px rgba(59, 126, 255, 0.2);
+}
+
+.map-node.owner-blue:hover {
+    box-shadow: 0 0 12px rgba(59, 126, 255, 0.8), inset 0 0 8px rgba(59, 126, 255, 0.3);
+}
+
+.map-node.owner-neutral {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-muted);
+}
+
+.map-node.owner-neutral:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-gold);
+}
+
+.node-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-light);
+}
+
+.node-owner-indicator {
+    font-size: 1.2rem;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 480px) {
     .container {
@@ -789,6 +882,15 @@ input::placeholder {
 
     .screen-content {
         padding: 20px;
+    }
+
+    .map-node {
+        min-height: 50px;
+        font-size: 0.7rem;
+    }
+
+    .node-owner-indicator {
+        font-size: 1rem;
     }
 }
 
