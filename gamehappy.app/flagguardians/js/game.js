@@ -122,23 +122,34 @@ class Game {
 
         this.socket.on('game:started', (data) => {
             console.log('[SOCKET] Game started:', data);
-            this.phase = data.phase;
+            this.phase = data.phase || 'flag-placement';
             this.redTeam = data.redTeam || [];
             this.blueTeam = data.blueTeam || [];
             this.houses = data.houses || {};
-            this.isFlagPlacer = data.redPlacingPlayer === this.playerToken || data.bluePlacingPlayer === this.playerToken;
+            
+            // Check if this player is the flag placer for their team
+            if (data.redPlacingPlayer === this.playerToken || data.bluePlacingPlayer === this.playerToken) {
+                this.isFlagPlacer = true;
+            }
             
             if (this.phase === 'flag-placement') {
                 this.showScreen('flag-placement');
+                this.renderHousesForPlacement();
             }
         });
 
         this.socket.on('flagguardians:game-started', (data) => {
-            console.log('[SOCKET] FlagGuardians game started:', data);
-            this.phase = data.phase;
-            this.redScore = data.gameState.redScore;
-            this.blueScore = data.gameState.redScore;
+            console.log('[SOCKET] FlagGuardians active game started:', data);
+            this.phase = data.phase || 'active';
             this.showScreen('game');
+            
+            if (data.gameState) {
+                this.redScore = data.gameState.redScore || 0;
+                this.blueScore = data.gameState.blueScore || 0;
+                this.redTeam = data.gameState.redTeam || [];
+                this.blueTeam = data.gameState.blueTeam || [];
+            }
+            
             this.renderGameMap();
         });
 
@@ -558,18 +569,44 @@ class Game {
     }
 
     /**
+     * Render houses for flag placement
+     */
+    renderHousesForPlacement() {
+        const container = document.getElementById('houses-grid');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        for (const [houseId, house] of Object.entries(this.houses)) {
+            const btn = document.createElement('button');
+            btn.className = 'house-button';
+            btn.innerHTML = `${house.name}<br><small>${house.floors} floor${house.floors > 1 ? 's' : ''}</small>`;
+            btn.onclick = () => this.selectHouseForFlagPlacement(houseId);
+            container.appendChild(btn);
+        }
+    }
+
+    /**
      * Update lobby UI
      */
     updateLobbyUI() {
         const redContainer = document.getElementById('red-team');
         const blueContainer = document.getElementById('blue-team');
         const startBtn = document.getElementById('btn-start-game');
+        const codeDisplay = document.getElementById('lobby-code');
+        
+        if (codeDisplay) {
+            codeDisplay.textContent = this.gameCode || '----';
+        }
         
         if (redContainer) {
-            redContainer.innerHTML = this.redTeam.map(p => `<div class="team-player">${p.name}</div>`).join('');
+            redContainer.innerHTML = this.redTeam.length === 0 ? 
+                '<p class="empty">Waiting for players...</p>' :
+                this.redTeam.map(p => `<div class="team-player">${p.name}</div>`).join('');
         }
         if (blueContainer) {
-            blueContainer.innerHTML = this.blueTeam.map(p => `<div class="team-player">${p.name}</div>`).join('');
+            blueContainer.innerHTML = this.blueTeam.length === 0 ?
+                '<p class="empty">Waiting for players...</p>' :
+                this.blueTeam.map(p => `<div class="team-player">${p.name}</div>`).join('');
         }
         
         // Enable start button if host and both teams have players
