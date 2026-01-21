@@ -454,7 +454,9 @@ class Game {
             (response) => {
                 if (response.success) {
                     this.playerTeam = team;
+                    console.log(`[SELECT TEAM] Team selected: ${team}, isHost: ${this.isHost}, playerTeam: ${this.playerTeam}`);
                     this.updateLobbyTeams();
+                    this.updatePlayerCount();
                 } else {
                     this.showMessage(response.message || 'Failed to select team', 'error');
                 }
@@ -629,9 +631,12 @@ class Game {
         const totalPlayers = this.redTeamPlayers.length + this.blueTeamPlayers.length;
         document.getElementById('player-count-display').textContent = `Players: ${totalPlayers}/8`;
 
-        // Enable start button if minimum 2 players and player has selected a team
+        // Enable start button if minimum 2 players and player has selected a team (and is host)
         const startBtn = document.getElementById('btn-start-game');
         const canStart = this.isHost && totalPlayers >= 2 && this.playerTeam;
+        
+        console.log(`[UPDATE PLAYER COUNT] isHost: ${this.isHost}, totalPlayers: ${totalPlayers}, playerTeam: ${this.playerTeam}, canStart: ${canStart}`);
+        
         startBtn.disabled = !canStart;
         
         if (canStart) {
@@ -640,6 +645,8 @@ class Game {
             startBtn.textContent = 'Start Game (Minimum 2 players)';
         } else if (!this.playerTeam) {
             startBtn.textContent = 'Select a team first';
+        } else if (!this.isHost) {
+            startBtn.textContent = 'Only host can start';
         }
     }
 
