@@ -2074,10 +2074,12 @@ io.on('connection', (socket) => {
       if (result.success) {
         // Broadcast game started
         io.to(`game-${gameCode}`).emit('game:started', {
-          gameState: result.gameState,
+          phase: result.phase,
           redTeam: game.redTeam,
           blueTeam: game.blueTeam,
-          currentRound: game.currentRound
+          redPlacingPlayer: result.redPlacingPlayer,
+          bluePlacingPlayer: result.bluePlacingPlayer,
+          houses: result.houses
         });
 
         callback({ success: true });
