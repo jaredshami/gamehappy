@@ -23,12 +23,17 @@ class Game {
         this.currentRound = 1;
         this.gameStarted = false;
         
-        // Map and game mechanics
-        this.mapGraph = this.initializeMapGraph();
+        // Map and game mechanics - Initialize nodeControl BEFORE initializeMapGraph
         this.nodeControl = new Map(); // nodeId -> 'red', 'blue', or 'neutral'
         this.gameLog = [];
         
+        console.log('About to initialize map graph...');
+        this.mapGraph = this.initializeMapGraph();
+        console.log('Map graph initialized:', this.mapGraph);
+        
+        console.log('About to call init()...');
         this.init();
+        console.log('init() completed');
     }
 
     // ===== MAP INITIALIZATION =====
@@ -44,6 +49,11 @@ class Game {
          * SOUTH SIDE (Blue Team starts here)
          * [S0] [S1] [S2] [S3] [S4] [S5]
          */
+        
+        // Initialize nodeControl map first
+        if (!this.nodeControl) {
+            this.nodeControl = new Map();
+        }
         
         const graph = {
             nodes: [
