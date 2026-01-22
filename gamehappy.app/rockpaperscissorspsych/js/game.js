@@ -59,7 +59,7 @@ class RockPaperScissorsPsychGame {
             this.gameCode = data.gameCode;
             this.playerToken = data.playerToken;
             this.isHost = data.isHost;
-            this.playerName = data.game.host_name;
+            this.playerName = data.playerName;
             this.showScreen('lobby');
             this.updateLobbyUI();
         });
@@ -294,9 +294,10 @@ class RockPaperScissorsPsychGame {
         this.socket.emit('game:create', { gameType: 'rockpaperscissorspsych', playerName: name }, (response) => {
             console.log('[CREATE-GAME] Response:', response);
             if (response.success) {
-                this.gameCode = response.game.gameCode;
-                this.isHost = response.isHost;
-                this.players = response.game.players || [];
+                this.gameCode = response.gameCode;
+                this.playerToken = response.playerToken;
+                this.isHost = true;
+                this.players = response.players || [];
                 this.updateLobbyUI();
                 this.showScreen('lobby');
             }
@@ -315,8 +316,9 @@ class RockPaperScissorsPsychGame {
             console.log('[JOIN-GAME] Response:', response);
             if (response.success) {
                 this.gameCode = response.gameCode;
-                this.isHost = response.isHost;
-                this.players = response.game.players || [];
+                this.playerToken = response.playerToken;
+                this.isHost = false;
+                this.players = response.players || [];
                 this.updateLobbyUI();
                 this.showScreen('lobby');
             } else {
