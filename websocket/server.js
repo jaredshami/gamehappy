@@ -2515,9 +2515,10 @@ io.on('connection', (socket) => {
 
       game.makeActualChoice(playerToken, choice);
 
-      // Check if all players have made choices
-      const activePlayers = game.getActivePlayers();
+      // Check if all active (non-psyched) players have made choices
+      const activePlayers = Array.from(game.activePlayers.keys()).filter(p => !game.psychedPlayers.has(p));
       if (game.actualChoices.size === activePlayers.length) {
+        // All players have submitted, calculate results
         setTimeout(() => {
           const roundResult = game.endRound();
           
@@ -2527,6 +2528,9 @@ io.on('connection', (socket) => {
           if (game.isGameOver()) {
             const winner = game.getWinner();
             io.to(`game-${gameCode}`).emit('game:over', winner);
+          } else {
+            // Game continues, send next round signal
+            io.to(`game-${gameCode}`).emit('round:nextAllowed');
           }
         }, 500);
       }

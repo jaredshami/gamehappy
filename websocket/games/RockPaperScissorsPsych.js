@@ -253,16 +253,16 @@ class RockPaperScissorsPsych extends GameManager {
 
         // Two choices - determine winner
         if (choiceCounts.rock > 0 && choiceCounts.paper > 0) {
-            // Paper wins
-            return choiceMap.paper.length > choiceMap.rock.length ? choiceMap.paper : [];
+            // Paper wins over rock
+            return choiceMap.paper;
         }
         if (choiceCounts.rock > 0 && choiceCounts.scissors > 0) {
-            // Rock wins
-            return choiceMap.rock.length > choiceMap.scissors.length ? choiceMap.rock : [];
+            // Rock wins over scissors
+            return choiceMap.rock;
         }
         if (choiceCounts.paper > 0 && choiceCounts.scissors > 0) {
-            // Scissors wins
-            return choiceMap.scissors.length > choiceMap.paper.length ? choiceMap.scissors : [];
+            // Scissors wins over paper
+            return choiceMap.scissors;
         }
 
         return [];
