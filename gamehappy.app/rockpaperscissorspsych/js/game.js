@@ -394,26 +394,12 @@ class RockPaperScissorsPsychGame {
                 clearInterval(interval);
                 this.socket.emit('game:countdownEnd', { gameCode: this.gameCode });
             }
-        }, 1000);
+        }, 300);
     }
 
     startActualChoiceTimer() {
-        let timeLeft = 3;
-        const timerDisplay = document.getElementById('timer-display');
-
-        const interval = setInterval(() => {
-            if (timerDisplay) timerDisplay.textContent = timeLeft;
-            timeLeft--;
-            
-            if (timeLeft < 0) {
-                clearInterval(interval);
-                // If no choice made, pick random
-                if (!this.myActualChoice) {
-                    const choices = ['rock', 'paper', 'scissors'];
-                    this.makeActualChoice(choices[Math.floor(Math.random() * 3)]);
-                }
-            }
-        }, 1000);
+        // No timer - players choose at their own pace
+        // Timer display removed from UI
     }
 
     makeActualChoice(choice) {
