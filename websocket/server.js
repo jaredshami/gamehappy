@@ -2747,6 +2747,129 @@ function broadcastActiveStats() {
   }
 }
 
+/**
+ * ROCK PAPER SCISSORS PSYCH HANDLERS
+ */
+
+socket.on('game:intentionSelect', (data, callback) => {
+  try {
+    const { gameCode, intention } = data;
+    const game = gameServer.getGame(gameCode);
+
+    if (!game || game.gameType !== 'rockpaperscissorspsych') {
+      callback({ success: false, message: 'Game not found' });
+      return;
+    }
+
+    const result = game.selectIntention(playerToken, intention);
+    
+    if (result.success) {
+      io.to(`game-${gameCode}`).emit('round:intentions', {
+        intentions: result.intentions
+      });
+      callback({ success: true, intentions: result.intentions });
+    } else {
+      callback({ success: false, message: result.message });
+    }
+  } catch (err) {
+    console.error('[PSYCH] Intention select error:', err);
+    callback({ success: false, message: 'Server error' });
+  }
+});
+
+socket.on('game:playerReady', (data, callback) => {
+  try {
+    const { gameCode } = data;
+    const game = gameServer.getGame(gameCode);
+
+    if (!game || game.gameType !== 'rockpaperscissorspsych') {
+      callback({ success: false, message: 'Game not found' });
+      return;
+    }
+
+    const result = game.playerReady(playerToken);
+    
+    if (result.success) {
+      if (result.allReady) {
+        io.to(`game-${gameCode}`).emit('round:allReady');
+      }
+      callback({ success: true });
+    } else {
+      callback({ success: false, message: result.message });
+    }
+  } catch (err) {
+    console.error('[PSYCH] Player ready error:', err);
+    callback({ success: false, message: 'Server error' });
+  }
+});
+
+socket.on('game:countdownEnd', (data) => {
+  try {
+    const { gameCode } = data;
+    const game = gameServer.getGame(gameCode);
+
+    if (!game || game.gameType !== 'rockpaperscissorspsych') {
+      return;
+    }
+
+    io.to(`game-${gameCode}`).emit('round:actualChoice');
+  } catch (err) {
+    console.error('[PSYCH] Countdown end error:', err);
+  }
+});
+
+socket.on('game:actualChoice', (data) => {
+  try {
+    const { gameCode, choice } = data;
+    const game = gameServer.getGame(gameCode);
+
+    if (!game || game.gameType !== 'rockpaperscissorspsych') {
+      return;
+    }
+
+    game.makeActualChoice(playerToken, choice);
+
+    // Check if all players have made choices
+    const activePlayers = game.getActivePlayers();
+    if (game.actualChoices.size === activePlayers.length) {
+      setTimeout(() => {
+        const roundResult = game.endRound();
+        
+        io.to(`game-${gameCode}`).emit('round:result', roundResult);
+
+        // Check if game is over
+        if (game.isGameOver()) {
+          const winner = game.getWinner();
+          io.to(`game-${gameCode}`).emit('game:over', winner);
+        }
+      }, 500);
+    }
+  } catch (err) {
+    console.error('[PSYCH] Actual choice error:', err);
+  }
+});
+
+socket.on('game:nextRound', (data) => {
+  try {
+    const { gameCode } = data;
+    const game = gameServer.getGame(gameCode);
+
+    if (!game || game.gameType !== 'rockpaperscissorspsych') {
+      return;
+    }
+
+    game.roundNumber++;
+    game.resetRound();
+
+    io.to(`game-${gameCode}`).emit('round:start', {
+      roundNumber: game.roundNumber,
+      activePlayers: game.getActivePlayers()
+    });
+  } catch (err) {
+    console.error('[PSYCH] Next round error:', err);
+  }
+});
+
 // Broadcast active games every 5 seconds
 setInterval(broadcastActiveGames, 5000);
 

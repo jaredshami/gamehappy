@@ -1,5 +1,6 @@
 const SecretSyndicates = require('./SecretSyndicates');
 const FlagGuardians = require('./FlagGuardians');
+const RockPaperScissorsPsych = require('./RockPaperScissorsPsych');
 
 class GameServer {
     constructor() {
@@ -20,6 +21,8 @@ class GameServer {
             game = new SecretSyndicates(gameCode);
         } else if (gameType === 'flagguardians') {
             game = new FlagGuardians(gameCode);
+        } else if (gameType === 'rockpaperscissorspsych') {
+            game = new RockPaperScissorsPsych(gameCode);
         } else {
             return { success: false, message: 'Unknown game type' };
         }

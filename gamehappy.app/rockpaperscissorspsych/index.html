@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Rock Paper Scissors Psych!</title>
+    <link rel="stylesheet" href="css/style.css?v=20260121">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- HOME SCREEN -->
+        <div id="screen-home" class="screen">
+            <div class="logo">
+                <h1>ROCK PAPER</h1>
+                <h2>SCISSORS PSYCH!</h2>
+            </div>
+            <div class="tagline">The Mind Game</div>
+            <div class="button-group">
+                <button id="btn-create" class="btn btn-primary">Create Game</button>
+                <button id="btn-join" class="btn btn-secondary">Join Game</button>
+            </div>
+        </div>
+
+        <!-- CREATE SCREEN -->
+        <div id="screen-create" class="screen" style="display: none;">
+            <button class="btn-back" onclick="game.showScreen('home')">&larr; Back</button>
+            <div class="screen-content">
+                <h2>Create Game</h2>
+                <p class="subtitle">Enter your name to start a new game</p>
+                <div class="form-group">
+                    <input type="text" id="create-name-input" placeholder="Enter your name" maxlength="20">
+                </div>
+                <button id="btn-create-game" class="btn btn-primary">Create Game</button>
+            </div>
+        </div>
+
+        <!-- JOIN SCREEN -->
+        <div id="screen-join" class="screen" style="display: none;">
+            <button class="btn-back" onclick="game.showScreen('home')">&larr; Back</button>
+            <div class="screen-content">
+                <h2>Join Game</h2>
+                <p class="subtitle">Enter game code and your name</p>
+                <div class="form-group">
+                    <input type="text" id="join-code-input" placeholder="Game Code (4 chars)" maxlength="4" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <input type="text" id="join-name-input" placeholder="Enter your name" maxlength="20">
+                </div>
+                <button id="btn-join-game" class="btn btn-primary">Join Game</button>
+            </div>
+        </div>
+
+        <!-- LOBBY SCREEN -->
+        <div id="screen-lobby" class="screen" style="display: none;">
+            <div class="lobby-header">
+                <h2>Game Lobby</h2>
+                <div class="game-code">Code: <strong id="lobby-code">----</strong></div>
+            </div>
+
+            <div class="players-container">
+                <h3>Players (2-6)</h3>
+                <div id="players-list" class="players-list"></div>
+            </div>
+
+            <div class="lobby-controls">
+                <button id="btn-start-game" class="btn btn-primary" style="display: none;">Start Game</button>
+                <button id="btn-leave" class="btn btn-secondary">Leave Game</button>
+            </div>
+        </div>
+
+        <!-- INTENTION SELECT SCREEN -->
+        <div id="screen-intention" class="screen" style="display: none;">
+            <div class="round-header">
+                <h2 id="round-text">Round 1</h2>
+                <p>Select your INTENTION (everyone will see this)</p>
+            </div>
+
+            <div class="choices-container">
+                <button id="btn-intention-rock" class="choice-btn rock">
+                    <span class="emoji">🪨</span>
+                    <span>ROCK</span>
+                </button>
+                <button id="btn-intention-paper" class="choice-btn paper">
+                    <span class="emoji">📄</span>
+                    <span>PAPER</span>
+                </button>
+                <button id="btn-intention-scissors" class="choice-btn scissors">
+                    <span class="emoji">✂️</span>
+                    <span>SCISSORS</span>
+                </button>
+            </div>
+
+            <div id="intentions-display" class="intentions-display"></div>
+        </div>
+
+        <!-- READY SCREEN -->
+        <div id="screen-ready" class="screen" style="display: none;">
+            <div class="round-header">
+                <h2>Waiting for Players</h2>
+                <p>Click Ready when you're prepared to make your ACTUAL choice</p>
+            </div>
+
+            <div id="intentions-display-ready" class="intentions-display"></div>
+
+            <div class="ready-controls">
+                <button id="btn-player-ready" class="btn btn-primary">I'M READY</button>
+                <div id="ready-status" class="ready-status"></div>
+            </div>
+        </div>
+
+        <!-- COUNTDOWN SCREEN -->
+        <div id="screen-countdown" class="screen" style="display: none;">
+            <div class="countdown-container">
+                <div id="countdown-text" class="countdown-text">ROCK!</div>
+            </div>
+        </div>
+
+        <!-- ACTUAL CHOICE SCREEN -->
+        <div id="screen-actual" class="screen" style="display: none;">
+            <div class="round-header">
+                <h2>Make Your ACTUAL Choice</h2>
+                <p id="choice-instruction">Choose now!</p>
+            </div>
+
+            <div class="choices-container">
+                <button id="btn-actual-rock" class="choice-btn rock">
+                    <span class="emoji">🪨</span>
+                    <span>ROCK</span>
+                </button>
+                <button id="btn-actual-paper" class="choice-btn paper">
+                    <span class="emoji">📄</span>
+                    <span>PAPER</span>
+                </button>
+                <button id="btn-actual-scissors" class="choice-btn scissors">
+                    <span class="emoji">✂️</span>
+                    <span>SCISSORS</span>
+                </button>
+            </div>
+
+            <div id="timer-display" class="timer-display">3</div>
+        </div>
+
+        <!-- ROUND RESULT SCREEN -->
+        <div id="screen-result" class="screen" style="display: none;">
+            <div class="result-container">
+                <div id="result-content"></div>
+            </div>
+
+            <button id="btn-next-round" class="btn btn-primary">Next Round</button>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="screen-game-over" class="screen" style="display: none;">
+            <div class="game-over-container">
+                <h2>GAME OVER</h2>
+                <div id="winner-info"></div>
+                <div id="final-scores"></div>
+            </div>
+
+            <button id="btn-return-home" class="btn btn-primary">Return Home</button>
+        </div>
+
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
