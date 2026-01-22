@@ -2075,12 +2075,15 @@ io.on('connection', (socket) => {
         return;
       }
 
+      console.log(`[GAME:START] Starting game ${gameCode}, type: ${game.gameType}, constructor: ${game.constructor.name}`);
+
       if (game.host !== playerToken) {
         callback({ success: false, message: 'Only host can start game' });
         return;
       }
 
       // Call game-specific startGame method
+      console.log(`[GAME:START] Calling startGame on ${game.constructor.name} with ${game.activePlayers?.size || game.getPlayerCount()} players`);
       const result = game.startGame();
       
       if (result.success) {
@@ -2103,6 +2106,7 @@ io.on('connection', (socket) => {
 
         callback({ success: true });
       } else {
+        console.log(`[GAME:START] Start failed: ${result.message}`);
         callback({ success: false, message: result.message });
       }
     } catch (err) {
