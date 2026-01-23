@@ -7,8 +7,8 @@
 class GameHappyDB {
     private $host = 'localhost';
     private $db = 'gamehappy';
-    private $user = 'root';
-    private $password = '';
+    private $user = 'gamehappy';
+    private $password = 'GameHappy2026';
     private $conn;
 
     public function connect() {
