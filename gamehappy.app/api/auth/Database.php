@@ -165,7 +165,4 @@ class GameHappyDB {
     }
 }
 
-// Initialize database on first load
-$db = new GameHappyDB();
-$db->createTables();
 ?>

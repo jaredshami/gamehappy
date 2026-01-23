@@ -29,6 +29,7 @@ if ($method === 'POST') {
     }
 
     $db = new GameHappyDB();
+    $db->createTables(); // Ensure tables exist
 
     // Find user by username or email
     $result = $db->execute(

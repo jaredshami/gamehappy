@@ -55,6 +55,7 @@ if ($method === 'POST') {
 
     // Check if username exists
     $db = new GameHappyDB();
+    $db->createTables(); // Ensure tables exist
     $result = $db->execute(
         "SELECT id FROM users WHERE username = ?",
         [$username]
