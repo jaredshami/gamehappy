@@ -13,7 +13,7 @@ class GameHappyAuth {
     }
 
     checkSession() {
-        fetch('/gamehappy.app/api/auth/check-session.php')
+        fetch('/api/auth/check-session.php')
             .then(response => response.json())
             .then(data => {
                 if (data.authenticated || data.loggedIn) {
@@ -39,13 +39,13 @@ class GameHappyAuth {
     redirectToLogin() {
         // Redirect to login with return URL
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-        window.location.href = '/gamehappy.app/auth/login.html?redirect=' + returnUrl;
+        window.location.href = '/auth/login.html?redirect=' + returnUrl;
     }
 
     logout() {
-        fetch('/gamehappy.app/api/auth/logout.php', { method: 'POST' })
+        fetch('/api/auth/logout.php', { method: 'POST' })
             .then(() => {
-                window.location.href = '/gamehappy.app/index.html';
+                window.location.href = '/index.html';
             });
     }
 
@@ -59,7 +59,7 @@ class GameHappyAuth {
             data.elo_rating_change = eloChange;
         }
 
-        return fetch('/gamehappy.app/api/auth/profile.php', {
+        return fetch('/api/auth/profile.php', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -70,7 +70,7 @@ class GameHappyAuth {
     }
 
     getUserProfile() {
-        return fetch('/gamehappy.app/api/auth/profile.php')
+        return fetch('/api/auth/profile.php')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {

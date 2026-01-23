@@ -16,12 +16,12 @@ class LoginManager {
 
     checkExistingSession() {
         // Check if already logged in - if so, redirect to home
-        fetch('/gamehappy.app/api/auth/check-session.php')
+        fetch('/api/auth/check-session.php')
             .then(response => response.json())
             .then(data => {
                 if (data.authenticated) {
                     // Already logged in, redirect to homepage
-                    window.location.href = '/gamehappy.app/index.html';
+                    window.location.href = '/index.html';
                 }
             })
             .catch(err => console.log('Session check failed', err));
@@ -47,7 +47,7 @@ class LoginManager {
         button.disabled = true;
         button.classList.add('loading');
 
-        fetch('/gamehappy.app/api/auth/login.php', {
+        fetch('/api/auth/login.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -72,7 +72,7 @@ class LoginManager {
                 
                 // Get redirect target from URL params, default to home
                 const params = new URLSearchParams(window.location.search);
-                const redirectTo = params.get('redirect') || '/gamehappy.app/index.html';
+                const redirectTo = params.get('redirect') || '/index.html';
                 
                 setTimeout(() => {
                     window.location.href = redirectTo;

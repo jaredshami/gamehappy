@@ -28,10 +28,10 @@ class MenuAuth extends GameHappyAuth {
     }
 
     logout() {
-        fetch('/gamehappy.app/api/auth/logout.php', { method: 'POST' })
+        fetch('/api/auth/logout.php', { method: 'POST' })
             .then(() => {
                 // Redirect to homepage after logout
-                window.location.href = '/gamehappy.app/index.html';
+                window.location.href = '/index.html';
             });
     }
 }

@@ -16,12 +16,12 @@ class SignupManager {
 
     checkExistingSession() {
         // Check if already logged in - if so, redirect to home
-        fetch('/gamehappy.app/api/auth/check-session.php')
+        fetch('/api/auth/check-session.php')
             .then(response => response.json())
             .then(data => {
                 if (data.authenticated) {
                     // Already logged in, redirect to homepage
-                    window.location.href = '/gamehappy.app/index.html';
+                    window.location.href = '/index.html';
                 }
             })
             .catch(err => console.log('Session check failed', err));
@@ -77,7 +77,7 @@ class SignupManager {
         button.classList.add('loading');
 
         // Send to backend
-        fetch('/gamehappy.app/api/auth/register.php', {
+        fetch('/api/auth/register.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -96,7 +96,7 @@ class SignupManager {
             if (data.success) {
                 this.showSuccess('Account created successfully! Redirecting to login...');
                 setTimeout(() => {
-                    window.location.href = '/gamehappy.app/auth/login.html';
+                    window.location.href = '/auth/login.html';
                 }, 2000);
             } else {
                 this.showError(data.message || 'An error occurred during signup');

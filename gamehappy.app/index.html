@@ -301,13 +301,13 @@
                         <span>▼</span>
                     </button>
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="/gamehappy.app/auth/profile.html">👤 Profile</a>
+                        <a href="/auth/profile.html">👤 Profile</a>
                         <button id="logoutBtn">🚪 Logout</button>
                     </div>
                 </div>
                 <div class="auth-buttons show">
-                    <a href="/gamehappy.app/auth/signup.html" class="btn-auth btn-signup">Sign Up</a>
-                    <a href="/gamehappy.app/auth/login.html" class="btn-auth btn-login">Log In</a>
+                    <a href="/auth/signup.html" class="btn-auth btn-signup">Sign Up</a>
+                    <a href="/auth/login.html" class="btn-auth btn-login">Log In</a>
                 </div>
             </div>
         </div>
@@ -372,7 +372,7 @@
 
             async checkAuthStatus() {
                 try {
-                    const response = await fetch('/gamehappy.app/api/auth/check-session.php');
+                    const response = await fetch('/api/auth/check-session.php');
                     const data = await response.json();
                     
                     if (data.authenticated) {
@@ -407,7 +407,7 @@
 
             async logout() {
                 try {
-                    await fetch('/gamehappy.app/api/auth/logout.php', { method: 'POST' });
+                    await fetch('/api/auth/logout.php', { method: 'POST' });
                     this.showLoggedOutUI();
                     if (this.dropdownMenu) {
                         this.dropdownMenu.classList.remove('active');
