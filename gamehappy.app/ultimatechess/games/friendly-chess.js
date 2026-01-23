@@ -267,11 +267,13 @@ class FriendlyChessGame {
             // Valid move
             const success = this.chess.makeMove(this.selectedSquare, [row, col]);
             if (success) {
+                // Save move before clearing selectedSquare
+                const move = [this.selectedSquare, [row, col]];
                 this.selectedSquare = null;
                 this.validMoves = [];
                 this.renderBoard();
                 this.updateGameStatus();
-                this.sendMoveToOpponent([this.selectedSquare, [row, col]]);
+                this.sendMoveToOpponent(move);
             }
         } else if (piece && piece.color === this.playerColor) {
             // Select different piece
