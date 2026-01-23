@@ -168,6 +168,7 @@ class FriendlyChessGame {
         this.gameActive = true;
         this.chess.resetBoard();
         this.searching = false;
+        this.lastMoveId = 0;
 
         // Update UI
         document.getElementById('search-status').classList.add('hidden');
@@ -179,6 +180,9 @@ class FriendlyChessGame {
         this.showGameScreen();
         this.renderBoard();
         this.updateGameStatus();
+        
+        // Start polling for opponent moves every 500ms
+        this.moveCheckInterval = setInterval(() => this.checkForOpponentMoves(), 500);
     }
 
     renderBoard() {
@@ -193,15 +197,19 @@ class FriendlyChessGame {
             'black_queen': '♛', 'black_king': '♚', 'black_pawn': '♟'
         };
 
-        // Board orientation: white at bottom (rows 7->0), black at bottom (rows 0->7)
-        // If player is white, start from row 7 and go to row 0
-        // If player is black, start from row 0 and go to row 7
-        const startRow = this.playerColor === 'white' ? 7 : 0;
-        const endRow = this.playerColor === 'white' ? -1 : 8;
-        const rowStep = this.playerColor === 'white' ? -1 : 1;
+        // Board orientation: 
+        // White player: row 0 at top (black pieces), row 7 at bottom (white pieces)
+        // Black player: row 7 at top (white pieces), row 0 at bottom (black pieces)
+        const startRow = this.playerColor === 'white' ? 0 : 7;
+        const endRow = this.playerColor === 'white' ? 8 : -1;
+        const rowStep = this.playerColor === 'white' ? 1 : -1;
+        
+        const startCol = this.playerColor === 'white' ? 0 : 7;
+        const endCol = this.playerColor === 'white' ? 8 : -1;
+        const colStep = this.playerColor === 'white' ? 1 : -1;
 
         for (let row = startRow; row !== endRow; row += rowStep) {
-            for (let col = this.playerColor === 'white' ? 7 : 0; col !== (this.playerColor === 'white' ? -1 : 8); col += (this.playerColor === 'white' ? -1 : 1)) {
+            for (let col = startCol; col !== endCol; col += colStep) {
                 const square = document.createElement('div');
                 const isLight = (row + col) % 2 === 0;
                 square.className = `square ${isLight ? 'light' : 'dark'}`;
@@ -293,10 +301,52 @@ class FriendlyChessGame {
     }
 
     sendMoveToOpponent(move) {
-        // In production, send via WebSocket
-        console.log('Move sent:', move);
+        // Send move to server for opponent to retrieve
+        const [from, to] = move;
+        fetch('/api/moves.php?action=send_move', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                game_code: this.gameId,
+                from_row: from[0],
+                from_col: from[1],
+                to_row: to[0],
+                to_col: to[1]
+            })
+        })
+        .catch(err => console.error('Error sending move:', err));
+        
         // Reset nudge timer on successful move
         this.resetNudgeTimer();
+    }
+
+    checkForOpponentMoves() {
+        if (!this.gameActive) {
+            clearInterval(this.moveCheckInterval);
+            return;
+        }
+        
+        fetch(`/api/moves.php?action=get_moves&game_code=${this.gameId}&last_move_id=${this.lastMoveId}`, {
+            credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+            
+            if (data.moves && data.moves.length > 0) {
+                data.moves.forEach(moveData => {
+                    // Apply opponent's move
+                    const success = this.chess.makeMove(moveData.from, moveData.to);
+                    if (success) {
+                        this.lastMoveId = moveData.id;
+                        this.renderBoard();
+                        this.updateGameStatus();
+                    }
+                });
+            }
+        })
+        .catch(err => console.error('Error checking moves:', err));
     }
 
     nudgeOpponent() {
@@ -373,6 +423,7 @@ class FriendlyChessGame {
 
     endGame(message, winner) {
         this.gameActive = false;
+        clearInterval(this.moveCheckInterval);
         document.getElementById('result-title').textContent = message;
         document.getElementById('result-message').textContent = winner ? 
             `${winner.toUpperCase()} is victorious!` : 
