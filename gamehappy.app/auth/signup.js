@@ -93,6 +93,11 @@ class SignupManager {
             button.disabled = false;
             button.classList.remove('loading');
 
+            // Log the version marker for testing
+            if (data.marker) {
+                console.log('✅ DEPLOYMENT MARKER FOUND:', data.marker, '| VERSION:', data.version);
+            }
+
             if (data.success) {
                 this.showSuccess('Account created successfully! Redirecting to login...');
                 setTimeout(() => {
@@ -105,7 +110,7 @@ class SignupManager {
         .catch(error => {
             button.disabled = false;
             button.classList.remove('loading');
-            console.error('Signup error:', error);
+            console.error('❌ Signup error:', error);
             this.showError('Network error. Please try again.');
         });
     }

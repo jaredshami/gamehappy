@@ -1,12 +1,14 @@
 <?php
 /**
  * User Registration Endpoint
+ * VERSION: v2.5-GAMEHAPPY-JAN23-2026
  */
 
 header('Content-Type: application/json');
 
-// Catch all errors and convert to JSON
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
+// MARKER: JAN-23-2026-DEPLOY-001 - Change tracking code word
+$VERSION = 'v2.5-GAMEHAPPY-JAN23-2026';
+error_log("MARKER: JAN-23-2026-DEPLOY-001 - Register endpoint called at " . date('Y-m-d H:i:s'));
     http_response_code(500);
     die(json_encode([
         'success' => false,
@@ -166,7 +168,9 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => 'Error: ' . $e->getMessage(),
+        'version' => $VERSION,
+        'marker' => 'JAN-23-2026-DEPLOY-001'
     ]);
 }
 ?>
