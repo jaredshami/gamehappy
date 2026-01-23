@@ -9,6 +9,9 @@ header('Content-Type: application/json');
 // MARKER: JAN-23-2026-DEPLOY-001 - Change tracking code word
 $VERSION = 'v2.5-GAMEHAPPY-JAN23-2026';
 error_log("MARKER: JAN-23-2026-DEPLOY-001 - Register endpoint called at " . date('Y-m-d H:i:s'));
+
+// Catch all errors and convert to JSON
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
     http_response_code(500);
     die(json_encode([
         'success' => false,
