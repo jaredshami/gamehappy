@@ -10,21 +10,22 @@ header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
+    try {
+        $data = json_decode(file_get_contents('php://input'), true);
 
-    $username = trim($data['username'] ?? '');
-    $email = trim($data['email'] ?? '');
-    $password = $data['password'] ?? '';
+        $username = trim($data['username'] ?? '');
+        $email = trim($data['email'] ?? '');
+        $password = $data['password'] ?? '';
 
-    // Validation
-    if (empty($username) || empty($email) || empty($password)) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Missing required fields'
-        ]);
-        exit;
-    }
+        // Validation
+        if (empty($username) || empty($email) || empty($password)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Missing required fields'
+            ]);
+            exit;
+        }
 
     if (strlen($username) < 3 || strlen($username) > 20) {
         http_response_code(400);
@@ -53,9 +54,11 @@ if ($method === 'POST') {
         exit;
     }
 
-    // Check if username exists
+    // Initialize database
     $db = new GameHappyDB();
     $db->createTables(); // Ensure tables exist
+    
+    // Check if username exists
     $result = $db->execute(
         "SELECT id FROM users WHERE username = ?",
         [$username]
@@ -88,8 +91,7 @@ if ($method === 'POST') {
     // Hash password
     $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
-    // Insert user
-    $db = new GameHappyDB();
+    // Insert user - get fresh connection for transaction
     $conn = $db->connect();
     $stmt = $conn->prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)");
     
@@ -131,6 +133,14 @@ if ($method === 'POST') {
 
     $stmt->close();
     $conn->close();
+    } catch (Exception $e) {
+        http_response_code(500);
+        error_log("Signup error: " . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'message' => 'An error occurred during registration'
+        ]);
+    }
 } else {
     http_response_code(405);
     echo json_encode(['message' => 'Method not allowed']);

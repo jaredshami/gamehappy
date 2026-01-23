@@ -56,62 +56,66 @@ class GameHappyDB {
     }
 
     public function createTables() {
-        $conn = $this->connect();
+        try {
+            $conn = $this->connect();
 
-        // Users table
-        $users_sql = "CREATE TABLE IF NOT EXISTS users (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            username VARCHAR(20) UNIQUE NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP NULL,
-            is_active BOOLEAN DEFAULT TRUE
-        )";
+            // Users table
+            $users_sql = "CREATE TABLE IF NOT EXISTS users (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                username VARCHAR(20) UNIQUE NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP NULL,
+                is_active BOOLEAN DEFAULT TRUE
+            )";
 
-        // User Stats table
-        $stats_sql = "CREATE TABLE IF NOT EXISTS user_stats (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            user_id INT NOT NULL,
-            elo_rating INT DEFAULT 1600,
-            friendly_chess_games INT DEFAULT 0,
-            timed_chess_games INT DEFAULT 0,
-            timed_chess_wins INT DEFAULT 0,
-            timed_chess_losses INT DEFAULT 0,
-            timed_chess_draws INT DEFAULT 0,
-            world_chess_participations INT DEFAULT 0,
-            wack_chess_games INT DEFAULT 0,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )";
+            // User Stats table
+            $stats_sql = "CREATE TABLE IF NOT EXISTS user_stats (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                user_id INT NOT NULL,
+                elo_rating INT DEFAULT 1600,
+                friendly_chess_games INT DEFAULT 0,
+                timed_chess_games INT DEFAULT 0,
+                timed_chess_wins INT DEFAULT 0,
+                timed_chess_losses INT DEFAULT 0,
+                timed_chess_draws INT DEFAULT 0,
+                world_chess_participations INT DEFAULT 0,
+                wack_chess_games INT DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )";
 
-        // Game Sessions table
-        $sessions_sql = "CREATE TABLE IF NOT EXISTS game_sessions (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            user_id INT NOT NULL,
-            game_type VARCHAR(50) NOT NULL,
-            opponent_id INT,
-            result VARCHAR(20),
-            moves_made INT DEFAULT 0,
-            duration_seconds INT DEFAULT 0,
-            elo_change INT DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )";
+            // Game Sessions table
+            $sessions_sql = "CREATE TABLE IF NOT EXISTS game_sessions (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                user_id INT NOT NULL,
+                game_type VARCHAR(50) NOT NULL,
+                opponent_id INT,
+                result VARCHAR(20),
+                moves_made INT DEFAULT 0,
+                duration_seconds INT DEFAULT 0,
+                elo_change INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )";
 
-        if (!$conn->query($users_sql)) {
-            error_log("Error creating users table: " . $conn->error);
+            if (!$conn->query($users_sql)) {
+                error_log("Error creating users table: " . $conn->error);
+            }
+
+            if (!$conn->query($stats_sql)) {
+                error_log("Error creating user_stats table: " . $conn->error);
+            }
+
+            if (!$conn->query($sessions_sql)) {
+                error_log("Error creating game_sessions table: " . $conn->error);
+            }
+
+            $conn->close();
+        } catch (Exception $e) {
+            error_log("Database initialization error: " . $e->getMessage());
         }
-
-        if (!$conn->query($stats_sql)) {
-            error_log("Error creating user_stats table: " . $conn->error);
-        }
-
-        if (!$conn->query($sessions_sql)) {
-            error_log("Error creating game_sessions table: " . $conn->error);
-        }
-
-        $conn->close();
     }
 
     public function query($sql) {
