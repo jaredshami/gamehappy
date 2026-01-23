@@ -45,17 +45,13 @@ if ($action === 'join_queue') {
 }
 
 function joinQueue($conn, $userId, $username) {
-    // Check if player is already in queue
-    $stmt = $conn->prepare("SELECT id FROM matchmaking_queue WHERE user_id = ? AND status = 'waiting'");
+    // Clean up old stale queue entries (older than 10 minutes)
+    $conn->query("DELETE FROM matchmaking_queue WHERE status = 'waiting' AND joined_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
+
+    // Remove any existing queue entry for this user (cancel previous search)
+    $stmt = $conn->prepare("DELETE FROM matchmaking_queue WHERE user_id = ? AND status = 'waiting'");
     $stmt->bind_param('i', $userId);
     $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Already in queue']);
-        return;
-    }
 
     // Add player to queue
     $stmt = $conn->prepare("INSERT INTO matchmaking_queue (user_id, username, status, joined_at) VALUES (?, ?, 'waiting', NOW())");

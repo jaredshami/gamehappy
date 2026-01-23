@@ -53,10 +53,17 @@ class FriendlyChessGame {
         this.searching = true;
         document.getElementById('search-status').classList.remove('hidden');
 
-        // Join matchmaking queue on server
-        fetch('/api/matchmaking.php?action=join_queue', {
+        // First, leave queue if already in it (cleanup from previous attempt)
+        fetch('/api/matchmaking.php?action=leave_queue', {
             method: 'POST',
             credentials: 'include'
+        })
+        .then(() => {
+            // Now join fresh
+            return fetch('/api/matchmaking.php?action=join_queue', {
+                method: 'POST',
+                credentials: 'include'
+            });
         })
         .then(res => res.json())
         .then(data => {
