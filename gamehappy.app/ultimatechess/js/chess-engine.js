@@ -13,6 +13,8 @@ class ChessBoard {
             white: { kingside: false, queenside: false },
             black: { kingside: false, queenside: false }
         };
+        // Track last pawn double move for en passant
+        this.lastPawnDoubleMove = null; // { from, to, color, moveNumber }
     }
 
     initializeBoard() {
@@ -97,9 +99,19 @@ class ChessBoard {
             }
         }
 
-        // Capture
+        // Capture (normal diagonal)
         if (Math.abs(fromCol - toCol) === 1 && toRow === fromRow + direction && this.board[toRow][toCol]) {
             return true;
+        }
+
+        // En passant: capture diagonally to empty square
+        if (Math.abs(fromCol - toCol) === 1 && toRow === fromRow + direction && !this.board[toRow][toCol]) {
+            if (this.lastPawnDoubleMove && 
+                this.lastPawnDoubleMove.color !== color &&
+                this.lastPawnDoubleMove.to[0] === fromRow &&
+                this.lastPawnDoubleMove.to[1] === toCol) {
+                return true;
+            }
         }
 
         return false;
@@ -261,6 +273,19 @@ class ChessBoard {
             } else if (fromCol === 7) {
                 this.hasRookMoved[color]['kingside'] = true;
             }
+        }
+
+        // Handle en passant capture
+        if (piece.type === 'pawn' && Math.abs(fromCol - toCol) === 1 && fromRow !== toRow && !this.board[toRow][toCol]) {
+            // Pawn captured diagonally to empty square (en passant)
+            this.board[fromRow][toCol] = null;
+        }
+
+        // Track pawn double moves for en passant
+        if (piece.type === 'pawn' && Math.abs(fromRow - toRow) === 2) {
+            this.lastPawnDoubleMove = { from, to, color, moveNumber: this.moveHistory.length };
+        } else {
+            this.lastPawnDoubleMove = null; // En passant only valid for 1 turn
         }
 
         this.moveHistory.push({ from, to, timestamp: Date.now() });
