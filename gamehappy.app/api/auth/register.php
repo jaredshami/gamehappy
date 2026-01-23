@@ -88,8 +88,20 @@ if ($method === 'POST') {
     $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
     // Insert user
+    $db = new GameHappyDB();
     $conn = $db->connect();
     $stmt = $conn->prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)");
+    
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Database error: ' . $conn->error
+        ]);
+        $conn->close();
+        exit;
+    }
+    
     $stmt->bind_param("sss", $username, $email, $password_hash);
     
     if ($stmt->execute()) {
@@ -97,9 +109,11 @@ if ($method === 'POST') {
         
         // Create user stats record
         $stmt2 = $conn->prepare("INSERT INTO user_stats (user_id) VALUES (?)");
-        $stmt2->bind_param("i", $user_id);
-        $stmt2->execute();
-        $stmt2->close();
+        if ($stmt2) {
+            $stmt2->bind_param("i", $user_id);
+            $stmt2->execute();
+            $stmt2->close();
+        }
 
         echo json_encode([
             'success' => true,
@@ -110,7 +124,7 @@ if ($method === 'POST') {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'message' => 'Registration failed'
+            'message' => 'Registration failed: ' . $stmt->error
         ]);
     }
 

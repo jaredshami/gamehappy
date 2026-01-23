@@ -12,6 +12,29 @@ class GameHappyDB {
     private $conn;
 
     public function connect() {
+        // First, try to connect to MySQL without selecting a database
+        $temp_conn = new mysqli($this->host, $this->user, $this->password);
+
+        if ($temp_conn->connect_error) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Database connection failed: ' . $temp_conn->connect_error
+            ]);
+            exit;
+        }
+
+        // Create database if it doesn't exist
+        if (!$temp_conn->query("CREATE DATABASE IF NOT EXISTS " . $this->db)) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to create database: ' . $temp_conn->error
+            ]);
+            exit;
+        }
+
+        // Now select the database
         $this->conn = new mysqli(
             $this->host,
             $this->user,
@@ -20,12 +43,15 @@ class GameHappyDB {
         );
 
         if ($this->conn->connect_error) {
-            die(json_encode([
+            http_response_code(500);
+            echo json_encode([
                 'success' => false,
-                'message' => 'Database connection failed'
-            ]));
+                'message' => 'Failed to select database: ' . $this->conn->connect_error
+            ]);
+            exit;
         }
 
+        $temp_conn->close();
         return $this->conn;
     }
 
