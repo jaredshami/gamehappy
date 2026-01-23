@@ -87,6 +87,19 @@ function getMoves($conn, $userId) {
         return;
     }
     
+    // Create moves table if needed
+    $conn->query("CREATE TABLE IF NOT EXISTS game_moves (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        game_code VARCHAR(6) NOT NULL,
+        player_id INT NOT NULL,
+        from_row INT NOT NULL,
+        from_col INT NOT NULL,
+        to_row INT NOT NULL,
+        to_col INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+    
     // Get moves from other players only, after lastMoveId
     $stmt = $conn->prepare("SELECT id, player_id, from_row, from_col, to_row, to_col FROM game_moves WHERE game_code = ? AND id > ? AND player_id != ? ORDER BY created_at ASC");
     $stmt->bind_param('sii', $gameCode, $lastMoveId, $userId);
