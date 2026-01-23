@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Chess</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="world-chess.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Game Selection Screen -->
+        <div id="game-select-screen" class="screen active">
+            <header>
+                <button class="btn-back" onclick="goBack()">← Back to Menu</button>
+                <h1>World Chess</h1>
+                <p>Join global games with 100+ players. Team voting determines each move!</p>
+            </header>
+
+            <div class="world-games-grid">
+                <div class="world-game-card" onclick="selectWorldGame(3)">
+                    <h2>⚡ 3-Second Chess</h2>
+                    <p class="game-description">Lightning fast voting with 3 seconds per move</p>
+                    <div class="game-stats">
+                        <div class="stat">
+                            <span class="stat-label">Players</span>
+                            <span class="stat-value" id="players-3s">42</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Move #</span>
+                            <span class="stat-value" id="move-3s">15</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="world-game-card" onclick="selectWorldGame(10)">
+                    <h2>🔥 10-Second Chess</h2>
+                    <p class="game-description">Rapid team voting with 10 seconds per move</p>
+                    <div class="game-stats">
+                        <div class="stat">
+                            <span class="stat-label">Players</span>
+                            <span class="stat-value" id="players-10s">87</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Move #</span>
+                            <span class="stat-value" id="move-10s">23</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="world-game-card" onclick="selectWorldGame(60)">
+                    <h2>⏳ 1-Minute Chess</h2>
+                    <p class="game-description">Standard team voting with 1 minute per move</p>
+                    <div class="game-stats">
+                        <div class="stat">
+                            <span class="stat-label">Players</span>
+                            <span class="stat-value" id="players-60s">156</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Move #</span>
+                            <span class="stat-value" id="move-60s">8</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="world-game-card" onclick="selectWorldGame(3600)">
+                    <h2>🌙 1-Hour Chess</h2>
+                    <p class="game-description">Epic strategy with 1 hour per move</p>
+                    <div class="game-stats">
+                        <div class="stat">
+                            <span class="stat-label">Players</span>
+                            <span class="stat-value" id="players-3600s">312</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Move #</span>
+                            <span class="stat-value" id="move-3600s">2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Game Screen -->
+        <div id="game-screen" class="screen">
+            <button class="btn-back" onclick="exitGame()">← Exit Game</button>
+
+            <div class="game-container">
+                <div class="game-header">
+                    <div class="team-section team-white">
+                        <div class="team-name">⚪ White Team</div>
+                        <div class="team-players" id="white-players">45 players</div>
+                        <div class="team-color">Team: White</div>
+                    </div>
+
+                    <div class="game-info">
+                        <h2 id="current-player-team">White to Move</h2>
+                        <div class="move-timer">
+                            <span id="move-countdown">60</span>s remaining
+                        </div>
+                        <div class="game-stats-display">
+                            <span>Move #<span id="move-number">1</span></span>
+                            <span id="winning-team">-</span>
+                        </div>
+                    </div>
+
+                    <div class="team-section team-black">
+                        <div class="team-name">⚫ Black Team</div>
+                        <div class="team-players" id="black-players">42 players</div>
+                        <div class="team-color">Team: Black</div>
+                    </div>
+                </div>
+
+                <div class="board-container">
+                    <div id="chessboard" class="chessboard"></div>
+                </div>
+
+                <div class="voting-section">
+                    <h3>Cast Your Vote</h3>
+                    <p class="vote-instruction">Select a piece and where you want it to move</p>
+                    <div class="vote-display" id="vote-display">
+                        <p>No vote yet</p>
+                    </div>
+                    <button class="btn btn-primary" id="submit-vote-btn" onclick="submitVote()" disabled>
+                        Submit Vote
+                    </button>
+
+                    <div class="voting-results" id="voting-results">
+                        <h4>Top Votes This Round</h4>
+                        <div id="top-votes-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <div class="game-over-container">
+                <h1 id="game-over-title">Game Over!</h1>
+                <p id="game-over-message">The game has ended</p>
+
+                <div id="your-team-result" class="team-result">
+                    <h2 id="result-team-name">Your Team</h2>
+                    <p id="result-status">Result</p>
+                </div>
+
+                <div class="game-over-stats">
+                    <div class="stat-box">
+                        <span class="stat-label">Total Moves</span>
+                        <span class="stat-value" id="total-moves">42</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Your Votes</span>
+                        <span class="stat-value" id="your-votes">15</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Winning Votes</span>
+                        <span class="stat-value" id="winning-votes">8</span>
+                    </div>
+                </div>
+
+                <div class="game-over-actions">
+                    <button class="btn btn-primary" onclick="selectNewGame()">Play Another Game</button>
+                    <button class="btn btn-secondary" onclick="goBackToMenu()">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/chess-engine.js"></script>
+    <script src="world-chess.js"></script>
+</body>
+</html>

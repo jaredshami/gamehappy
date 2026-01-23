@@ -1,0 +1,358 @@
+/* ===== Global Styles ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ===== Header ===== */
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 50px;
+    padding-top: 30px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header-top h1 {
+    margin: 0;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#username-display {
+    font-size: 0.9rem;
+    opacity: 0.95;
+}
+
+.btn-logout {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+header h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+header .tagline {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+/* ===== Menu Grid ===== */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+/* ===== Game Cards ===== */
+.game-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge.casual {
+    background: #4CAF50;
+    color: white;
+}
+
+.badge.competitive {
+    background: #FF9800;
+    color: white;
+}
+
+.badge.multiplayer {
+    background: #2196F3;
+    color: white;
+}
+
+.badge.special {
+    background: #E91E63;
+    color: white;
+}
+
+.description {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+.features {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.features span {
+    padding: 5px 0;
+}
+
+/* ===== Buttons ===== */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: auto;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== Chess Board Styles ===== */
+.chessboard {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    background: #8B7355;
+    border: 3px solid #5D4037;
+    border-radius: 5px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0;
+    padding: 5px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.square {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    user-select: none;
+    border: 2px solid transparent;
+}
+
+.square.light {
+    background: #F0D9B5;
+}
+
+.square.dark {
+    background: #B58863;
+}
+
+.square:hover {
+    opacity: 0.8;
+}
+
+.square.selected {
+    border: 2px solid #FFD700;
+    background-color: #FFD700 !important;
+}
+
+.square.valid-move {
+    border: 2px solid #00FF00;
+    opacity: 0.7;
+}
+
+.piece {
+    cursor: move;
+}
+
+/* ===== Game UI ===== */
+.game-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.game-title {
+    font-size: 2rem;
+    color: #333;
+}
+
+.game-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player-info {
+    text-align: right;
+}
+
+.player-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.player-rating {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.timer {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+    min-width: 80px;
+}
+
+.timer.warning {
+    color: #FF9800;
+}
+
+.timer.critical {
+    color: #F44336;
+}
+
+/* ===== Modal Styles ===== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2rem;
+    }
+
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .chessboard {
+        max-width: 90vw;
+    }
+}
+
+/* ===== Animations ===== */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.game-card {
+    animation: slideIn 0.5s ease-out;
+}
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: white;
+    padding: 20px;
+    margin-top: 50px;
+}

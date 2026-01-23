@@ -1,0 +1,376 @@
+/* World Chess Specific Styles */
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Game Selection Screen */
+.world-games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    max-width: 1200px;
+    margin: 40px auto;
+}
+
+.world-game-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 5px solid #667eea;
+}
+
+.world-game-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    border-left-color: #764ba2;
+}
+
+.world-game-card h2 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+}
+
+.game-description {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+}
+
+.game-stats {
+    display: flex;
+    gap: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.stat {
+    flex: 1;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #999;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+/* Game Screen */
+.game-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    max-width: 1000px;
+    margin: 20px auto;
+}
+
+.game-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.team-section {
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.team-section.team-white {
+    background: #f0f0f0;
+    border-left: 4px solid #999;
+}
+
+.team-section.team-black {
+    background: #2a2a2a;
+    color: white;
+    border-left: 4px solid #333;
+}
+
+.team-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.team-players {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 5px;
+}
+
+.team-color {
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.game-info {
+    text-align: center;
+}
+
+.game-info h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.move-timer {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+    margin: 10px 0;
+}
+
+.move-timer.warning {
+    color: #FF9800;
+}
+
+.move-timer.critical {
+    color: #F44336;
+}
+
+.game-stats-display {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.board-container {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+/* Voting Section */
+.voting-section {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+}
+
+.voting-section h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.vote-instruction {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.vote-display {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ddd;
+}
+
+.vote-display.has-vote {
+    border-color: #667eea;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.voting-results {
+    margin-top: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.voting-results h4 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+#top-votes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vote-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.vote-move {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.vote-count {
+    background: #667eea;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Game Over Screen */
+.game-over-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+#game-over-title {
+    font-size: 2.5rem;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+#game-over-message {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.team-result {
+    background: #f5f5f5;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    border-left: 5px solid #667eea;
+}
+
+#result-team-name {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+#result-status {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.game-over-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-box {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.stat-box .stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #999;
+    margin-bottom: 5px;
+}
+
+.stat-box .stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.game-over-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.game-over-actions .btn {
+    flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .game-header {
+        grid-template-columns: 1fr;
+    }
+
+    .world-games-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .game-over-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .game-stats {
+        flex-direction: column;
+    }
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #d0d0d0;
+}
+
+.hidden {
+    display: none !important;
+}

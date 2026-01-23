@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Chess</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="timed-chess.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Time Selection Screen -->
+        <div id="time-select-screen" class="screen active">
+            <header>
+                <button class="btn-back" onclick="goBack()">← Back to Menu</button>
+                <h1>Timed Chess</h1>
+                <p>Select your time control and compete for ELO rating</p>
+            </header>
+
+            <div class="time-selection">
+                <div class="time-option" onclick="selectTimeControl(1)">
+                    <h2>1 min</h2>
+                    <p>Bullet</p>
+                    <span class="rating-info">+/- 32 ELO</span>
+                </div>
+                <div class="time-option" onclick="selectTimeControl(3)">
+                    <h2>3 min</h2>
+                    <p>Rapid</p>
+                    <span class="rating-info">+/- 24 ELO</span>
+                </div>
+                <div class="time-option" onclick="selectTimeControl(5)">
+                    <h2>5 min</h2>
+                    <p>Blitz</p>
+                    <span class="rating-info">+/- 16 ELO</span>
+                </div>
+                <div class="time-option" onclick="selectTimeControl(10)">
+                    <h2>10 min</h2>
+                    <p>Classical</p>
+                    <span class="rating-info">+/- 8 ELO</span>
+                </div>
+            </div>
+
+            <div class="player-stats">
+                <div class="stat-card">
+                    <h3>Your Rating</h3>
+                    <p class="rating-value" id="player-elo">1600</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Games Played</h3>
+                    <p class="stat-value" id="games-played">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Win Rate</h3>
+                    <p class="stat-value" id="win-rate">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matchmaking Screen -->
+        <div id="matchmaking-screen" class="screen">
+            <div class="matchmaking-container">
+                <div class="spinner"></div>
+                <h2>Finding opponent...</h2>
+                <p>Time: <span id="search-time">0</span>s</p>
+                <p id="rating-range">Looking for <span id="opponent-rating-range">1600±150</span> rated players</p>
+                <button class="btn btn-secondary" onclick="cancelMatchmaking()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-container">
+                <div class="game-header">
+                    <div class="player-section player-opponent">
+                        <div class="player-name" id="opponent-name">Opponent</div>
+                        <div class="player-rating" id="opponent-elo">1600</div>
+                        <div class="timer-display" id="opponent-timer">5:00</div>
+                    </div>
+
+                    <div class="game-info">
+                        <h2>Timed Chess</h2>
+                        <div class="time-control">5 min per side</div>
+                    </div>
+
+                    <div class="player-section player-you">
+                        <div class="player-name" id="your-name">You</div>
+                        <div class="player-rating" id="your-elo">1600</div>
+                        <div class="timer-display" id="your-timer">5:00</div>
+                    </div>
+                </div>
+
+                <div class="board-container">
+                    <div id="chessboard" class="chessboard"></div>
+                </div>
+
+                <div class="game-controls">
+                    <button class="btn btn-secondary" onclick="resignGame()">Resign</button>
+                    <button class="btn btn-secondary" onclick="offerDraw()">Offer Draw</button>
+                </div>
+            </div>
+
+            <button class="btn-back" onclick="exitGame()">← Exit Game</button>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="screen">
+            <div class="result-container">
+                <h1 id="result-title">Game Over</h1>
+                <p id="result-message">Result message here</p>
+                
+                <div class="rating-change">
+                    <div class="rating-card">
+                        <p>Your Rating</p>
+                        <p class="old-rating" id="old-rating">1600</p>
+                        <div class="arrow">→</div>
+                        <p class="new-rating" id="new-rating">1616</p>
+                    </div>
+                    <div class="rating-delta" id="rating-delta">
+                        <span class="delta-plus">+16 ELO</span>
+                    </div>
+                </div>
+
+                <div class="result-actions">
+                    <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+                    <button class="btn btn-secondary" onclick="backToMenu()">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/chess-engine.js"></script>
+    <script src="timed-chess.js"></script>
+</body>
+</html>

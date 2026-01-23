@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wack-a-Chess</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="wack-chess.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <header>
+                <button class="btn-back" onclick="goBack()">← Back to Menu</button>
+                <h1>🔨 Wack-a-Chess</h1>
+                <p>3-player chaos! Two players play chess, one player eliminates pieces!</p>
+            </header>
+
+            <div class="menu-options">
+                <div class="menu-card">
+                    <h2>Create a Game</h2>
+                    <p>Create a game and invite two friends with a code</p>
+                    <button class="btn btn-primary" onclick="createGame()">Create Game</button>
+                </div>
+
+                <div class="menu-divider">OR</div>
+
+                <div class="menu-card">
+                    <h2>Join a Game</h2>
+                    <p>Enter the code your friend shared</p>
+                    <input type="text" id="game-code-input" placeholder="Enter 6-character code" maxlength="6">
+                    <button class="btn btn-primary" onclick="joinGame()">Join Game</button>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>How to Play</h3>
+                <div class="rules">
+                    <div class="rule">
+                        <span class="rule-number">1</span>
+                        <p><strong>Two players</strong> play regular chess against each other</p>
+                    </div>
+                    <div class="rule">
+                        <span class="rule-number">2</span>
+                        <p><strong>The wacker</strong> guesses a square on every turn. If correct, the piece is eliminated!</p>
+                    </div>
+                    <div class="rule">
+                        <span class="rule-number">3</span>
+                        <p><strong>Wacker wins</strong> by eliminating both queens. <strong>Chess players win</strong> by checkmate!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting Room Screen -->
+        <div id="waiting-room-screen" class="screen">
+            <div class="waiting-container">
+                <h2>Waiting for Players</h2>
+                <p>Game Code: <span id="display-game-code" class="game-code">-</span></p>
+                <p>Share this code with your friends!</p>
+
+                <div class="players-status">
+                    <div class="player-slot" id="slot-0">
+                        <div class="slot-icon">👤</div>
+                        <p>Host</p>
+                    </div>
+                    <div class="player-slot" id="slot-1">
+                        <div class="slot-icon">?</div>
+                        <p>Waiting...</p>
+                    </div>
+                    <div class="player-slot" id="slot-2">
+                        <div class="slot-icon">?</div>
+                        <p>Waiting...</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="cancelWait()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Role Assignment Screen -->
+        <div id="role-screen" class="screen">
+            <div class="role-container">
+                <h2>You are the...</h2>
+                <div id="role-display" class="role-display">
+                    <!-- Filled by JS -->
+                </div>
+                <button class="btn btn-primary" onclick="confirmRole()">Ready!</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <button class="btn-back" onclick="exitGame()">← Exit Game</button>
+
+            <div class="game-container">
+                <div class="game-header-wack">
+                    <div class="player-card player-white">
+                        <div class="player-label">⚪ White Player</div>
+                        <div class="player-name" id="white-name">Player 1</div>
+                        <div class="player-pieces" id="white-pieces">16 pieces</div>
+                    </div>
+
+                    <div class="center-info">
+                        <h1>Wack-a-Chess</h1>
+                        <div id="current-turn">White's Turn</div>
+                        <div id="game-phase">Chess Phase</div>
+                    </div>
+
+                    <div class="player-card player-black">
+                        <div class="player-label">⚫ Black Player</div>
+                        <div class="player-name" id="black-name">Player 2</div>
+                        <div class="player-pieces" id="black-pieces">16 pieces</div>
+                    </div>
+                </div>
+
+                <div class="board-and-wack-container">
+                    <div class="board-container">
+                        <div id="chessboard" class="chessboard"></div>
+                    </div>
+
+                    <div id="wack-panel" class="wack-panel hidden">
+                        <h3>🔨 Wacker Mode</h3>
+                        <p>Guess which square the current player will move a piece TO</p>
+                        <div id="wack-board" class="wack-board"></div>
+                        <div class="wack-guess">
+                            <input type="text" id="wack-input" placeholder="e.g., e4" maxlength="2">
+                            <button class="btn btn-primary" onclick="submitWackGuess()">Guess!</button>
+                        </div>
+                        <div id="wack-result" class="hidden"></div>
+                    </div>
+
+                    <div id="chess-panel" class="chess-panel">
+                        <h3>Your Move</h3>
+                        <p id="move-instruction">Select a piece and where to move it</p>
+                        <div class="move-display" id="move-display">No move selected</div>
+                        <button class="btn btn-primary" onclick="confirmMove()" disabled id="confirm-move-btn">Confirm Move</button>
+                    </div>
+                </div>
+
+                <div class="game-log" id="game-log">
+                    <h4>Game Log</h4>
+                    <div id="log-entries"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <div class="game-over-container">
+                <h1 id="game-over-title">Game Over!</h1>
+                <p id="game-over-message">The game has concluded</p>
+
+                <div class="winner-display" id="winner-display">
+                    <!-- Filled by JS -->
+                </div>
+
+                <div class="game-over-stats">
+                    <div class="stat-box">
+                        <span class="stat-label">Total Moves</span>
+                        <span class="stat-value" id="final-moves">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Pieces Wacked</span>
+                        <span class="stat-value" id="pieces-wacked">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Wacker Accuracy</span>
+                        <span class="stat-value" id="wacker-accuracy">0%</span>
+                    </div>
+                </div>
+
+                <div class="game-over-actions">
+                    <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+                    <button class="btn btn-secondary" onclick="goBackToMenu()">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/chess-engine.js"></script>
+    <script src="wack-chess.js"></script>
+</body>
+</html>

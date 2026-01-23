@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendly Chess</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="friendly-chess.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Menu/Lobby Screen -->
+        <div id="lobby-screen" class="screen active">
+            <header>
+                <button class="btn-back" onclick="goBack()">← Back to Menu</button>
+                <h1>Friendly Chess</h1>
+                <p>Play unlimited chess with friends</p>
+            </header>
+
+            <div class="lobby-content">
+                <div class="lobby-option">
+                    <h2>Find a Random Opponent</h2>
+                    <p>Get paired with another waiting player</p>
+                    <button class="btn btn-primary" onclick="findRandomOpponent()">Search for Opponent</button>
+                    <div id="search-status" class="hidden">
+                        <div class="spinner"></div>
+                        <p>Searching for opponent...</p>
+                        <button class="btn btn-secondary" onclick="cancelSearch()">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="lobby-divider">OR</div>
+
+                <div class="lobby-option">
+                    <h2>Play with Friend</h2>
+                    <div class="friend-option">
+                        <h3>Create a Game</h3>
+                        <p>Get a code to share with your friend</p>
+                        <button class="btn btn-primary" onclick="createGame()">Create Game</button>
+                    </div>
+                    <div class="friend-option">
+                        <h3>Join a Game</h3>
+                        <p>Enter the code your friend gave you</p>
+                        <input type="text" id="game-code" placeholder="Enter game code" maxlength="6">
+                        <button class="btn btn-primary" onclick="joinGameWithCode()">Join Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-container">
+                <div class="game-header">
+                    <div class="player-section player-opponent">
+                        <div class="player-name" id="opponent-name">Opponent</div>
+                        <div class="player-rating" id="opponent-status">Waiting...</div>
+                    </div>
+
+                    <div class="game-info">
+                        <h2>Friendly Chess</h2>
+                        <div class="game-id">Game: <span id="display-game-id">-</span></div>
+                    </div>
+
+                    <div class="player-section player-you">
+                        <div class="player-name" id="your-name">You</div>
+                        <div class="player-rating" id="your-color">-</div>
+                    </div>
+                </div>
+
+                <div class="board-container">
+                    <div id="chessboard" class="chessboard"></div>
+                </div>
+
+                <div class="game-controls">
+                    <button class="btn btn-primary" id="nudge-button" onclick="nudgeOpponent()" disabled>
+                        👋 Nudge Opponent
+                    </button>
+                    <button class="btn btn-secondary" onclick="resignGame()">Resign</button>
+                    <button class="btn btn-secondary" onclick="offerDraw()">Offer Draw</button>
+                </div>
+
+                <div id="nudge-alert" class="nudge-alert hidden">
+                    <div class="nudge-message">
+                        <p>Your opponent has nudged you!</p>
+                        <button class="btn btn-primary" onclick="respondToNudge()">I'm Here</button>
+                    </div>
+                    <div class="nudge-timer">
+                        <p>Respond in <span id="nudge-countdown">30</span>s or forfeit</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-back" onclick="exitGame()">← Exit Game</button>
+        </div>
+
+        <!-- End Game Screen -->
+        <div id="end-game-screen" class="screen">
+            <div class="end-game-container">
+                <div id="game-result" class="game-result">
+                    <h1 id="result-title">Game Over</h1>
+                    <p id="result-message">The game has ended</p>
+                </div>
+                <div class="end-game-actions">
+                    <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+                    <button class="btn btn-secondary" onclick="goBack()">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/chess-engine.js"></script>
+    <script src="friendly-chess.js"></script>
+</body>
+</html>

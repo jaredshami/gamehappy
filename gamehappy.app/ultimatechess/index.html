@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Chess</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1>♟️ Ultimate Chess</h1>
+                <div class="user-menu">
+                    <span id="username-display">Guest</span>
+                    <button class="btn-logout" onclick="auth.logout()">Logout</button>
+                </div>
+            </div>
+            <p class="tagline">Multiple chess variations, one ultimate experience</p>
+        </header>
+
+        <div class="menu-grid">
+            <!-- Friendly Chess -->
+            <div class="game-card friendly-chess-card">
+                <div class="card-header">
+                    <h2>Friendly Chess</h2>
+                    <span class="badge casual">Casual</span>
+                </div>
+                <p class="description">Play unlimited chess with friends. No timer, no pressure. Find a random opponent or invite a friend with a code.</p>
+                <div class="features">
+                    <span>✓ No time limit</span>
+                    <span>✓ Nudge system</span>
+                    <span>✓ Friend codes</span>
+                </div>
+                <button class="btn btn-primary" onclick="navigateTo('friendly-chess')">Play Friendly Chess</button>
+            </div>
+
+            <!-- Timed Chess -->
+            <div class="game-card timed-chess-card">
+                <div class="card-header">
+                    <h2>Timed Chess</h2>
+                    <span class="badge competitive">Competitive</span>
+                </div>
+                <p class="description">Official chess with time controls (1-10 min per side). Compete for ELO rating and climb the leaderboard.</p>
+                <div class="features">
+                    <span>⏱ Timed games</span>
+                    <span>📊 ELO rating</span>
+                    <span>🏆 Leaderboard</span>
+                </div>
+                <button class="btn btn-primary" onclick="navigateTo('timed-chess')">Play Timed Chess</button>
+            </div>
+
+            <!-- World Chess -->
+            <div class="game-card world-chess-card">
+                <div class="card-header">
+                    <h2>World Chess</h2>
+                    <span class="badge multiplayer">Multiplayer</span>
+                </div>
+                <p class="description">Join continuous global games with 100+ players. Collaborate with your team to outvote opponents and win.</p>
+                <div class="features">
+                    <span>🌍 100+ players</span>
+                    <span>🗳 Team voting</span>
+                    <span>⏳ 4 time modes</span>
+                </div>
+                <button class="btn btn-primary" onclick="navigateTo('world-chess')">Join World Chess</button>
+            </div>
+
+            <!-- Wack-a-Chess -->
+            <div class="game-card wack-chess-card">
+                <div class="card-header">
+                    <h2>Wack-a-Chess</h2>
+                    <span class="badge special">3-Player</span>
+                </div>
+                <p class="description">A chaotic 3-player twist on chess. Two players play, one player tries to guess and eliminate their pieces!</p>
+                <div class="features">
+                    <span>🔨 Piece elimination</span>
+                    <span>🎯 Guess the move</span>
+                    <span>👥 3 players</span>
+                </div>
+                <button class="btn btn-primary" onclick="navigateTo('wack-chess')">Play Wack-a-Chess</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 Ultimate Chess - Where legends are made</p>
+        </footer>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/menu.js"></script>
+</body>
+</html>

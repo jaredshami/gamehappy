@@ -1,0 +1,331 @@
+/* Timed Chess Specific Styles */
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Time Selection Screen */
+.time-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    max-width: 700px;
+    margin: 40px auto;
+}
+
+.time-option {
+    background: white;
+    padding: 30px 20px;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 3px solid transparent;
+}
+
+.time-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-color: #667eea;
+}
+
+.time-option h2 {
+    font-size: 2rem;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.time-option p {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.rating-info {
+    font-size: 0.85rem;
+    color: #999;
+    display: block;
+}
+
+/* Player Stats */
+.player-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    max-width: 700px;
+    margin: 40px auto;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.rating-value {
+    font-size: 2rem;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    color: #333;
+    font-weight: bold;
+}
+
+/* Matchmaking Screen */
+.matchmaking-container {
+    max-width: 400px;
+    margin: 100px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 20px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.matchmaking-container h2 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.matchmaking-container p {
+    color: #666;
+    margin: 10px 0;
+}
+
+/* Game Screen */
+.game-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.player-section {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.player-section.player-you {
+    background: #e8f5e9;
+}
+
+.player-section.player-opponent {
+    background: #fff3e0;
+}
+
+.player-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.player-rating {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.timer-display {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+}
+
+.timer-display.warning {
+    color: #FF9800;
+}
+
+.timer-display.critical {
+    color: #F44336;
+}
+
+.game-info h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.time-control {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.board-container {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.game-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+/* Result Screen */
+.result-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+#result-title {
+    font-size: 2.5rem;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+#result-message {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.rating-change {
+    background: #f5f5f5;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.rating-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.rating-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.old-rating {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #999;
+    font-family: 'Courier New', monospace;
+}
+
+.arrow {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.new-rating {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+}
+
+.rating-delta {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.delta-plus {
+    color: #4CAF50;
+}
+
+.delta-minus {
+    color: #F44336;
+}
+
+.result-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.result-actions .btn {
+    flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .game-header {
+        grid-template-columns: 1fr;
+    }
+
+    .time-selection {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #d0d0d0;
+}

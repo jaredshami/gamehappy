@@ -32,9 +32,16 @@
         }
 
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             color: white;
             padding: 30px 0 20px 0;
+        }
+
+        .header-content {
+            flex: 1;
+            text-align: center;
         }
 
         .header h1 {
@@ -46,6 +53,119 @@
         .header p {
             font-size: 14px;
             opacity: 0.9;
+        }
+
+        .auth-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .user-profile {
+            position: relative;
+            display: none;
+        }
+
+        .user-profile.logged-in {
+            display: block;
+        }
+
+        .user-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .user-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            min-width: 200px;
+            margin-top: 5px;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-menu a,
+        .dropdown-menu button {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .dropdown-menu a:hover,
+        .dropdown-menu button:hover {
+            background: #f5f5f5;
+        }
+
+        .dropdown-menu button {
+            color: #f44336;
+        }
+
+        .auth-buttons {
+            display: none;
+            gap: 10px;
+        }
+
+        .auth-buttons.show {
+            display: flex;
+        }
+
+        .btn-auth {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-signup {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-login {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+        }
+
+        .btn-login:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .games-grid {
@@ -170,8 +290,26 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>GameHappy</h1>
-            <p>Your Mobile Game Collection</p>
+            <div class="header-content">
+                <h1>🎮 GameHappy</h1>
+                <p>Your Gaming Paradise</p>
+            </div>
+            <div class="auth-section">
+                <div class="user-profile">
+                    <button class="user-button" id="userMenuBtn">
+                        <span id="username"></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="/gamehappy.app/auth/profile.html">👤 Profile</a>
+                        <button id="logoutBtn">🚪 Logout</button>
+                    </div>
+                </div>
+                <div class="auth-buttons show">
+                    <a href="/gamehappy.app/auth/signup.html" class="btn-auth btn-signup">Sign Up</a>
+                    <a href="/gamehappy.app/auth/login.html" class="btn-auth btn-login">Log In</a>
+                </div>
+            </div>
         </div>
 
         <div class="games-grid">
@@ -198,6 +336,96 @@
     <!-- Socket.IO for user tracking -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
+        // ============ AUTHENTICATION MANAGEMENT ============
+        class HomepageAuth {
+            constructor() {
+                this.userButton = document.getElementById('userMenuBtn');
+                this.dropdownMenu = document.getElementById('dropdownMenu');
+                this.logoutBtn = document.getElementById('logoutBtn');
+                this.userProfile = document.querySelector('.user-profile');
+                this.authButtons = document.querySelector('.auth-buttons');
+                this.usernameSpan = document.getElementById('username');
+                
+                this.setupEventListeners();
+                this.checkAuthStatus();
+            }
+
+            setupEventListeners() {
+                if (this.userButton) {
+                    this.userButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.dropdownMenu.classList.toggle('active');
+                    });
+                }
+
+                if (this.logoutBtn) {
+                    this.logoutBtn.addEventListener('click', () => this.logout());
+                }
+
+                // Close dropdown when clicking elsewhere
+                document.addEventListener('click', () => {
+                    if (this.dropdownMenu) {
+                        this.dropdownMenu.classList.remove('active');
+                    }
+                });
+            }
+
+            async checkAuthStatus() {
+                try {
+                    const response = await fetch('/gamehappy.app/api/auth/check-session.php');
+                    const data = await response.json();
+                    
+                    if (data.authenticated) {
+                        this.showLoggedInUI(data.username);
+                    } else {
+                        this.showLoggedOutUI();
+                    }
+                } catch (error) {
+                    console.error('Error checking auth status:', error);
+                    this.showLoggedOutUI();
+                }
+            }
+
+            showLoggedInUI(username) {
+                if (this.userProfile) {
+                    this.userProfile.classList.add('logged-in');
+                    this.usernameSpan.textContent = username;
+                }
+                if (this.authButtons) {
+                    this.authButtons.classList.remove('show');
+                }
+            }
+
+            showLoggedOutUI() {
+                if (this.userProfile) {
+                    this.userProfile.classList.remove('logged-in');
+                }
+                if (this.authButtons) {
+                    this.authButtons.classList.add('show');
+                }
+            }
+
+            async logout() {
+                try {
+                    await fetch('/gamehappy.app/api/auth/logout.php', { method: 'POST' });
+                    this.showLoggedOutUI();
+                    if (this.dropdownMenu) {
+                        this.dropdownMenu.classList.remove('active');
+                    }
+                    // Reload to refresh the page
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Error logging out:', error);
+                }
+            }
+        }
+
+        // Initialize authentication UI when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new HomepageAuth();
+        });
+
+        // ============ SOCKET.IO CONNECTION ============
         // Generate or retrieve a unique session ID for this user
         function getSessionId() {
             let sessionId = localStorage.getItem('gamehappy-session-id');

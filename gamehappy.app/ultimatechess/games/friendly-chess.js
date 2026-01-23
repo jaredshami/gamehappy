@@ -1,0 +1,409 @@
+/**
+ * Friendly Chess Game Logic
+ * - Player matchmaking and friend codes
+ * - Nudge system with forfeit mechanism
+ * - Real-time board updates
+ */
+
+class FriendlyChessGame {
+    constructor() {
+        this.gameId = null;
+        this.playerId = this.generatePlayerId();
+        this.opponentId = null;
+        this.playerColor = null;
+        this.chess = new ChessBoard();
+        this.ws = null;
+        this.searching = false;
+        this.gameActive = false;
+        this.nudgeTimeout = null;
+        this.nudgeResponded = false;
+        this.selectedSquare = null;
+        this.validMoves = [];
+
+        this.initializeWebSocket();
+        this.setupEventListeners();
+        this.renderBoard();
+    }
+
+    generatePlayerId() {
+        return 'player_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    generateGameCode() {
+        return Math.random().toString(36).substr(2, 6).toUpperCase();
+    }
+
+    initializeWebSocket() {
+        // In production, connect to actual WebSocket server
+        // For now, we'll use a simulated connection
+        this.simulateWebSocket();
+    }
+
+    simulateWebSocket() {
+        // Simulated WebSocket for development
+        this.simulatedMessages = [];
+    }
+
+    setupEventListeners() {
+        // Board click listeners will be set up when board is rendered
+        this.renderBoard();
+    }
+
+    findRandomOpponent() {
+        this.searching = true;
+        document.getElementById('search-status').classList.remove('hidden');
+
+        // Simulate finding opponent after 2-4 seconds
+        setTimeout(() => {
+            if (this.searching) {
+                this.startGame({
+                    gameId: this.generateGameCode(),
+                    playerColor: Math.random() > 0.5 ? 'white' : 'black',
+                    opponentId: 'opponent_' + Math.random().toString(36).substr(2, 9),
+                    opponentName: 'Friend Player'
+                });
+            }
+        }, 2000 + Math.random() * 2000);
+    }
+
+    cancelSearch() {
+        this.searching = false;
+        document.getElementById('search-status').classList.add('hidden');
+    }
+
+    createGame() {
+        const gameCode = this.generateGameCode();
+        this.gameId = gameCode;
+        this.playerColor = 'white'; // Creator is always white
+        alert(`Game created! Share this code with your friend: ${gameCode}`);
+        
+        // Switch to game screen and wait for opponent
+        this.showGameScreen();
+        document.getElementById('display-game-id').textContent = gameCode;
+    }
+
+    joinGameWithCode() {
+        const code = document.getElementById('game-code').value.toUpperCase();
+        if (!code || code.length !== 6) {
+            alert('Please enter a valid 6-character code');
+            return;
+        }
+
+        // In production, validate code with server
+        this.gameId = code;
+        this.playerColor = 'black'; // Joiner is always black
+        this.startGame({
+            gameId: code,
+            playerColor: 'black',
+            opponentId: 'opponent_' + Math.random().toString(36).substr(2, 9),
+            opponentName: 'Friend Player'
+        });
+    }
+
+    startGame(config) {
+        this.gameId = config.gameId;
+        this.playerColor = config.playerColor;
+        this.opponentId = config.opponentId;
+        this.gameActive = true;
+        this.chess.resetBoard();
+        this.searching = false;
+
+        // Update UI
+        document.getElementById('search-status').classList.add('hidden');
+        document.getElementById('opponent-name').textContent = config.opponentName;
+        document.getElementById('your-color').textContent = `You are ${this.playerColor === 'white' ? '⚪ White' : '⚫ Black'}`;
+        document.getElementById('opponent-status').textContent = 'Connected';
+        document.getElementById('display-game-id').textContent = this.gameId;
+
+        this.showGameScreen();
+        this.renderBoard();
+        this.updateGameStatus();
+    }
+
+    renderBoard() {
+        const boardElement = document.getElementById('chessboard');
+        boardElement.innerHTML = '';
+
+        const board = this.chess.getBoard();
+        const pieces = ['♖', '♗', '♘', '♕', '♔', '♙', '♜', '♝', '♞', '♛', '♚', '♟'];
+        const pieceMap = {
+            'white_rook': '♖', 'white_knight': '♘', 'white_bishop': '♗',
+            'white_queen': '♕', 'white_king': '♔', 'white_pawn': '♙',
+            'black_rook': '♜', 'black_knight': '♞', 'black_bishop': '♝',
+            'black_queen': '♛', 'black_king': '♚', 'black_pawn': '♟'
+        };
+
+        // If player is black, flip the board
+        const startRow = this.playerColor === 'black' ? 0 : 7;
+        const endRow = this.playerColor === 'black' ? 8 : -1;
+        const rowStep = this.playerColor === 'black' ? 1 : -1;
+
+        for (let row = startRow; row !== endRow; row += rowStep) {
+            for (let col = this.playerColor === 'black' ? 0 : 7; col >= (this.playerColor === 'black' ? 7 : 0); col--) {
+                const square = document.createElement('div');
+                const isLight = (row + col) % 2 === 0;
+                square.className = `square ${isLight ? 'light' : 'dark'}`;
+                square.dataset.row = row;
+                square.dataset.col = col;
+
+                // Check if this is the selected square
+                if (this.selectedSquare && this.selectedSquare[0] === row && this.selectedSquare[1] === col) {
+                    square.classList.add('selected');
+                }
+
+                // Check if this is a valid move
+                if (this.validMoves.some(move => move[0] === row && move[1] === col)) {
+                    square.classList.add('valid-move');
+                }
+
+                const piece = board[row][col];
+                if (piece) {
+                    const key = `${piece.color}_${piece.type}`;
+                    square.textContent = pieceMap[key] || '';
+                    square.classList.add('piece');
+                }
+
+                square.addEventListener('click', () => this.handleSquareClick(row, col));
+                boardElement.appendChild(square);
+            }
+        }
+    }
+
+    handleSquareClick(row, col) {
+        if (!this.gameActive) return;
+        if (this.chess.currentPlayer !== this.playerColor) {
+            alert("It's not your turn!");
+            return;
+        }
+
+        const piece = this.chess.board[row][col];
+
+        // First click - select a piece
+        if (!this.selectedSquare) {
+            if (piece && piece.color === this.playerColor) {
+                this.selectedSquare = [row, col];
+                this.calculateValidMoves();
+            }
+            this.renderBoard();
+            return;
+        }
+
+        // Second click - try to move
+        if (this.selectedSquare[0] === row && this.selectedSquare[1] === col) {
+            // Deselect
+            this.selectedSquare = null;
+            this.validMoves = [];
+        } else if (this.validMoves.some(move => move[0] === row && move[1] === col)) {
+            // Valid move
+            const success = this.chess.makeMove(this.selectedSquare, [row, col]);
+            if (success) {
+                this.selectedSquare = null;
+                this.validMoves = [];
+                this.renderBoard();
+                this.updateGameStatus();
+                this.sendMoveToOpponent([this.selectedSquare, [row, col]]);
+            }
+        } else if (piece && piece.color === this.playerColor) {
+            // Select different piece
+            this.selectedSquare = [row, col];
+            this.calculateValidMoves();
+        } else {
+            // Invalid move attempt
+            this.selectedSquare = null;
+            this.validMoves = [];
+        }
+
+        this.renderBoard();
+    }
+
+    calculateValidMoves() {
+        this.validMoves = [];
+        if (!this.selectedSquare) return;
+
+        const [row, col] = this.selectedSquare;
+        for (let toRow = 0; toRow < 8; toRow++) {
+            for (let toCol = 0; toCol < 8; toCol++) {
+                if (this.chess.isValidMove([row, col], [toRow, toCol], this.playerColor)) {
+                    this.validMoves.push([toRow, toCol]);
+                }
+            }
+        }
+    }
+
+    sendMoveToOpponent(move) {
+        // In production, send via WebSocket
+        console.log('Move sent:', move);
+        // Reset nudge timer on successful move
+        this.resetNudgeTimer();
+    }
+
+    nudgeOpponent() {
+        if (!this.gameActive) return;
+
+        // Show nudge alert on opponent's side (we're simulating this)
+        alert('Nudge sent! Opponent has 30 seconds to respond.');
+
+        // Set timeout for forfeit
+        this.startNudgeTimer();
+    }
+
+    startNudgeTimer() {
+        this.nudgeResponded = false;
+        let timeLeft = 30;
+
+        this.nudgeTimeout = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(this.nudgeTimeout);
+                if (!this.nudgeResponded) {
+                    this.opponentForfeit();
+                }
+            }
+        }, 1000);
+    }
+
+    resetNudgeTimer() {
+        if (this.nudgeTimeout) {
+            clearInterval(this.nudgeTimeout);
+            this.nudgeTimeout = null;
+        }
+        this.nudgeResponded = false;
+    }
+
+    respondToNudge() {
+        this.nudgeResponded = true;
+        document.getElementById('nudge-alert').classList.add('hidden');
+        alert("I'm here! Keep playing.");
+    }
+
+    opponentForfeit() {
+        this.gameActive = false;
+        this.endGame(this.playerColor + ' wins by forfeit!', this.playerColor);
+    }
+
+    updateGameStatus() {
+        const status = this.chess.getGameStatus();
+        if (status.status !== 'playing') {
+            this.gameActive = false;
+            const message = status.status === 'checkmate' 
+                ? `Checkmate! ${status.winner} wins!`
+                : 'Stalemate - Draw!';
+            this.endGame(message, status.winner);
+        }
+
+        // Update nudge button state
+        const nudgeBtn = document.getElementById('nudge-button');
+        nudgeBtn.disabled = this.chess.currentPlayer !== this.playerColor;
+    }
+
+    resignGame() {
+        if (confirm('Are you sure you want to resign?')) {
+            this.gameActive = false;
+            const winner = this.playerColor === 'white' ? 'Black' : 'White';
+            this.endGame(`You resigned. ${winner} wins!`, this.playerColor === 'white' ? 'black' : 'white');
+        }
+    }
+
+    offerDraw() {
+        alert('Draw offer sent to opponent');
+        // In production, wait for opponent response
+    }
+
+    endGame(message, winner) {
+        this.gameActive = false;
+        document.getElementById('result-title').textContent = message;
+        document.getElementById('result-message').textContent = winner ? 
+            `${winner.toUpperCase()} is victorious!` : 
+            'Game ended in a draw';
+        this.showEndGameScreen();
+    }
+
+    playAgain() {
+        this.gameId = null;
+        this.opponentId = null;
+        this.gameActive = false;
+        this.chess.resetBoard();
+        this.selectedSquare = null;
+        this.validMoves = [];
+        this.showLobby();
+    }
+
+    exitGame() {
+        if (this.gameActive && !confirm('Game is in progress. Are you sure you want to exit?')) {
+            return;
+        }
+        this.playAgain();
+    }
+
+    showGameScreen() {
+        document.getElementById('lobby-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        document.getElementById('end-game-screen').classList.remove('active');
+    }
+
+    showLobby() {
+        document.getElementById('lobby-screen').classList.add('active');
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('end-game-screen').classList.remove('active');
+        document.getElementById('game-code').value = '';
+    }
+
+    showEndGameScreen() {
+        document.getElementById('lobby-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('end-game-screen').classList.add('active');
+    }
+}
+
+// Global game instance
+let game;
+
+// Global functions for HTML onclick handlers
+function findRandomOpponent() {
+    game.findRandomOpponent();
+}
+
+function cancelSearch() {
+    game.cancelSearch();
+}
+
+function createGame() {
+    game.createGame();
+}
+
+function joinGameWithCode() {
+    game.joinGameWithCode();
+}
+
+function nudgeOpponent() {
+    game.nudgeOpponent();
+}
+
+function respondToNudge() {
+    game.respondToNudge();
+}
+
+function resignGame() {
+    game.resignGame();
+}
+
+function offerDraw() {
+    game.offerDraw();
+}
+
+function exitGame() {
+    game.exitGame();
+}
+
+function playAgain() {
+    game.playAgain();
+}
+
+function goBack() {
+    window.location.href = '../index.html';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    game = new FriendlyChessGame();
+});
