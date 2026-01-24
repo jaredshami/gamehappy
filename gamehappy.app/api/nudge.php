@@ -100,19 +100,20 @@ function checkNudge($conn, $userId) {
         FOREIGN KEY (nudged_by_player_id) REFERENCES users(id) ON DELETE CASCADE
     )");
 
-    // Check for unanswered nudges
-    $stmt = $conn->prepare("SELECT id, nudged_by_player_id, nudged_at FROM game_nudges WHERE game_code = ? AND responded_at IS NULL AND is_forfeit = 0 ORDER BY nudged_at DESC LIMIT 1");
-    $stmt->bind_param('s', $gameCode);
+    // Check for unanswered nudges DIRECTED AT THIS PLAYER (not sent by this player)
+    // Only return nudges sent BY other players, not nudges you sent
+    $stmt = $conn->prepare("SELECT id, nudged_by_player_id, nudged_at FROM game_nudges WHERE game_code = ? AND nudged_by_player_id != ? AND responded_at IS NULL AND is_forfeit = 0 ORDER BY nudged_at DESC LIMIT 1");
+    $stmt->bind_param('si', $gameCode, $userId);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($row = $result->fetch_assoc()) {
-        // Check if 15 seconds have passed since nudge
+        // Check if 30 seconds have passed since nudge
         $nudgeTime = strtotime($row['nudged_at']);
         $currentTime = time();
         $secondsElapsed = $currentTime - $nudgeTime;
 
-        if ($secondsElapsed > 15) {
+        if ($secondsElapsed > 30) {
             // Player forfeited - update nudge record
             $updateStmt = $conn->prepare("UPDATE game_nudges SET is_forfeit = 1 WHERE id = ?");
             $updateStmt->bind_param('i', $row['id']);
@@ -130,7 +131,7 @@ function checkNudge($conn, $userId) {
                 'has_nudge' => true,
                 'forfeit' => false,
                 'nudge_id' => $row['id'],
-                'seconds_remaining' => 15 - $secondsElapsed,
+                'seconds_remaining' => 30 - $secondsElapsed,
                 'nudged_by_player_id' => $row['nudged_by_player_id']
             ]);
         }

@@ -19,6 +19,7 @@ class FriendlyChessGame {
         this.nudgeCheckInterval = null;
         this.nudgeButtonInterval = null;
         this.nudgeResponded = false;
+        this.hasMoved = false; // Track if player has made their first move
         this.selectedSquare = null;
         this.validMoves = [];
         this.lastMoveTime = 0;
@@ -173,10 +174,8 @@ class FriendlyChessGame {
         this.chess.resetBoard();
         this.searching = false;
         this.lastMoveId = 0;
-        
-        // Only set lastMoveTime if you're white (first player to move)
-        // If you're black, opponent moves first, so timer shouldn't start yet
-        this.lastMoveTime = this.playerColor === 'white' ? Date.now() : 0;
+        this.hasMoved = false; // Reset flag at game start
+        this.lastMoveTime = 0; // Don't set move time until player actually moves
 
         // Update UI
         document.getElementById('search-status').classList.add('hidden');
@@ -323,7 +322,8 @@ class FriendlyChessGame {
         const fromPiece = this.chess.board[from[0]][from[1]];
         const isPawnDoubleMove = fromPiece && fromPiece.type === 'pawn' && Math.abs(from[0] - to[0]) === 2;
         
-        // Reset nudge timer when YOU make a move - this starts the 10-second wait
+        // Mark that you've moved and reset nudge timer
+        this.hasMoved = true;
         this.lastMoveTime = Date.now();
         
         fetch('/api/moves.php?action=send_move', {
@@ -382,7 +382,7 @@ class FriendlyChessGame {
     }
 
     updateNudgeButtonState() {
-        if (!this.gameActive) return;
+        if (!this.gameActive || !this.hasMoved) return; // Don't show until you've moved
         
         const secondsSinceMyMove = (Date.now() - this.lastMoveTime) / 1000;
         const isOpponentsTurn = this.chess.currentPlayer !== this.playerColor;
@@ -403,12 +403,16 @@ class FriendlyChessGame {
     nudgeOpponent() {
         if (!this.gameActive) return;
         
+        const nudgeBtn = document.getElementById('nudge-button');
+        nudgeBtn.disabled = true; // Disable button immediately after clicking
+        
         fetch('/api/nudge.php?action=send_nudge', {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                game_code: this.gameId
+                game_code: this.gameId,
+                nudged_player_id: this.opponentId  // Send to opponent, not both
             })
         })
         .then(res => res.json())
@@ -445,7 +449,7 @@ class FriendlyChessGame {
     }
 
     startNudgeTimer(nudgeId, initialSeconds) {
-        let timeLeft = initialSeconds || 15;
+        let timeLeft = initialSeconds || 30; // 30 second countdown
         const countdownEl = document.getElementById('nudge-countdown');
         
         if (this.nudgeTimeout) clearInterval(this.nudgeTimeout);
@@ -481,6 +485,10 @@ class FriendlyChessGame {
                 nudgeAlert.classList.add('hidden');
                 clearInterval(this.nudgeTimeout);
                 this.nudgeResponded = true;
+                
+                // Reset nudge button on opponent's screen - treat opponent's response as their "move"
+                // This resets the 10-second counter on the opponent's screen
+                this.lastMoveTime = Date.now();
             }
         })
         .catch(err => console.error('Error responding to nudge:', err));
