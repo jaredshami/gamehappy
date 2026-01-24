@@ -276,16 +276,25 @@ class ChessBoard {
         }
 
         // Handle en passant capture
-        if (piece.type === 'pawn' && Math.abs(fromCol - toCol) === 1 && fromRow !== toRow && !this.board[toRow][toCol]) {
-            // Pawn captured diagonally to empty square (en passant)
-            this.board[fromRow][toCol] = null;
+        if (piece.type === 'pawn' && Math.abs(fromCol - toCol) === 1 && toRow !== fromRow) {
+            // Pawn is moving diagonally
+            if (this.board[toRow][toCol]) {
+                // Normal diagonal capture
+            } else if (this.lastPawnDoubleMove && this.lastPawnDoubleMove.to[0] === fromRow && this.lastPawnDoubleMove.to[1] === toCol) {
+                // En passant capture - remove the pawn that just moved 2 squares
+                this.board[fromRow][toCol] = null;
+            }
         }
 
         // Track pawn double moves for en passant
         if (piece.type === 'pawn' && Math.abs(fromRow - toRow) === 2) {
             this.lastPawnDoubleMove = { from, to, color, moveNumber: this.moveHistory.length };
         } else {
-            this.lastPawnDoubleMove = null; // En passant only valid for 1 turn
+            // Only clear en passant if this move is not a pawn move
+            // Pawn moves (even single square) don't clear en passant until opponent's turn
+            if (piece.type !== 'pawn') {
+                this.lastPawnDoubleMove = null;
+            }
         }
 
         this.moveHistory.push({ from, to, timestamp: Date.now() });
