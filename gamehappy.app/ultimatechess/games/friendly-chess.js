@@ -494,8 +494,10 @@ class FriendlyChessGame {
         const nudgeAlert = document.getElementById('nudge-alert');
         const nudgeId = nudgeAlert.dataset.nudgeId;
         
+        console.log('Responding to nudge with ID:', nudgeId);
+        
         if (!nudgeId) {
-            console.error('No nudge_id found');
+            console.error('No nudge_id found in dataset:', nudgeAlert.dataset);
             return;
         }
         
@@ -504,11 +506,15 @@ class FriendlyChessGame {
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                nudge_id: nudgeId
+                nudge_id: parseInt(nudgeId) // Ensure it's an integer
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            console.log('Response status:', res.status);
+            return res.json();
+        })
         .then(data => {
+            console.log('Nudge response data:', data);
             if (data.success) {
                 nudgeAlert.classList.add('hidden');
                 clearInterval(this.nudgeTimeout);
