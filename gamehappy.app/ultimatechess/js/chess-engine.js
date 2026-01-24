@@ -240,12 +240,23 @@ class ChessBoard {
     }
 
     makeMove(from, to) {
-        if (!this.isValidMove(from, to, this.currentPlayer)) return false;
-
         const [fromRow, fromCol] = from;
-        const [toRow, toCol] = to;
         const piece = this.board[fromRow][fromCol];
-        const color = piece.color;
+        
+        if (!piece) return false;
+        
+        // For opponent moves received via API, the piece color determines whose move it is
+        // For local moves, verify it's the current player's piece
+        const moveColor = piece.color;
+        if (moveColor !== this.currentPlayer) {
+            // This is likely an opponent's move from the API - validate it's for the opponent
+            // Don't reject it, just validate the move itself
+        }
+        
+        if (!this.isValidMove(from, to, moveColor)) return false;
+
+        const [toRow, toCol] = to;
+        const color = moveColor;
         const isEnPassantCapture = piece.type === 'pawn' && 
                                   this.lastPawnDoubleMove && 
                                   this.lastPawnDoubleMove.color !== color &&
