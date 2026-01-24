@@ -18,6 +18,7 @@ class FriendlyChessGame {
         this.nudgeTimeout = null;
         this.nudgeCheckInterval = null;
         this.nudgeButtonInterval = null;
+        this.gameStatusCheckInterval = null; // Add interval for checking game status
         this.nudgeResponded = false;
         this.nudgeAlertShowing = false; // Track if nudge alert is currently displayed
         this.currentNudgeId = null; // Track the current nudge we're responding to
@@ -199,6 +200,9 @@ class FriendlyChessGame {
         
         // Update nudge button state every 500ms (check if 10 seconds have passed and whose turn it is)
         this.nudgeButtonInterval = setInterval(() => this.updateNudgeButtonState(), 500);
+        
+        // Check game status every 1000ms for checkmate/stalemate
+        this.gameStatusCheckInterval = setInterval(() => this.updateGameStatus(), 1000);
 
     }
 
@@ -578,6 +582,7 @@ class FriendlyChessGame {
         clearInterval(this.moveCheckInterval);
         clearInterval(this.nudgeCheckInterval);
         clearInterval(this.nudgeButtonInterval);
+        clearInterval(this.gameStatusCheckInterval);
         clearInterval(this.nudgeTimeout);
         document.getElementById('result-title').textContent = message;
         document.getElementById('result-message').textContent = winner ? 
