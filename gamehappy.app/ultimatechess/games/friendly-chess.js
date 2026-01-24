@@ -320,6 +320,9 @@ class FriendlyChessGame {
         const fromPiece = this.chess.board[from[0]][from[1]];
         const isPawnDoubleMove = fromPiece && fromPiece.type === 'pawn' && Math.abs(from[0] - to[0]) === 2;
         
+        // Reset nudge timer when YOU make a move - this starts the 10-second wait
+        this.lastMoveTime = Date.now();
+        
         fetch('/api/moves.php?action=send_move', {
             method: 'POST',
             credentials: 'include',
@@ -364,8 +367,6 @@ class FriendlyChessGame {
                     const success = this.chess.makeMove(moveData.from, moveData.to);
                     if (success) {
                         this.lastMoveId = moveData.id;
-                        // Update lastMoveTime when opponent moves - this resets the nudge timer
-                        this.lastMoveTime = Date.now();
                         this.renderBoard();
                         this.updateGameStatus();
                     } else {
@@ -380,12 +381,12 @@ class FriendlyChessGame {
     updateNudgeButtonState() {
         if (!this.gameActive) return;
         
-        const secondsSinceMove = (Date.now() - this.lastMoveTime) / 1000;
-        const isPlayersTurn = this.chess.currentPlayer === this.playerColor;
+        const secondsSinceMyMove = (Date.now() - this.lastMoveTime) / 1000;
+        const isOpponentsTurn = this.chess.currentPlayer !== this.playerColor;
         const nudgeBtn = document.getElementById('nudge-button');
         
-        // Enable nudge button if it's not your turn and 10+ seconds since last move
-        nudgeBtn.disabled = isPlayersTurn || secondsSinceMove < 10;
+        // Enable nudge button: 10+ seconds since I moved AND it's opponent's turn
+        nudgeBtn.disabled = !(isOpponentsTurn && secondsSinceMyMove >= 10);
     }
 
     nudgeOpponent() {
