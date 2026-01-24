@@ -290,11 +290,9 @@ class ChessBoard {
         if (piece.type === 'pawn' && Math.abs(fromRow - toRow) === 2) {
             this.lastPawnDoubleMove = { from, to, color, moveNumber: this.moveHistory.length };
         } else {
-            // Only clear en passant if this move is not a pawn move
-            // Pawn moves (even single square) don't clear en passant until opponent's turn
-            if (piece.type !== 'pawn') {
-                this.lastPawnDoubleMove = null;
-            }
+            // Clear en passant opportunity on any non-pawn-double move
+            // En passant is only valid for the immediate next move after a 2-square pawn advance
+            this.lastPawnDoubleMove = null;
         }
 
         this.moveHistory.push({ from, to, timestamp: Date.now() });
