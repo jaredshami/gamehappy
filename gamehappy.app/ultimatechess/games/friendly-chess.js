@@ -19,6 +19,7 @@ class FriendlyChessGame {
         this.nudgeCheckInterval = null;
         this.nudgeButtonInterval = null;
         this.nudgeResponded = false;
+        this.nudgeAlertShowing = false; // Track if nudge alert is currently displayed
         this.lastNudgeSentTime = 0; // Track when we last sent a nudge to detect responses
         this.hasMoved = false; // Track if player has made their first move
         this.selectedSquare = null;
@@ -447,7 +448,8 @@ class FriendlyChessGame {
         .then(data => {
             if (!data.success) return;
             
-            if (data.has_nudge) {
+            if (data.has_nudge && !this.nudgeAlertShowing) {
+                // Only show nudge alert if not already showing
                 if (data.forfeit) {
                     // Opponent forfeited
                     this.endGame(this.playerColor === 'white' ? 'White wins by forfeit!' : 'Black wins by forfeit!', this.playerColor);
@@ -456,27 +458,29 @@ class FriendlyChessGame {
                     const nudgeAlert = document.getElementById('nudge-alert');
                     nudgeAlert.dataset.nudgeId = data.nudge_id; // Store the nudge ID
                     nudgeAlert.classList.remove('hidden');
+                    this.nudgeAlertShowing = true;
                     this.startNudgeTimer(data.nudge_id, data.seconds_remaining);
                 }
-            } else if (this.lastNudgeSentTime > 0) {
-                // No active nudge - check if opponent responded to our nudge by checking if time has passed
-                // If we sent a nudge and there's no active nudge now, opponent may have responded
-                const timeSinceNudgeSent = (Date.now() - this.lastNudgeSentTime) / 1000;
-                if (timeSinceNudgeSent > 1) { // Give a 1 second buffer
-                    // Reset our nudge timer so button can appear again after 10 more seconds
-                    this.lastMoveTime = Date.now();
-                    this.lastNudgeSentTime = 0; // Clear so we don't keep resetting
-                }
+            } else if (!data.has_nudge && this.nudgeAlertShowing) {
+                // Nudge was responded to - clear the alert
+                document.getElementById('nudge-alert').classList.add('hidden');
+                this.nudgeAlertShowing = false;
+                clearInterval(this.nudgeTimeout);
             }
         })
         .catch(err => console.error('Error checking nudges:', err));
     }
 
     startNudgeTimer(nudgeId, initialSeconds) {
+        // Clear any existing timer
+        if (this.nudgeTimeout) {
+            clearInterval(this.nudgeTimeout);
+            this.nudgeTimeout = null;
+        }
+        
         let timeLeft = initialSeconds || 30; // 30 second countdown
         const countdownEl = document.getElementById('nudge-countdown');
-        
-        if (this.nudgeTimeout) clearInterval(this.nudgeTimeout);
+        countdownEl.textContent = timeLeft;
         
         this.nudgeTimeout = setInterval(() => {
             timeLeft--;
@@ -484,7 +488,8 @@ class FriendlyChessGame {
             
             if (timeLeft <= 0) {
                 clearInterval(this.nudgeTimeout);
-                if (!this.nudgeResponded) {
+                this.nudgeTimeout = null;
+                if (this.nudgeAlertShowing && !this.nudgeResponded) {
                     this.endGame('You forfeited by not responding!', 'opponent');
                 }
             }
@@ -495,10 +500,8 @@ class FriendlyChessGame {
         const nudgeAlert = document.getElementById('nudge-alert');
         const nudgeId = nudgeAlert.dataset.nudgeId;
         
-        console.log('Responding to nudge with ID:', nudgeId);
-        
         if (!nudgeId) {
-            console.error('No nudge_id found in dataset:', nudgeAlert.dataset);
+            console.error('No nudge_id found in dataset');
             return;
         }
         
@@ -507,25 +510,23 @@ class FriendlyChessGame {
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                nudge_id: parseInt(nudgeId) // Ensure it's an integer
+                nudge_id: parseInt(nudgeId)
             })
         })
-        .then(res => {
-            console.log('Response status:', res.status);
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            console.log('Nudge response data:', data);
             if (data.success) {
+                // Clear timer and hide alert
+                if (this.nudgeTimeout) {
+                    clearInterval(this.nudgeTimeout);
+                    this.nudgeTimeout = null;
+                }
                 nudgeAlert.classList.add('hidden');
-                clearInterval(this.nudgeTimeout);
+                this.nudgeAlertShowing = false;
                 this.nudgeResponded = true;
                 
-                // Reset nudge button timer on both screens - opponent responded counts as their "move"
-                // This resets the 10-second counter so the button can reappear after 10 more seconds
+                // Reset nudge button timer - opponent responded counts as their "move"
                 this.lastMoveTime = Date.now();
-            } else {
-                console.error('Failed to respond to nudge:', data.message);
             }
         })
         .catch(err => console.error('Error responding to nudge:', err));
