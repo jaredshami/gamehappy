@@ -547,11 +547,13 @@ class FriendlyChessGame {
 
     updateGameStatus() {
         const status = this.chess.getGameStatus();
+        console.log('Game Status:', status, 'Current Player:', this.chess.currentPlayer);
         if (status.status !== 'playing') {
             this.gameActive = false;
             const message = status.status === 'checkmate' 
                 ? `Checkmate! ${status.winner} wins!`
                 : 'Stalemate - Draw!';
+            console.log('Game ending with:', message);
             this.endGame(message, status.winner);
         }
 
