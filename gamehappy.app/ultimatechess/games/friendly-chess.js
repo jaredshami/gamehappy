@@ -20,7 +20,8 @@ class FriendlyChessGame {
         this.nudgeButtonInterval = null;
         this.nudgeResponded = false;
         this.nudgeAlertShowing = false; // Track if nudge alert is currently displayed
-        this.lastNudgeSentTime = 0; // Track when we last sent a nudge to detect responses
+        this.currentNudgeId = null; // Track the current nudge we're responding to
+        this.lastNudgeSentId = null; // Track last nudge WE sent
         this.hasMoved = false; // Track if player has made their first move
         this.selectedSquare = null;
         this.validMoves = [];
@@ -433,6 +434,7 @@ class FriendlyChessGame {
         .then(data => {
             if (data.success) {
                 console.log('Nudge sent!');
+                this.lastNudgeSentId = data.nudge_id; // Track this nudge ID
             }
         })
         .catch(err => console.error('Error sending nudge:', err));
@@ -448,24 +450,35 @@ class FriendlyChessGame {
         .then(data => {
             if (!data.success) return;
             
-            if (data.has_nudge && !this.nudgeAlertShowing) {
-                // Only show nudge alert if not already showing
+            if (data.has_nudge && data.nudge_id !== this.currentNudgeId) {
+                // NEW nudge received that we haven't shown yet
                 if (data.forfeit) {
-                    // Opponent forfeited
                     this.endGame(this.playerColor === 'white' ? 'White wins by forfeit!' : 'Black wins by forfeit!', this.playerColor);
                 } else {
-                    // Show nudge alert
                     const nudgeAlert = document.getElementById('nudge-alert');
-                    nudgeAlert.dataset.nudgeId = data.nudge_id; // Store the nudge ID
+                    nudgeAlert.dataset.nudgeId = data.nudge_id;
                     nudgeAlert.classList.remove('hidden');
+                    this.currentNudgeId = data.nudge_id;
                     this.nudgeAlertShowing = true;
                     this.startNudgeTimer(data.nudge_id, data.seconds_remaining);
                 }
-            } else if (!data.has_nudge && this.nudgeAlertShowing) {
-                // Nudge was responded to - clear the alert
-                document.getElementById('nudge-alert').classList.add('hidden');
-                this.nudgeAlertShowing = false;
-                clearInterval(this.nudgeTimeout);
+            } else if (!data.has_nudge && this.currentNudgeId !== null) {
+                // Nudge we were responding to is gone - opponent may have already handled it
+                // Clear our alert
+                if (this.nudgeAlertShowing) {
+                    document.getElementById('nudge-alert').classList.add('hidden');
+                    this.nudgeAlertShowing = false;
+                }
+                this.currentNudgeId = null;
+                if (this.nudgeTimeout) {
+                    clearInterval(this.nudgeTimeout);
+                    this.nudgeTimeout = null;
+                }
+            } else if (!data.has_nudge && this.lastNudgeSentId !== null) {
+                // No active nudge AND we sent one - it was responded to!
+                // Reset button timer so it can appear again after 10 seconds
+                this.lastMoveTime = Date.now();
+                this.lastNudgeSentId = null;
             }
         })
         .catch(err => console.error('Error checking nudges:', err));
