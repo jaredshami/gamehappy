@@ -88,6 +88,9 @@ function sendMove($conn, $userId) {
         FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
     )");
     
+    // Add is_pawn_double_move column if it doesn't exist (for existing tables)
+    $conn->query("ALTER TABLE game_moves ADD COLUMN IF NOT EXISTS is_pawn_double_move TINYINT DEFAULT 0");
+    
     $stmt = $conn->prepare("INSERT INTO game_moves (game_code, player_id, from_row, from_col, to_row, to_col, is_pawn_double_move) VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param('siiiiii', $gameCode, $userId, $fromRow, $fromCol, $toRow, $toCol, $isPawnDoubleMove);
     
@@ -123,8 +126,11 @@ function getMoves($conn, $userId) {
         FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
     )");
     
+    // Add is_pawn_double_move column if it doesn't exist (for existing tables)
+    $conn->query("ALTER TABLE game_moves ADD COLUMN IF NOT EXISTS is_pawn_double_move TINYINT DEFAULT 0");
+    
     // Get moves from other players only, after lastMoveId
-    $stmt = $conn->prepare("SELECT id, player_id, from_row, from_col, to_row, to_col, is_pawn_double_move FROM game_moves WHERE game_code = ? AND id > ? AND player_id != ? ORDER BY created_at ASC");
+    $stmt = $conn->prepare("SELECT id, player_id, from_row, from_col, to_row, to_col, COALESCE(is_pawn_double_move, 0) as is_pawn_double_move FROM game_moves WHERE game_code = ? AND id > ? AND player_id != ? ORDER BY created_at ASC");
     $stmt->bind_param('sii', $gameCode, $lastMoveId, $userId);
     $stmt->execute();
     $result = $stmt->get_result();
