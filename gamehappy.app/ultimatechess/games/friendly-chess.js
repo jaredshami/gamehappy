@@ -382,11 +382,19 @@ class FriendlyChessGame {
     }
 
     updateNudgeButtonState() {
-        if (!this.gameActive || !this.hasMoved) return; // Don't show until you've moved
+        if (!this.gameActive) return;
+        
+        const nudgeBtn = document.getElementById('nudge-button');
+        
+        // Don't show button until you've moved
+        if (!this.hasMoved) {
+            nudgeBtn.classList.add('hidden');
+            nudgeBtn.disabled = true;
+            return;
+        }
         
         const secondsSinceMyMove = (Date.now() - this.lastMoveTime) / 1000;
         const isOpponentsTurn = this.chess.currentPlayer !== this.playerColor;
-        const nudgeBtn = document.getElementById('nudge-button');
         
         // Show button ONLY when: 10+ seconds since I moved AND it's opponent's turn
         const shouldShow = isOpponentsTurn && secondsSinceMyMove >= 10;
