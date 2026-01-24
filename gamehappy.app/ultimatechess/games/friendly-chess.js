@@ -452,7 +452,9 @@ class FriendlyChessGame {
                     this.endGame(this.playerColor === 'white' ? 'White wins by forfeit!' : 'Black wins by forfeit!', this.playerColor);
                 } else {
                     // Show nudge alert
-                    document.getElementById('nudge-alert').classList.remove('hidden');
+                    const nudgeAlert = document.getElementById('nudge-alert');
+                    nudgeAlert.dataset.nudgeId = data.nudge_id; // Store the nudge ID
+                    nudgeAlert.classList.remove('hidden');
                     this.startNudgeTimer(data.nudge_id, data.seconds_remaining);
                 }
             } else if (this.lastNudgeSentTime > 0) {
@@ -492,6 +494,11 @@ class FriendlyChessGame {
         const nudgeAlert = document.getElementById('nudge-alert');
         const nudgeId = nudgeAlert.dataset.nudgeId;
         
+        if (!nudgeId) {
+            console.error('No nudge_id found');
+            return;
+        }
+        
         fetch('/api/nudge.php?action=respond_nudge', {
             method: 'POST',
             credentials: 'include',
@@ -510,6 +517,8 @@ class FriendlyChessGame {
                 // Reset nudge button on opponent's screen - treat opponent's response as their "move"
                 // This resets the 10-second counter on the opponent's screen
                 this.lastMoveTime = Date.now();
+            } else {
+                console.error('Failed to respond to nudge:', data.message);
             }
         })
         .catch(err => console.error('Error responding to nudge:', err));
