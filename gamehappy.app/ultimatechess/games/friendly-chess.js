@@ -19,6 +19,7 @@ class FriendlyChessGame {
         this.nudgeCheckInterval = null;
         this.nudgeButtonInterval = null;
         this.nudgeResponded = false;
+        this.lastNudgeSentTime = 0; // Track when we last sent a nudge to detect responses
         this.hasMoved = false; // Track if player has made their first move
         this.selectedSquare = null;
         this.validMoves = [];
@@ -414,6 +415,9 @@ class FriendlyChessGame {
         const nudgeBtn = document.getElementById('nudge-button');
         nudgeBtn.disabled = true; // Disable button immediately after clicking
         
+        // Track that we sent a nudge
+        this.lastNudgeSentTime = Date.now();
+        
         fetch('/api/nudge.php?action=send_nudge', {
             method: 'POST',
             credentials: 'include',
@@ -450,6 +454,15 @@ class FriendlyChessGame {
                     // Show nudge alert
                     document.getElementById('nudge-alert').classList.remove('hidden');
                     this.startNudgeTimer(data.nudge_id, data.seconds_remaining);
+                }
+            } else if (this.lastNudgeSentTime > 0) {
+                // No active nudge - check if opponent responded to our nudge by checking if time has passed
+                // If we sent a nudge and there's no active nudge now, opponent may have responded
+                const timeSinceNudgeSent = (Date.now() - this.lastNudgeSentTime) / 1000;
+                if (timeSinceNudgeSent > 1) { // Give a 1 second buffer
+                    // Reset our nudge timer so button can appear again after 10 more seconds
+                    this.lastMoveTime = Date.now();
+                    this.lastNudgeSentTime = 0; // Clear so we don't keep resetting
                 }
             }
         })
