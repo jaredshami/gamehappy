@@ -696,4 +696,13 @@
         font-size: 0.8rem;
         border-radius: 4px;
     }
+
+    .game-container {
+        padding: 0;
+    }
+
+    .square {
+        width: auto;
+        height: auto;
+    }
 }
