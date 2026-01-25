@@ -613,7 +613,8 @@
         padding: 0;
         margin: 0;
         width: 100%;
-        overflow-x: hidden;
+        height: 100vh;
+        overflow: hidden;
     }
 
     .container {
@@ -621,26 +622,28 @@
         margin: 0;
         width: 100%;
         max-width: 100%;
-        overflow-x: hidden;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         height: 100vh;
+        box-sizing: border-box;
     }
 
     header {
-        padding: 6px 6px;
-        margin-bottom: 2px;
-        overflow-x: hidden;
+        padding: 4px 4px;
+        margin-bottom: 1px;
+        overflow: hidden;
         flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     header h1 {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         margin-bottom: 0px;
     }
 
     header .tagline {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         display: none;
     }
 
@@ -650,14 +653,15 @@
         padding: 0;
         border: 0;
         box-shadow: none;
-        max-width: 75vw;
-        width: 75vw;
+        width: 70vw;
+        height: 70vw;
         aspect-ratio: 1;
         flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .piece-element {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     .piece-element.white-piece,
@@ -666,104 +670,109 @@
     }
 
     .board-container {
-        margin: 3px 0;
+        margin: 2px 0;
         padding: 0;
         width: 100%;
-        max-width: 100%;
+        overflow: hidden;
         justify-content: center;
-        overflow-x: hidden;
         flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .game-header {
-        gap: 4px;
-        margin-bottom: 4px;
-        padding: 0 4px;
+        gap: 3px;
+        margin-bottom: 2px;
+        padding: 0 3px;
         flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .player-section {
-        padding: 4px;
-        border-radius: 3px;
-        font-size: 0.75rem;
+        padding: 3px;
+        border-radius: 2px;
+        font-size: 0.7rem;
     }
 
     .player-name {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: bold;
     }
 
     .player-rating {
-        font-size: 0.6rem;
+        font-size: 0.55rem;
     }
 
     .game-info {
-        padding: 0 4px;
+        padding: 0 3px;
         flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .game-info h2 {
-        font-size: 0.8rem;
-        margin: 2px 0 1px 0;
+        font-size: 0.75rem;
+        margin: 1px 0 0px 0;
     }
 
     .game-id {
-        font-size: 0.55rem;
+        font-size: 0.5rem;
     }
 
     .game-controls {
         gap: 2px;
-        margin-top: 3px;
-        padding: 0 4px;
+        margin-top: 2px;
+        padding: 0 3px;
         flex-wrap: wrap;
-        overflow-x: hidden;
+        overflow: hidden;
         flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .btn {
-        padding: 4px 6px;
-        font-size: 0.65rem;
+        padding: 3px 5px;
+        font-size: 0.6rem;
         flex: 1 1 calc(50% - 1px);
-        min-width: 50px;
-        border-radius: 3px;
+        min-width: 45px;
+        border-radius: 2px;
     }
 
     .btn-back {
-        padding: 4px 6px;
-        font-size: 0.65rem;
-        margin-bottom: 2px;
-        margin-left: 4px;
+        padding: 3px 5px;
+        font-size: 0.6rem;
+        margin-bottom: 1px;
+        margin-left: 3px;
         width: auto;
         display: inline-block;
         flex-shrink: 0;
     }
 
     .end-game-container {
-        margin: 6px 4px;
-        padding: 10px 6px;
-        border-radius: 6px;
-        overflow-x: hidden;
+        margin: 4px 3px;
+        padding: 8px 5px;
+        border-radius: 5px;
+        overflow: hidden;
+        box-sizing: border-box;
     }
 
     .game-result h1 {
-        font-size: 1.1rem;
-        margin-bottom: 3px;
+        font-size: 1rem;
+        margin-bottom: 2px;
     }
 
     .game-result p {
-        font-size: 0.75rem;
-        line-height: 1.2;
+        font-size: 0.7rem;
+        line-height: 1.1;
     }
 
     .nudge-alert {
-        max-width: calc(100% - 8px);
+        max-width: calc(100% - 6px);
         left: 50%;
         transform: translateX(-50%);
-        padding: 6px;
-        font-size: 0.7rem;
+        padding: 5px;
+        font-size: 0.65rem;
+        box-sizing: border-box;
     }
 
     .nudge-message p {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 }
