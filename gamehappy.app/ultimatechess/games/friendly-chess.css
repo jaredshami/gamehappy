@@ -640,8 +640,8 @@
         padding: 0;
         border: 1px solid #999;
         width: 100%;
-        max-width: 100%;
         aspect-ratio: 1;
+        margin: 0 auto;
     }
 
     .piece-element {
@@ -651,6 +651,7 @@
     .board-container {
         margin: 0;
         padding: 0;
+        width: 100%;
     }
 
     .game-header {
