@@ -609,18 +609,20 @@
 
 @media (max-width: 480px) {
     body {
-        padding: 8px;
+        padding: 0;
+        margin: 0;
     }
 
     .container {
         width: 100%;
         padding: 0;
+        margin: 0;
     }
 
     header {
-        padding: 4px;
+        padding: 8px 8px;
+        margin: 0;
         margin-bottom: 8px;
-        font-size: 0.9rem;
     }
 
     header h1 {
@@ -637,8 +639,8 @@
         grid-template-rows: repeat(8, 1fr);
         padding: 0;
         border: 1px solid #999;
-        width: calc(100vw - 16px);
-        max-width: calc(100vw - 16px);
+        width: 100%;
+        max-width: 100%;
         aspect-ratio: 1;
     }
 
@@ -647,7 +649,7 @@
     }
 
     .board-container {
-        margin: 8px 0;
+        margin: 0;
         padding: 0;
     }
 
@@ -656,7 +658,8 @@
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-bottom: 8px;
-        padding: 0 4px;
+        padding: 8px 8px;
+        margin: 0;
     }
 
     .player-section {
@@ -683,7 +686,8 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 6px;
-        padding: 0 4px;
+        padding: 8px 8px;
+        margin: 0;
         margin-top: 8px;
     }
 
