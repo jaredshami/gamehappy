@@ -680,10 +680,6 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        display: flex;
-        justify-content: center;
-        padding-left: 0;
-        padding-right: 0;
         overflow: hidden;
     }
 
@@ -691,8 +687,8 @@
         display: grid;
         grid-template-columns: repeat(8, 1fr);
         grid-template-rows: repeat(8, 1fr);
-        width: calc(100vw - 0px);
-        max-width: calc(100vw - 0px);
+        width: 100%;
+        max-width: 100%;
         aspect-ratio: 1;
         border: 1px solid #999;
         padding: 0;
