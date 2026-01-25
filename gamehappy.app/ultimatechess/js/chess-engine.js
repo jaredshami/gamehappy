@@ -349,7 +349,9 @@ class ChessBoard {
             for (let col = 0; col < 8; col++) {
                 const piece = this.board[row][col];
                 if (piece && piece.color === oppositeColor) {
-                    if (this.isValidMove([row, col], kingPos, oppositeColor)) {
+                    // Check if opponent piece can attack the king (without validating king safety for opponent)
+                    // This prevents infinite recursion and correctly identifies check
+                    if (this.validatePieceMove(piece, [row, col], kingPos)) {
                         return true;
                     }
                 }
