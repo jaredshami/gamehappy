@@ -461,12 +461,26 @@ class FriendlyChessGame {
                         };
                     }
                     
+                    // Check if this is a knight move before we make it
+                    const movingPiece = this.chess.board[moveData.from[0]][moveData.from[1]];
+                    const isKnight = movingPiece && movingPiece.type === 'knight';
+                    const isCastling = movingPiece && 
+                                       movingPiece.type === 'king' &&
+                                       Math.abs(moveData.from[1] - moveData.to[1]) === 2;
+                    
                     // Apply opponent's move - makeMove handles validation and currentPlayer toggle
                     const success = this.chess.makeMove(moveData.from, moveData.to);
                     if (success) {
                         this.lastMoveId = moveData.id;
-                        this.renderBoard();
-                        this.updateGameStatus();
+                        
+                        // Animate the opponent's move
+                        this.animateMove(moveData.from, moveData.to, isCastling, isKnight);
+                        
+                        // Delay re-render and update to allow animation to play
+                        setTimeout(() => {
+                            this.renderBoard();
+                            this.updateGameStatus();
+                        }, isKnight ? 600 : 450);
                     } else {
                         console.error('Failed to apply opponent move:', moveData);
                     }
