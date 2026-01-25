@@ -611,16 +611,19 @@
     body {
         padding: 0;
         margin: 0;
+        overflow-x: hidden;
     }
 
     .container {
         width: 100%;
+        max-width: 100%;
         padding: 0;
         margin: 0;
+        overflow-x: hidden;
     }
 
     header {
-        padding: 8px 8px;
+        padding: 8px 4px;
         margin: 0;
         margin-bottom: 8px;
     }
@@ -639,9 +642,11 @@
         grid-template-rows: repeat(8, 1fr);
         padding: 0;
         border: 1px solid #999;
-        width: 100%;
+        width: 90vw;
+        max-width: 90vw;
         aspect-ratio: 1;
-        margin: 0 auto;
+        margin: 0;
+        overflow: hidden;
     }
 
     .piece-element {
@@ -650,16 +655,17 @@
 
     .board-container {
         margin: 0;
-        padding: 0;
+        padding: 4px;
         width: 100%;
+        box-sizing: border-box;
     }
 
     .game-header {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        gap: 6px;
         margin-bottom: 8px;
-        padding: 8px 8px;
+        padding: 8px 4px;
         margin: 0;
     }
 
@@ -687,7 +693,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 6px;
-        padding: 8px 8px;
+        padding: 8px 4px;
         margin: 0;
         margin-top: 8px;
     }
@@ -700,6 +706,7 @@
 
     .game-container {
         padding: 0;
+        margin: 0;
     }
 
     .square {
