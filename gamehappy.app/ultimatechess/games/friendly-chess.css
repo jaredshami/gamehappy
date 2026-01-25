@@ -269,6 +269,20 @@
     text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.4);
 }
 
+.square.white-piece {
+    color: #ffffff;
+    text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.square.black-piece {
+    color: #1a1a1a;
+    text-shadow: 
+        2px 2px 4px rgba(255, 255, 255, 0.5),
+        0 0 8px rgba(0, 0, 0, 0.3);
+}
+
 .square.piece:hover {
     text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
     transform: scale(0.95);

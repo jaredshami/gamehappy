@@ -248,6 +248,7 @@ class FriendlyChessGame {
                     const key = `${piece.color}_${piece.type}`;
                     square.textContent = pieceMap[key] || '';
                     square.classList.add('piece');
+                    square.classList.add(piece.color === 'white' ? 'white-piece' : 'black-piece');
                 }
 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
