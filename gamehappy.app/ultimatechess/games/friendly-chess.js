@@ -284,29 +284,33 @@ class FriendlyChessGame {
         } else if (this.validMoves.some(move => move[0] === row && move[1] === col)) {
             // Valid move
             console.log('Making move from', this.selectedSquare, 'to', [row, col]);
+            
+            const movingPiece = this.chess.board[this.selectedSquare[0]][this.selectedSquare[1]];
+            const isKnight = movingPiece && movingPiece.type === 'knight';
+            const isCastling = movingPiece && 
+                               movingPiece.type === 'king' &&
+                               Math.abs(this.selectedSquare[1] - col) === 2;
+            
             const success = this.chess.makeMove(this.selectedSquare, [row, col]);
             console.log('Move success:', success);
             if (success) {
-                // Check if this is a castling move
-                const isCastling = this.chess.board[row][col] && 
-                                   this.chess.board[row][col].type === 'king' &&
-                                   Math.abs(this.selectedSquare[1] - col) === 2;
-                
-                // Animate the move before re-rendering
-                this.animateMove(this.selectedSquare, [row, col], isCastling);
-                
                 // Save move before clearing selectedSquare
                 const move = [this.selectedSquare, [row, col]];
                 this.selectedSquare = null;
                 this.validMoves = [];
                 
-                // Delay re-render to allow animation to play
+                // Animate the move with special effects
+                this.animateMove(move[0], move[1], isCastling, isKnight);
+                
+                // Delay re-render and game update to allow animation to play
                 setTimeout(() => {
                     this.renderBoard();
                     console.log('Calling updateGameStatus after move');
                     this.updateGameStatus();
                     this.sendMoveToOpponent(move);
-                }, 400);
+                }, isKnight ? 600 : 450);
+                
+                return; // Don't call renderBoard again below
             }
         } else if (piece && piece.color === this.playerColor) {
             // Select different piece
@@ -335,19 +339,39 @@ class FriendlyChessGame {
         }
     }
 
-    animateMove(from, to, isCastling) {
+    animateMove(from, to, isCastling, isKnight) {
         const [fromRow, fromCol] = from;
         const [toRow, toCol] = to;
         
         // Get the pieces before move is applied
-        const movingPiece = this.chess.board[fromRow][fromCol];
         const targetPiece = this.chess.board[toRow][toCol];
         
         // Find squares in DOM
         const fromSquare = document.querySelector(`[data-row="${fromRow}"][data-col="${fromCol}"]`);
         const toSquare = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"]`);
         
-        if (isCastling) {
+        if (isKnight) {
+            // Knight jump animation - higher arc
+            if (fromSquare) {
+                fromSquare.classList.add('knight-jump');
+                fromSquare.style.animation = 'none';
+                // Trigger reflow
+                void fromSquare.offsetWidth;
+                fromSquare.style.animation = '';
+            }
+            
+            if (toSquare) {
+                toSquare.classList.add('knight-landing');
+                toSquare.style.animation = 'none';
+                void toSquare.offsetWidth;
+                toSquare.style.animation = '';
+            }
+            
+            // Animate capture if needed
+            if (targetPiece && toSquare) {
+                toSquare.classList.add('captured');
+            }
+        } else if (isCastling) {
             // For castling, animate the king scaling
             if (fromSquare) {
                 fromSquare.classList.add('castling-king');
@@ -384,6 +408,8 @@ class FriendlyChessGame {
                 toSquare.classList.add('arriving');
             }
         }
+        
+        console.log('Animation applied for', isCastling ? 'castling' : isKnight ? 'knight' : 'regular', 'move');
     }
 
     sendMoveToOpponent(move) {
