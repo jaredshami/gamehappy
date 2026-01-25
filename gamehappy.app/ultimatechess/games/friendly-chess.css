@@ -212,6 +212,55 @@
     pointer-events: none;
 }
 
+/* Animation Keyframes */
+@keyframes movePiece {
+    0% {
+        transform: scale(0.95);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+@keyframes castleKingMove {
+    0% {
+        transform: scaleX(1);
+    }
+    50% {
+        transform: scaleX(0.9);
+    }
+    100% {
+        transform: scaleX(1);
+    }
+}
+
 .square {
     width: 60px;
     height: 60px;
@@ -271,6 +320,26 @@
 
 .square.piece {
     cursor: grab;
+}
+
+.square.piece.moving {
+    animation: movePiece 0.5s ease-out;
+}
+
+.square.piece.captured {
+    animation: slideOut 0.3s ease-out forwards;
+}
+
+.square.piece.arriving {
+    animation: slideIn 0.4s ease-out;
+}
+
+.square.piece.castling-king {
+    animation: castleKingMove 0.6s ease-in-out;
+}
+
+.square.piece.castling-rook {
+    animation: movePiece 0.6s ease-in-out;
 }
 
 .square.white-piece {

@@ -287,14 +287,26 @@ class FriendlyChessGame {
             const success = this.chess.makeMove(this.selectedSquare, [row, col]);
             console.log('Move success:', success);
             if (success) {
+                // Check if this is a castling move
+                const isCastling = this.chess.board[row][col] && 
+                                   this.chess.board[row][col].type === 'king' &&
+                                   Math.abs(this.selectedSquare[1] - col) === 2;
+                
+                // Animate the move before re-rendering
+                this.animateMove(this.selectedSquare, [row, col], isCastling);
+                
                 // Save move before clearing selectedSquare
                 const move = [this.selectedSquare, [row, col]];
                 this.selectedSquare = null;
                 this.validMoves = [];
-                this.renderBoard();
-                console.log('Calling updateGameStatus after move');
-                this.updateGameStatus();
-                this.sendMoveToOpponent(move);
+                
+                // Delay re-render to allow animation to play
+                setTimeout(() => {
+                    this.renderBoard();
+                    console.log('Calling updateGameStatus after move');
+                    this.updateGameStatus();
+                    this.sendMoveToOpponent(move);
+                }, 400);
             }
         } else if (piece && piece.color === this.playerColor) {
             // Select different piece
@@ -319,6 +331,57 @@ class FriendlyChessGame {
                 if (this.chess.isValidMove([row, col], [toRow, toCol], this.playerColor)) {
                     this.validMoves.push([toRow, toCol]);
                 }
+            }
+        }
+    }
+
+    animateMove(from, to, isCastling) {
+        const [fromRow, fromCol] = from;
+        const [toRow, toCol] = to;
+        
+        // Get the pieces before move is applied
+        const movingPiece = this.chess.board[fromRow][fromCol];
+        const targetPiece = this.chess.board[toRow][toCol];
+        
+        // Find squares in DOM
+        const fromSquare = document.querySelector(`[data-row="${fromRow}"][data-col="${fromCol}"]`);
+        const toSquare = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"]`);
+        
+        if (isCastling) {
+            // For castling, animate the king scaling
+            if (fromSquare) {
+                fromSquare.classList.add('castling-king');
+            }
+            
+            // Find and animate the rook too
+            let rookFrom, rookTo;
+            if (toCol > fromCol) {
+                // King-side castling (king moves right)
+                rookFrom = [fromRow, 7];
+                rookTo = [fromRow, 5];
+            } else {
+                // Queen-side castling (king moves left)
+                rookFrom = [fromRow, 0];
+                rookTo = [fromRow, 3];
+            }
+            
+            const rookSquareFrom = document.querySelector(`[data-row="${rookFrom[0]}"][data-col="${rookFrom[1]}"]`);
+            if (rookSquareFrom) {
+                rookSquareFrom.classList.add('castling-rook');
+            }
+        } else {
+            // Regular move animation
+            if (fromSquare) {
+                fromSquare.classList.add('moving');
+            }
+            
+            // Animate capture if there's a target piece
+            if (targetPiece && toSquare) {
+                toSquare.classList.add('captured');
+            }
+            
+            if (toSquare) {
+                toSquare.classList.add('arriving');
             }
         }
     }
