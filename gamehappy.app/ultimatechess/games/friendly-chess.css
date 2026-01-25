@@ -212,85 +212,107 @@
     pointer-events: none;
 }
 
-/* Animation Keyframes */
-@keyframes movePiece {
-    0% {
-        transform: scale(0.95);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+/* Piece Element Styling */
+.piece-element {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    cursor: grab;
+    transition: filter 0.2s ease;
 }
 
-@keyframes slideIn {
+.square:hover .piece-element {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+    transform: scale(1.08);
+}
+
+.piece-element.white-piece {
+    color: #f0f0f0;
+    text-shadow: 
+        -2px -2px 0px rgba(0, 0, 0, 0.9),
+        2px -2px 0px rgba(0, 0, 0, 0.9),
+        -2px 2px 0px rgba(0, 0, 0, 0.9),
+        2px 2px 0px rgba(0, 0, 0, 0.9),
+        0px -3px 0px rgba(0, 0, 0, 0.8),
+        0px 3px 0px rgba(0, 0, 0, 0.8),
+        -3px 0px 0px rgba(0, 0, 0, 0.8),
+        3px 0px 0px rgba(0, 0, 0, 0.8),
+        0px 0px 8px rgba(0, 0, 0, 0.6);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.piece-element.black-piece {
+    color: #1a1a1a;
+    text-shadow: 
+        -2px -2px 0px rgba(255, 255, 255, 0.6),
+        2px -2px 0px rgba(255, 255, 255, 0.6),
+        -2px 2px 0px rgba(255, 255, 255, 0.6),
+        2px 2px 0px rgba(255, 255, 255, 0.6),
+        0px -3px 0px rgba(255, 255, 255, 0.5),
+        0px 3px 0px rgba(255, 255, 255, 0.5),
+        -3px 0px 0px rgba(255, 255, 255, 0.5),
+        3px 0px 0px rgba(255, 255, 255, 0.5);
+    filter: drop-shadow(0 2px 3px rgba(255, 255, 255, 0.3));
+}
+
+/* Move Animations */
+@keyframes slideMove {
     from {
-        opacity: 0;
-        transform: scale(0.8);
+        transform: translate(0, 0);
     }
     to {
-        opacity: 1;
-        transform: scale(1);
+        transform: translate(var(--move-x), var(--move-y));
     }
 }
 
-@keyframes slideOut {
-    from {
-        opacity: 1;
-        transform: scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-}
-
-@keyframes castleKingMove {
+@keyframes knightArc {
     0% {
-        transform: scaleX(1);
+        transform: translate(0, 0) scale(1);
+    }
+    20% {
+        transform: translate(calc(var(--move-x) * 0.2), calc(var(--move-y) * 0.2 - 30px)) scale(0.95);
     }
     50% {
-        transform: scaleX(0.9);
+        transform: translate(calc(var(--move-x) * 0.5), calc(var(--move-y) * 0.5 - 45px)) scale(0.9);
+    }
+    80% {
+        transform: translate(calc(var(--move-x) * 0.8), calc(var(--move-y) * 0.8 - 20px)) scale(0.95);
     }
     100% {
-        transform: scaleX(1);
+        transform: translate(var(--move-x), var(--move-y)) scale(1);
     }
 }
 
-@keyframes knightJump {
+@keyframes castleArc {
     0% {
-        transform: translateY(0) scale(1);
-    }
-    25% {
-        transform: translateY(-25px) scale(0.95) rotateZ(10deg);
+        transform: translate(0, 0);
     }
     50% {
-        transform: translateY(-35px) scale(0.9) rotateZ(-5deg);
-    }
-    75% {
-        transform: translateY(-15px) scale(0.95) rotateZ(5deg);
+        transform: translate(calc(var(--move-x) * 0.5), -8px);
     }
     100% {
-        transform: translateY(0) scale(1);
+        transform: translate(var(--move-x), var(--move-y));
     }
 }
 
-@keyframes knightLanding {
-    0% {
-        transform: scale(0.7);
-        opacity: 0;
-    }
-    60% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+.piece-element.slide-move {
+    animation: slideMove 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.piece-element.knight-jump {
+    animation: knightArc 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.piece-element.castling-move {
+    animation: castleArc 0.5s ease-in-out forwards;
 }
 
 .square {
@@ -300,14 +322,8 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 2.8rem;
     transition: all 0.15s ease;
     position: relative;
-    font-weight: 900;
-    letter-spacing: -2px;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
 .square.light {
@@ -348,77 +364,6 @@
 
 .square:hover {
     transform: scale(1.02);
-}
-
-.square.piece {
-    cursor: grab;
-}
-
-.square.piece.moving {
-    animation: movePiece 0.5s ease-out;
-}
-
-.square.piece.captured {
-    animation: slideOut 0.3s ease-out forwards;
-}
-
-.square.piece.arriving {
-    animation: slideIn 0.4s ease-out;
-}
-
-.square.piece.knight-jump {
-    animation: knightJump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.square.piece.knight-landing {
-    animation: knightLanding 0.4s ease-out;
-}
-
-.square.piece.castling-king {
-    animation: castleKingMove 0.6s ease-in-out;
-}
-
-.square.piece.castling-rook {
-    animation: movePiece 0.6s ease-in-out;
-}
-
-.square.white-piece {
-    color: #ffffff;
-    text-shadow: 
-        -2px -2px 0px rgba(0, 0, 0, 0.9),
-        2px -2px 0px rgba(0, 0, 0, 0.9),
-        -2px 2px 0px rgba(0, 0, 0, 0.9),
-        2px 2px 0px rgba(0, 0, 0, 0.9),
-        0px -3px 0px rgba(0, 0, 0, 0.8),
-        0px 3px 0px rgba(0, 0, 0, 0.8),
-        -3px 0px 0px rgba(0, 0, 0, 0.8),
-        3px 0px 0px rgba(0, 0, 0, 0.8),
-        0px 0px 8px rgba(0, 0, 0, 0.6);
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-}
-
-.square.black-piece {
-    color: #1a1a1a;
-    text-shadow: 
-        -2px -2px 0px rgba(255, 255, 255, 0.6),
-        2px -2px 0px rgba(255, 255, 255, 0.6),
-        -2px 2px 0px rgba(255, 255, 255, 0.6),
-        2px 2px 0px rgba(255, 255, 255, 0.6),
-        0px -3px 0px rgba(255, 255, 255, 0.5),
-        0px 3px 0px rgba(255, 255, 255, 0.5),
-        -3px 0px 0px rgba(255, 255, 255, 0.5),
-        3px 0px 0px rgba(255, 255, 255, 0.5);
-    filter: drop-shadow(0 2px 3px rgba(255, 255, 255, 0.3));
-}
-
-.square.piece:hover {
-    transform: scale(1.08);
-    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9));
-}
-
-.square.piece:active {
-    cursor: grabbing;
-    transform: scale(0.95);
 }
 
 .square.selected {

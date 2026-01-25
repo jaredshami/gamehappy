@@ -246,9 +246,14 @@ class FriendlyChessGame {
                 const piece = board[row][col];
                 if (piece) {
                     const key = `${piece.color}_${piece.type}`;
-                    square.textContent = pieceMap[key] || '';
-                    square.classList.add('piece');
-                    square.classList.add(piece.color === 'white' ? 'white-piece' : 'black-piece');
+                    const pieceChar = pieceMap[key] || '';
+                    
+                    // Create a piece element instead of just text
+                    const pieceEl = document.createElement('div');
+                    pieceEl.className = `piece-element ${piece.color === 'white' ? 'white-piece' : 'black-piece'}`;
+                    pieceEl.textContent = pieceChar;
+                    pieceEl.dataset.piece = piece.type;
+                    square.appendChild(pieceEl);
                 }
 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
@@ -343,73 +348,67 @@ class FriendlyChessGame {
         const [fromRow, fromCol] = from;
         const [toRow, toCol] = to;
         
-        // Get the pieces before move is applied
-        const targetPiece = this.chess.board[toRow][toCol];
-        
         // Find squares in DOM
         const fromSquare = document.querySelector(`[data-row="${fromRow}"][data-col="${fromCol}"]`);
         const toSquare = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"]`);
         
+        if (!fromSquare) return;
+        
+        const pieceEl = fromSquare.querySelector('.piece-element');
+        if (!pieceEl) return;
+        
+        // Calculate pixel distances for smooth movement
+        const fromRect = fromSquare.getBoundingClientRect();
+        const toRect = toSquare.getBoundingClientRect();
+        
+        const deltaX = toRect.left - fromRect.left;
+        const deltaY = toRect.top - fromRect.top;
+        
         if (isKnight) {
-            // Knight jump animation - higher arc
-            if (fromSquare) {
-                fromSquare.classList.add('knight-jump');
-                fromSquare.style.animation = 'none';
-                // Trigger reflow
-                void fromSquare.offsetWidth;
-                fromSquare.style.animation = '';
-            }
-            
-            if (toSquare) {
-                toSquare.classList.add('knight-landing');
-                toSquare.style.animation = 'none';
-                void toSquare.offsetWidth;
-                toSquare.style.animation = '';
-            }
-            
-            // Animate capture if needed
-            if (targetPiece && toSquare) {
-                toSquare.classList.add('captured');
-            }
+            // Knight jump - arc animation with translate
+            pieceEl.style.transition = 'none';
+            pieceEl.classList.add('knight-jump');
+            pieceEl.style.setProperty('--move-x', `${deltaX}px`);
+            pieceEl.style.setProperty('--move-y', `${deltaY}px`);
         } else if (isCastling) {
-            // For castling, animate the king scaling
-            if (fromSquare) {
-                fromSquare.classList.add('castling-king');
-            }
+            // Castling animation
+            pieceEl.classList.add('castling-move');
+            pieceEl.style.setProperty('--move-x', `${deltaX}px`);
+            pieceEl.style.setProperty('--move-y', `${deltaY}px`);
             
-            // Find and animate the rook too
-            let rookFrom, rookTo;
+            // Animate rook too
+            let rookFromCol, rookToCol;
             if (toCol > fromCol) {
-                // King-side castling (king moves right)
-                rookFrom = [fromRow, 7];
-                rookTo = [fromRow, 5];
+                rookFromCol = 7;
+                rookToCol = 5;
             } else {
-                // Queen-side castling (king moves left)
-                rookFrom = [fromRow, 0];
-                rookTo = [fromRow, 3];
+                rookFromCol = 0;
+                rookToCol = 3;
             }
             
-            const rookSquareFrom = document.querySelector(`[data-row="${rookFrom[0]}"][data-col="${rookFrom[1]}"]`);
-            if (rookSquareFrom) {
-                rookSquareFrom.classList.add('castling-rook');
+            const rookFromSquare = document.querySelector(`[data-row="${fromRow}"][data-col="${rookFromCol}"]`);
+            const rookToSquare = document.querySelector(`[data-row="${fromRow}"][data-col="${rookToCol}"]`);
+            
+            if (rookFromSquare && rookToSquare) {
+                const rookEl = rookFromSquare.querySelector('.piece-element');
+                if (rookEl) {
+                    const rookRect = rookToSquare.getBoundingClientRect();
+                    const rookDeltaX = rookRect.left - rookFromSquare.getBoundingClientRect().left;
+                    const rookDeltaY = rookRect.top - rookFromSquare.getBoundingClientRect().top;
+                    
+                    rookEl.classList.add('castling-move');
+                    rookEl.style.setProperty('--move-x', `${rookDeltaX}px`);
+                    rookEl.style.setProperty('--move-y', `${rookDeltaY}px`);
+                }
             }
         } else {
-            // Regular move animation
-            if (fromSquare) {
-                fromSquare.classList.add('moving');
-            }
-            
-            // Animate capture if there's a target piece
-            if (targetPiece && toSquare) {
-                toSquare.classList.add('captured');
-            }
-            
-            if (toSquare) {
-                toSquare.classList.add('arriving');
-            }
+            // Regular move - slide animation
+            pieceEl.classList.add('slide-move');
+            pieceEl.style.setProperty('--move-x', `${deltaX}px`);
+            pieceEl.style.setProperty('--move-y', `${deltaY}px`);
         }
         
-        console.log('Animation applied for', isCastling ? 'castling' : isKnight ? 'knight' : 'regular', 'move');
+        console.log('Piece animation applied:', isKnight ? 'knight' : isCastling ? 'castling' : 'slide');
     }
 
     sendMoveToOpponent(move) {
