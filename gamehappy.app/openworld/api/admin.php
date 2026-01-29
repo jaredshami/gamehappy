@@ -34,7 +34,13 @@ if (!($_SESSION['admin_logged_in'] ?? false)) {
 }
 
 $username = $_SESSION['admin_username'] ?? 'admin';
-$action = $_GET['action'] ?? $_POST['action'] ?? null;
+
+// Read action from GET, POST, or JSON body
+$action = $_GET['action'] ?? null;
+if (!$action) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $action = $json_data['action'] ?? null;
+}
 
 try {
     if (!$action) {
