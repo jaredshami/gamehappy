@@ -1,5 +1,6 @@
 // Configuration
 const API_URL = '/openworld/api/admin.php';
+const AUTH_API_URL = '/openworld/api/auth.php';
 
 // State
 let currentWorld = null;
@@ -7,19 +8,67 @@ let currentPlace = null;
 let worlds = [];
 let places = [];
 let objects = [];
+let loggedIn = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    loadWorlds();
+    checkAuth();
     setupEventListeners();
 });
 
-function setupEventListeners() {
-    // Mechanic type change handler
-    const mechanicType = document.getElementById('mechanic-type');
-    if (mechanicType) {
-        mechanicType.addEventListener('change', showMechanicSettings);
-    }
+function checkAuth() {
+    fetch(`${AUTH_API_URL}?action=check`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loggedIn = true;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadWorlds();
+            } else {
+                showLoginScreen();
+            }
+        })
+        .catch(err => showLoginScreen());
+}
+
+function showLoginScreen() {
+    loggedIn = false;
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'none';
+}
+
+function performLogin() {
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    
+    fetch(`${AUTH_API_URL}?action=login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            checkAuth();
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        } else {
+            alert('Login failed: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error('Login error:', err);
+        alert('Login error: ' + err.message);
+    });
+}
+
+function logout() {
+    fetch(`${AUTH_API_URL}?action=logout`)
+        .then(() => {
+            loggedIn = false;
+            showLoginScreen();
+        });
 }
 
 // TAB SWITCHING

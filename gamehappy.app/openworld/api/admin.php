@@ -5,42 +5,43 @@
  */
 
 header('Content-Type: application/json');
-require_once '../../auth/check-session.php';
+session_start();
 
-// Check if user is admin
-function isAdmin($userId) {
-    global $pdo;
-    $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $user && $user['role'] === 'admin';
+// Get database connection
+$db_host = 'localhost';
+$db_user = 'root';
+$db_pass = '';
+$db_name = 'gamehappy';
+
+try {
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+    exit;
 }
 
-$action = $_GET['action'] ?? null;
-$userId = $_SESSION['user_id'] ?? null;
-
-if (!$userId) {
+// Check if admin is logged in
+if (!($_SESSION['admin_logged_in'] ?? false)) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Not authenticated']);
     exit;
 }
 
-if (!isAdmin($userId)) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Admin access required']);
-    exit;
-}
+$username = $_SESSION['admin_username'] ?? 'admin';
+$action = $_GET['action'] ?? null;
 
 try {
     switch ($action) {
         case 'create_world':
-            createWorld($pdo, $userId);
+            createWorld($pdo, $username);
             break;
         case 'get_worlds':
             getWorlds($pdo);
             break;
         case 'create_place':
-            createPlace($pdo, $userId);
+            createPlace($pdo, $username);
             break;
         case 'get_places':
             getPlaces($pdo);
@@ -49,10 +50,13 @@ try {
             linkPlaces($pdo);
             break;
         case 'create_object':
-            createObject($pdo, $userId);
+            createObject($pdo, $username);
             break;
         case 'add_mechanic':
             addMechanic($pdo);
+            break;
+        case 'get_objects':
+            getObjects($pdo);
             break;
         default:
             http_response_code(400);
@@ -63,7 +67,7 @@ try {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
-function createWorld($pdo, $userId) {
+function createWorld($pdo, $username) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!$data['name']) {
@@ -78,7 +82,7 @@ function createWorld($pdo, $userId) {
     $result = $stmt->execute([
         $data['name'],
         $data['description'] ?? null,
-        $userId,
+        $username,
         $data['is_public'] ?? false
     ]);
     
@@ -103,7 +107,7 @@ function getWorlds($pdo) {
     echo json_encode(['success' => true, 'worlds' => $worlds]);
 }
 
-function createPlace($pdo, $userId) {
+function createPlace($pdo, $username) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!$data['world_id'] || !$data['name']) {
@@ -119,7 +123,7 @@ function createPlace($pdo, $userId) {
         $data['world_id'],
         $data['name'],
         $data['description'] ?? null,
-        $userId
+        $username
     ]);
     
     if ($result) {
@@ -193,7 +197,7 @@ function linkPlaces($pdo) {
     }
 }
 
-function createObject($pdo, $userId) {
+function createObject($pdo, $username) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!$data['place_id'] || !$data['name']) {
@@ -209,7 +213,7 @@ function createObject($pdo, $userId) {
         $data['place_id'],
         $data['name'],
         $data['description'] ?? null,
-        $userId
+        $username
     ]);
     
     if ($result) {
@@ -248,4 +252,22 @@ function addMechanic($pdo) {
             'message' => 'Mechanic added successfully'
         ]);
     }
+}
+function getObjects($pdo) {
+    $placeId = $_GET['place_id'] ?? null;
+    
+    if (!$placeId) {
+        throw new Exception('Place ID required');
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT id, name, description, created_at
+        FROM ow_objects
+        WHERE place_id = ?
+        ORDER BY created_at ASC
+    ");
+    
+    $stmt->execute([$placeId]);
+    $objects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode(['success' => true, 'objects' => $objects]);
 }

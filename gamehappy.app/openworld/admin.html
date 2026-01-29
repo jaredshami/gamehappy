@@ -7,7 +7,35 @@
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <div class="container">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" style="display: none;">
+        <div class="login-container">
+            <div class="login-box">
+                <h1>Open World Admin</h1>
+                <p>Phase 1: World Builder</p>
+                
+                <form onsubmit="performLogin(); return false;">
+                    <div class="form-group">
+                        <label for="login-username">Username:</label>
+                        <input type="text" id="login-username" value="admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password:</label>
+                        <input type="password" id="login-password" value="admin123" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" style="display: none;">
+        <div class="container">
+            <header>
+                <h1>Open World - Admin Dashboard</h1>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </header>
         <header>
             <h1>Open World - Admin Dashboard</h1>
             <button class="btn-logout" onclick="logout()">Logout</button>
@@ -137,6 +165,7 @@
                 </form>
             </div>
         </section>
+        </div>
     </div>
 
     <script src="admin.js"></script>
