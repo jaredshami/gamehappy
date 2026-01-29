@@ -30,9 +30,15 @@ if (!($_SESSION['admin_logged_in'] ?? false)) {
 }
 
 $username = $_SESSION['admin_username'] ?? 'admin';
-$action = $_GET['action'] ?? null;
+$action = $_GET['action'] ?? $_POST['action'] ?? null;
 
 try {
+    if (!$action) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Action parameter required']);
+        exit;
+    }
+    
     switch ($action) {
         case 'create_world':
             createWorld($pdo, $username);
