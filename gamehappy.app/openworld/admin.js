@@ -563,12 +563,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        window.location.href = '/gamehappy/auth/logout.php';
-    }
-}
-
 function editPlace(placeId) {
     // TODO: Implement edit place modal
     showMessage('Edit place feature coming soon', 'info');
