@@ -209,7 +209,7 @@ class FriendlyChessGame {
         const board = this.chess.getBoard();
         
         const pieceSVGs = {
-            'pawn': '<svg viewBox="0 0 100 100"><circle cx="50" cy="22" r="10" fill="currentColor"/><path d="M42 32 L42 65 L58 65 L58 32 Z" fill="currentColor"/><rect x="35" y="65" width="30" height="12" fill="currentColor"/></svg>',
+            'pawn': '<svg viewBox="0 0 100 100"><circle cx="50" cy="20" r="12" fill="currentColor"/><path d="M42 32 Q40 40 42 50 L58 50 Q60 40 58 32 Z" fill="currentColor"/><rect x="30" y="50" width="40" height="18" fill="currentColor"/></svg>',
             'rook': '<svg viewBox="0 0 100 100"><path d="M30 25 L30 15 L38 15 L38 25 L44 25 L44 12 L56 12 L56 25 L62 25 L62 15 L70 15 L70 25 L75 25 L75 70 L25 70 L25 25 Z" fill="currentColor"/><rect x="35" y="70" width="30" height="10" fill="currentColor"/></svg>',
             'knight': '<svg viewBox="0 0 100 100"><path d="M35 55 L35 40 L40 35 L45 35 L48 32 L52 32 L55 35 L60 38 L65 50 L70 58 L70 70 L30 70 L30 58 Z" fill="currentColor" stroke="currentColor" stroke-width="0.5" stroke-linejoin="round"/><circle cx="52" cy="42" r="3" fill="currentColor"/></svg>',
             'bishop': '<svg viewBox="0 0 100 100"><path d="M50 15 L45 22 L45 32 L50 38 L55 32 L55 22 Z" fill="currentColor"/><path d="M40 38 L40 55 L50 60 L60 55 L60 38 Z" fill="currentColor"/><path d="M35 55 L35 70 L65 70 L65 55 Z" fill="currentColor"/><circle cx="50" cy="50" r="2" fill="currentColor"/></svg>',
