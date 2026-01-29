@@ -1,5 +1,5 @@
 // Configuration
-const API_URL = '/gamehappy/api/openworld/admin.php';
+const API_URL = '/openworld/api/admin.php';
 
 // State
 let currentWorld = null;
