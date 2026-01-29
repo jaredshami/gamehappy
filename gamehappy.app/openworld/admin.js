@@ -13,7 +13,6 @@ let loggedIn = false;
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
-    setupEventListeners();
 });
 
 function checkAuth() {
