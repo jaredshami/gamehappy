@@ -6,7 +6,7 @@
 
 // Handle both CLI and web requests
 $is_cli = php_sapi_name() === 'cli';
-$is_post = $_SERVER['REQUEST_METHOD'] === 'POST';
+$is_post = isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST';
 
 if (!$is_cli && !$is_post) {
     http_response_code(405);
@@ -64,11 +64,12 @@ foreach ($statements as $statement) {
     if (empty($statement)) continue;
     if (strpos($statement, '--') === 0) continue; // Skip comments
     
-    if ($db->query($statement)) {
-        $created++;
-    } else {
+    // Skip DROP statements for now
+    if (strpos(strtoupper($statement), 'DROP') === 0) continue;
+    
+    if (!$db->query($statement)) {
         // Check if it's a "table already exists" error (that's OK)
-        if (strpos($db->error, 'already exists') === false) {
+        if (strpos($db->error, 'already exists') === false && strpos($db->error, 'Duplicate') === false) {
             $errors[] = $db->error;
         }
     }
