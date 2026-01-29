@@ -79,16 +79,23 @@ foreach ($lines as $line) {
         $statement = trim(substr($current_statement, 0, -1));
         
         if (!empty($statement) && strpos(strtoupper($statement), 'DROP') !== 0) {
-            if ($db->query($statement)) {
-                $statement_count++;
-            } else {
-                // Check if it's a "table already exists" error (that's OK)
-                if (strpos($db->error, 'already exists') === false && 
-                    strpos($db->error, 'Duplicate') === false &&
-                    strpos($db->error, 'Duplicate entry') === false) {
-                    log_message("  ❌ Error: " . $db->error);
-                    log_message("     Statement: " . substr($statement, 0, 80) . "...\n");
-                    $errors[] = $db->error;
+            // Skip INDEX statements as they may already exist
+            if (strpos(strtoupper($statement), 'CREATE INDEX') === 0) {
+                // Just create or skip silently
+                @$db->query($statement);
+            } else if (!empty($statement)) {
+                if ($db->query($statement)) {
+                    $statement_count++;
+                } else {
+                    // Check if it's a "table already exists" error (that's OK)
+                    if (strpos($db->error, 'already exists') === false && 
+                        strpos($db->error, 'Duplicate') === false &&
+                        strpos($db->error, 'Duplicate entry') === false &&
+                        strpos($db->error, 'Duplicate key name') === false) {
+                        log_message("  ❌ Error: " . $db->error);
+                        log_message("     Statement: " . substr($statement, 0, 80) . "...\n");
+                        $errors[] = $db->error;
+                    }
                 }
             }
         }
