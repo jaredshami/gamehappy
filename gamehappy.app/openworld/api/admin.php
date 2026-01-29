@@ -7,6 +7,10 @@
 header('Content-Type: application/json');
 session_start();
 
+// Enable detailed error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
 // Get database connection
 $db_host = 'localhost';
 $db_user = 'root';
@@ -18,7 +22,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
 
@@ -66,11 +70,18 @@ try {
             break;
         default:
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Error: ' . $e->getMessage(),
+        'debug' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]
+    ]);
 }
 
 function createWorld($pdo, $username) {
