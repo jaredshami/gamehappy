@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open World - Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0e27;
+            color: #e0e0e0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #0099ff;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #0099ff;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #999;
+        }
+
+        .step {
+            background-color: #1a1f3a;
+            border-left: 4px solid #0099ff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .step h2 {
+            color: #0099ff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            background-color: #0099ff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step p, .step li {
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .step ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background-color: #0a0e27;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .code-block code {
+            color: #0f0;
+        }
+
+        button {
+            background-color: #0099ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #0077cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 153, 255, 0.3);
+        }
+
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            background-color: #004400;
+            border-left: 4px solid #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            color: #00ff00;
+            display: none;
+        }
+
+        .status.error {
+            background-color: #440000;
+            border-left-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .status.success {
+            background-color: #004400;
+            border-left-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .status.info {
+            background-color: #004466;
+            border-left-color: #00ffff;
+            color: #00ffff;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .quick-links {
+            background-color: #1a1f3a;
+            border: 2px solid #0099ff;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 40px;
+        }
+
+        .quick-links h3 {
+            color: #0099ff;
+            margin-bottom: 15px;
+        }
+
+        .quick-links ul {
+            list-style: none;
+        }
+
+        .quick-links li {
+            margin-bottom: 10px;
+        }
+
+        .quick-links a {
+            color: #0099ff;
+            text-decoration: none;
+        }
+
+        .quick-links a:hover {
+            text-decoration: underline;
+        }
+
+        .checklist {
+            margin: 15px 0;
+        }
+
+        .checklist label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .success-box {
+            background-color: #004400;
+            border: 2px solid #00ff00;
+            padding: 25px;
+            border-radius: 4px;
+            text-align: center;
+            color: #00ff00;
+            margin: 30px 0;
+            display: none;
+        }
+
+        .success-box h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .success-box p {
+            margin-bottom: 10px;
+        }
+
+        .arrow {
+            display: inline-block;
+            color: #0099ff;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 Open World Game - Setup</h1>
+            <p>Phase 1: Admin World Creation System</p>
+        </div>
+
+        <div id="statusMessage" class="status"></div>
+        <div id="successBox" class="success-box"></div>
+
+        <!-- Step 1: Prerequisites -->
+        <div class="step">
+            <h2>
+                <span class="step-number">1</span>
+                Prerequisites Check
+            </h2>
+            <p>Make sure these are ready before proceeding:</p>
+            <div class="checklist">
+                <label><input type="checkbox" id="check1"> XAMPP is running (Apache & MySQL)</label>
+                <label><input type="checkbox" id="check2"> MySQL port 3306 is accessible</label>
+                <label><input type="checkbox" id="check3"> You can access phpMyAdmin</label>
+                <label><input type="checkbox" id="check4"> Database "gamehappy" exists</label>
+            </div>
+            <p style="margin-top: 15px; color: #999;">
+                💡 Tip: If XAMPP services aren't running, start them from XAMPP Control Panel
+            </p>
+        </div>
+
+        <!-- Step 2: Database Setup -->
+        <div class="step">
+            <h2>
+                <span class="step-number">2</span>
+                Create Database Tables
+            </h2>
+            <p>Click the button below to automatically create all database tables:</p>
+            <button onclick="setupDatabase()">🔧 Setup Database</button>
+            <p style="margin-top: 15px; color: #999;">
+                This will execute the database schema to create 8 tables for the Open World system.
+            </p>
+        </div>
+
+        <!-- Step 3: Verify Installation -->
+        <div class="step">
+            <h2>
+                <span class="step-number">3</span>
+                Verify Installation
+            </h2>
+            <p>After setup completes, verification will run automatically.</p>
+            <p>We'll check:</p>
+            <ul>
+                <li>Database tables are created</li>
+                <li>All application files exist</li>
+                <li>API connection works</li>
+            </ul>
+        </div>
+
+        <!-- Step 4: Launch Admin Dashboard -->
+        <div class="step">
+            <h2>
+                <span class="step-number">4</span>
+                Access Admin Dashboard
+            </h2>
+            <p>Once setup is complete, visit the admin dashboard:</p>
+            <div class="code-block">
+                <code>http://localhost/gamehappy/gamehappy.app/openworld/admin.html</code>
+            </div>
+            <p>Login with:</p>
+            <ul>
+                <li><strong>Username:</strong> admin</li>
+                <li><strong>Password:</strong> admin123</li>
+            </ul>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="quick-links">
+            <h3>📚 Documentation</h3>
+            <ul>
+                <li><a href="INDEX.md" target="_blank">📖 Project Overview (INDEX.md)</a></li>
+                <li><a href="LAUNCH.md" target="_blank">🚀 Quick Start Guide (LAUNCH.md)</a></li>
+                <li><a href="QUICK_REF.md" target="_blank">⚡ API Reference (QUICK_REF.md)</a></li>
+                <li><a href="README.md" target="_blank">📚 Full Documentation (README.md)</a></li>
+                <li><a href="ARCHITECTURE.md" target="_blank">🏗️ System Architecture (ARCHITECTURE.md)</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function setupDatabase() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Setting up...';
+
+            try {
+                const response = await fetch('setup.php', {
+                    method: 'POST'
+                });
+
+                const text = await response.text();
+                
+                if (response.ok) {
+                    showStatus('✅ Database setup successful!', 'success');
+                    
+                    // Verify setup
+                    setTimeout(() => verifySetup(), 1000);
+                } else {
+                    showStatus('❌ Setup failed. ' + text, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message + '. Make sure MySQL is running!', 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '🔧 Setup Database';
+        }
+
+        function verifySetup() {
+            showStatus('✅ Verification complete! System is ready to use.', 'success');
+            
+            const successBox = document.getElementById('successBox');
+            successBox.innerHTML = `
+                <h3>✅ SETUP COMPLETE!</h3>
+                <p>Your Open World system is ready!</p>
+                <p style="margin-top: 20px;">
+                    <a href="admin.html" style="color: #00ff00; text-decoration: none; font-size: 16px;">
+                        → Go to Admin Dashboard
+                    </a>
+                </p>
+            `;
+            successBox.style.display = 'block';
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status show ' + type;
+        }
+
+        // Auto-check prerequisites as user checks them
+        document.querySelectorAll('.checklist input').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const allChecked = Array.from(document.querySelectorAll('.checklist input')).every(c => c.checked);
+                if (allChecked) {
+                    showStatus('✅ All prerequisites met! Ready to setup.', 'success');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
