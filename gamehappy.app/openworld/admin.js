@@ -23,7 +23,7 @@ function checkAuth() {
             if (data.success) {
                 loggedIn = true;
                 document.getElementById('login-screen').classList.remove('visible');
-                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('dashboard').classList.add('visible');
                 loadWorlds();
             } else {
                 showLoginScreen();
@@ -38,7 +38,7 @@ function checkAuth() {
 function showLoginScreen() {
     loggedIn = false;
     document.getElementById('login-screen').classList.add('visible');
-    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('dashboard').classList.remove('visible');
 }
 
 function performLogin() {

@@ -82,6 +82,18 @@ body {
     background-color: #242424;
 }
 
+#login-screen.visible {
+    display: flex !important;
+}
+
+#dashboard {
+    display: none;
+}
+
+#dashboard.visible {
+    display: block !important;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
