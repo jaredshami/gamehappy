@@ -662,18 +662,6 @@ function renderDirectionButtons(existingExits) {
         'no_throughway': '#888888'
     };
     
-    // Adjacency map - which directions are next to each other
-    const adjacentDirections = {
-        'north': ['northwest', 'northeast'],
-        'south': ['southwest', 'southeast'],
-        'east': ['northeast', 'southeast'],
-        'west': ['northwest', 'southwest'],
-        'northeast': ['north', 'east'],
-        'northwest': ['north', 'west'],
-        'southeast': ['south', 'east'],
-        'southwest': ['south', 'west']
-    };
-    
     container.innerHTML = directions.map(dir => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
@@ -681,24 +669,6 @@ function renderDirectionButtons(existingExits) {
         const connType = exit?.connection_type || 'full';
         
         if (exists) {
-            // Create badges between this place and adjacent places
-            let adjacentBadgesHtml = '';
-            const adjacents = adjacentDirections[dir];
-            for (const adjDir of adjacents) {
-                if (existingDirections.has(adjDir)) {
-                    const adjExit = existingExits.find(e => e.direction.toLowerCase() === adjDir);
-                    const adjConnType = adjExit?.connection_type || 'full';
-                    adjacentBadgesHtml += `
-                        <div class="connection-type-badge connection-badge-between-${dir}-${adjDir}" 
-                             style="background-color: ${connectionTypeColors[adjConnType]}"
-                             title="${connectionTypeLabels[adjConnType]}"
-                             onclick="showConnectionTypeModal(${adjExit.id}, '${adjConnType}'); event.stopPropagation();">
-                            ${connectionTypeLabels[adjConnType].charAt(0)}
-                        </div>
-                    `;
-                }
-            }
-            
             return `
                 <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer; position: relative;">
                     <div class="exit-content">
@@ -711,7 +681,6 @@ function renderDirectionButtons(existingExits) {
                          onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
                         ${connectionTypeLabels[connType].charAt(0)}
                     </div>
-                    ${adjacentBadgesHtml}
                 </div>
             `;
         } else {
