@@ -1011,6 +1011,7 @@ function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -1018,6 +1019,11 @@ function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'none';
+        // Check if any other modals are still open
+        const openModals = document.querySelectorAll('.modal[style*="display: flex"]');
+        if (openModals.length === 0) {
+            document.body.style.overflow = 'auto';
+        }
     }
 }
 
