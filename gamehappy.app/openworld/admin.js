@@ -1,105 +1,144 @@
-// Configuration
+// Admin Dashboard - Hierarchical Navigation
 const API_URL = '/openworld/api/admin.php';
-const AUTH_API_URL = '/openworld/api/auth.php';
 
-// State
-let currentWorld = null;
-let currentPlace = null;
+// Navigation state
+let navState = {
+    world_id: null,
+    world_name: null,
+    place_id: null,
+    place_name: null,
+    object_id: null,
+    object_name: null
+};
+
+// Data cache
 let worlds = [];
 let places = [];
 let objects = [];
-let loggedIn = false;
+let currentObjectMechanics = [];
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
+// ===== AUTHENTICATION =====
+window.addEventListener('load', () => {
     checkAuth();
 });
 
-function checkAuth() {
-    fetch(`${AUTH_API_URL}?action=check`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loggedIn = true;
-                document.getElementById('login-screen').classList.remove('visible');
-                document.getElementById('dashboard').classList.add('visible');
-                loadWorlds();
-            } else {
-                showLoginScreen();
-            }
-        })
-        .catch(err => {
-            console.error('Auth check failed:', err);
-            showLoginScreen();
-        });
-}
-
-function showLoginScreen() {
-    loggedIn = false;
-    document.getElementById('login-screen').classList.add('visible');
-    document.getElementById('dashboard').classList.remove('visible');
-}
-
-function performLogin() {
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
-    
-    fetch(`${AUTH_API_URL}?action=login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            checkAuth();
-            document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
+async function checkAuth() {
+    try {
+        const response = await fetch('/openworld/api/auth.php?action=checkAuth');
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+            document.getElementById('login-screen').classList.add('visible');
+            document.getElementById('dashboard').style.display = 'none';
         } else {
-            alert('Login failed: ' + data.message);
+            document.getElementById('login-screen').classList.remove('visible');
+            document.getElementById('dashboard').style.display = 'block';
+            loadWorlds();
         }
-    })
-    .catch(err => {
-        console.error('Login error:', err);
-        alert('Login error: ' + err.message);
-    });
-}
-
-function logout() {
-    fetch(`${AUTH_API_URL}?action=logout`)
-        .then(() => {
-            loggedIn = false;
-            showLoginScreen();
-        });
-}
-
-// TAB SWITCHING
-function switchTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-
-    // Deactivate all buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    // Show selected tab
-    document.getElementById(tabName).classList.add('active');
-
-    // Activate button
-    event.target.classList.add('active');
-
-    // Load data for tab
-    if (tabName === 'worlds') {
-        loadWorlds();
-    } else if (tabName === 'places') {
-        loadWorldsForPlaces();
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        document.getElementById('login-screen').classList.add('visible');
     }
 }
 
-// WORLD MANAGEMENT
+async function performLogin() {
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+
+    try {
+        const response = await fetch('/openworld/api/auth.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'login',
+                username: username,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('login-screen').classList.remove('visible');
+            document.getElementById('dashboard').style.display = 'block';
+            loadWorlds();
+        } else {
+            alert('Login failed: ' + data.message);
+        }
+    } catch (error) {
+        alert('Login error: ' + error.message);
+    }
+}
+
+function logout() {
+    fetch('/openworld/api/auth.php?action=logout').then(() => {
+        document.getElementById('login-screen').classList.add('visible');
+        document.getElementById('dashboard').style.display = 'none';
+    });
+}
+
+// ===== NAVIGATION FUNCTIONS =====
+function navigateToWorlds() {
+    navState = { world_id: null, world_name: null, place_id: null, place_name: null, object_id: null, object_name: null };
+    updateBreadcrumb();
+    showView('view-worlds');
+    loadWorlds();
+}
+
+function navigateToPlaces(worldId, worldName) {
+    navState.world_id = worldId;
+    navState.world_name = worldName;
+    navState.place_id = null;
+    navState.place_name = null;
+    navState.object_id = null;
+    navState.object_name = null;
+    updateBreadcrumb();
+    showView('view-places');
+    loadPlacesForWorld(worldId);
+}
+
+function navigateToObjects(placeId, placeName) {
+    navState.place_id = placeId;
+    navState.place_name = placeName;
+    navState.object_id = null;
+    navState.object_name = null;
+    updateBreadcrumb();
+    showView('view-objects');
+    loadObjectsForPlace(placeId);
+}
+
+function navigateToObjectDetails(objectId, objectName) {
+    navState.object_id = objectId;
+    navState.object_name = objectName;
+    updateBreadcrumb();
+    showView('view-object-details');
+    loadObjectDetails(objectId);
+}
+
+function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+}
+
+function updateBreadcrumb() {
+    const breadcrumb = document.getElementById('breadcrumb');
+    let html = '<a href="#" onclick="navigateToWorlds(); return false;" class="breadcrumb-item">Worlds</a>';
+    
+    if (navState.world_id) {
+        html += ` / <a href="#" onclick="navigateToPlaces(${navState.world_id}, '${escapeHtml(navState.world_name)}'); return false;" class="breadcrumb-item">${escapeHtml(navState.world_name)}</a>`;
+    }
+    
+    if (navState.place_id) {
+        html += ` / <a href="#" onclick="navigateToObjects(${navState.place_id}, '${escapeHtml(navState.place_name)}'); return false;" class="breadcrumb-item">${escapeHtml(navState.place_name)}</a>`;
+    }
+    
+    if (navState.object_id) {
+        html += ` / <span class="breadcrumb-item active">${escapeHtml(navState.object_name)}</span>`;
+    }
+    
+    breadcrumb.innerHTML = html;
+}
+
+// ===== WORLDS =====
 async function loadWorlds() {
     try {
         const response = await fetch(API_URL, {
@@ -108,33 +147,20 @@ async function loadWorlds() {
             body: JSON.stringify({ action: 'get_worlds' })
         });
 
-        if (!response.ok) {
-            console.error('API error:', response.status, response.statusText);
-            showMessage('API Error: ' + response.status, 'error');
-            return;
-        }
-
         const data = await response.json();
         if (data.success) {
-            worlds = data.worlds || [];
+            worlds = data.worlds;
             renderWorldsList();
-            loadWorldsForPlaces();
-        } else {
-            console.error('API returned false:', data);
-            showMessage('Error: ' + (data.message || 'Unknown error'), 'error');
         }
     } catch (error) {
-        console.error('Load worlds error:', error);
-        showMessage('Connection error: ' + error.message, 'error');
+        showMessage('Error loading worlds', 'error', 'world-message');
     }
 }
 
 async function createWorld(e) {
     e.preventDefault();
-
     const name = document.getElementById('world-name').value;
     const description = document.getElementById('world-desc').value;
-    const isPublic = document.getElementById('world-public').checked;
 
     try {
         const response = await fetch(API_URL, {
@@ -143,29 +169,27 @@ async function createWorld(e) {
             body: JSON.stringify({
                 action: 'create_world',
                 name: name,
-                description: description,
-                is_public: isPublic ? 1 : 0
+                description: description
             })
         });
 
         const data = await response.json();
         if (data.success) {
-            showMessage('World created successfully!', 'success');
+            showMessage('World created!', 'success', 'world-message');
             document.getElementById('world-form').reset();
             loadWorlds();
         } else {
-            showMessage('Error: ' + data.message, 'error');
+            showMessage('Error: ' + data.message, 'error', 'world-message');
         }
     } catch (error) {
-        showMessage('Error creating world: ' + error.message, 'error');
+        showMessage('Error creating world', 'error', 'world-message');
     }
 }
 
 function renderWorldsList() {
     const container = document.getElementById('worlds-list');
-    
     if (worlds.length === 0) {
-        container.innerHTML = '<div class="empty-state">No worlds created yet</div>';
+        container.innerHTML = '<p class="empty-state">No worlds yet. Create one above!</p>';
         return;
     }
 
@@ -174,64 +198,41 @@ function renderWorldsList() {
             <div class="list-item-content">
                 <div class="list-item-title">${escapeHtml(world.name)}</div>
                 <div class="list-item-desc">${escapeHtml(world.description || '(no description)')}</div>
-                <div class="list-item-meta">
-                    ${world.place_count} places | Created: ${new Date(world.created_at).toLocaleDateString()}
-                    ${world.is_public ? '| PUBLIC' : '| PRIVATE'}
-                </div>
             </div>
+            <button class="btn-primary" onclick="navigateToPlaces(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="white-space: nowrap;">
+                View Places →
+            </button>
         </div>
     `).join('');
 }
 
-// PLACE MANAGEMENT
-async function loadWorldsForPlaces() {
-    const select = document.getElementById('place-world-select');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">-- Select World --</option>' + 
-        worlds.map(w => `<option value="${w.id}">${escapeHtml(w.name)}</option>`).join('');
-}
-
-async function loadWorldPlaces() {
-    currentWorld = document.getElementById('place-world-select').value;
-    
-    if (!currentWorld) {
-        document.getElementById('place-form-panel').style.display = 'none';
-        document.getElementById('link-form-panel').style.display = 'none';
-        document.getElementById('places-list').innerHTML = '';
-        return;
-    }
-
+// ===== PLACES =====
+async function loadPlacesForWorld(worldId) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'get_places',
-                world_id: currentWorld
+                world_id: worldId
             })
         });
 
         const data = await response.json();
         if (data.success) {
             places = data.places;
-            document.getElementById('place-form-panel').style.display = 'block';
-            document.getElementById('link-form-panel').style.display = 'block';
+            loadExitDestinations();
             renderPlacesList();
-            populatePlaceSelects();
-        } else {
-            showMessage('Error loading places', 'error');
         }
     } catch (error) {
-        showMessage('Error loading places: ' + error.message, 'error');
+        showMessage('Error loading places', 'error', 'place-message');
     }
 }
 
 async function createPlace(e) {
     e.preventDefault();
-
-    if (!currentWorld) {
-        showMessage('Please select a world first', 'error');
+    if (!navState.world_id) {
+        showMessage('Select a world first', 'error', 'place-message');
         return;
     }
 
@@ -244,7 +245,7 @@ async function createPlace(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'create_place',
-                world_id: currentWorld,
+                world_id: navState.world_id,
                 name: name,
                 description: description
             })
@@ -252,28 +253,32 @@ async function createPlace(e) {
 
         const data = await response.json();
         if (data.success) {
-            showMessage('Place created successfully!', 'success');
+            showMessage('Place created!', 'success', 'place-message');
             document.getElementById('place-form').reset();
-            loadWorldPlaces();
+            loadPlacesForWorld(navState.world_id);
         } else {
-            showMessage('Error: ' + data.message, 'error');
+            showMessage('Error: ' + data.message, 'error', 'place-message');
         }
     } catch (error) {
-        showMessage('Error creating place: ' + error.message, 'error');
+        showMessage('Error creating place', 'error', 'place-message');
     }
+}
+
+async function loadExitDestinations() {
+    const select = document.getElementById('exit-destination');
+    select.innerHTML = '<option value="">-- Select Destination --</option>' + 
+        places.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
 }
 
 async function linkPlaces(e) {
     e.preventDefault();
-
-    const fromId = document.getElementById('link-from').value;
-    const direction = document.getElementById('link-direction').value;
-    const toId = document.getElementById('link-to').value;
-
-    if (!fromId || !direction || !toId) {
-        showMessage('Please fill in all fields', 'error');
+    if (!navState.place_id) {
+        showMessage('Select a place first', 'error', 'exit-message');
         return;
     }
+
+    const direction = document.getElementById('exit-direction').value;
+    const destination = document.getElementById('exit-destination').value;
 
     try {
         const response = await fetch(API_URL, {
@@ -281,30 +286,29 @@ async function linkPlaces(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'link_places',
-                from_place_id: fromId,
-                to_place_id: toId,
+                from_place_id: navState.place_id,
+                to_place_id: destination,
                 direction: direction
             })
         });
 
         const data = await response.json();
         if (data.success) {
-            showMessage('Places linked successfully!', 'success');
-            document.getElementById('link-form').reset();
-            loadWorldPlaces();
+            showMessage('Link created!', 'success', 'exit-message');
+            document.getElementById('exit-form').reset();
+            loadPlacesForWorld(navState.world_id);
         } else {
-            showMessage('Error: ' + data.message, 'error');
+            showMessage('Error: ' + data.message, 'error', 'exit-message');
         }
     } catch (error) {
-        showMessage('Error linking places: ' + error.message, 'error');
+        showMessage('Error creating link', 'error', 'exit-message');
     }
 }
 
 function renderPlacesList() {
     const container = document.getElementById('places-list');
-    
     if (places.length === 0) {
-        container.innerHTML = '<div class="empty-state">No places in this world</div>';
+        container.innerHTML = '<p class="empty-state">No places yet. Create one above!</p>';
         return;
     }
 
@@ -313,79 +317,40 @@ function renderPlacesList() {
             <div class="list-item-content">
                 <div class="list-item-title">${escapeHtml(place.name)}</div>
                 <div class="list-item-desc">${escapeHtml(place.description || '(no description)')}</div>
-                <div class="list-item-meta">
-                    Created: ${new Date(place.created_at).toLocaleDateString()}
-                </div>
             </div>
-            <div class="list-item-actions">
-                <button class="btn-secondary" onclick="editPlace(${place.id})">Edit</button>
-            </div>
+            <button class="btn-primary" onclick="navigateToObjects(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="white-space: nowrap;">
+                View Objects →
+            </button>
         </div>
     `).join('');
-
-    // Load objects when places are updated
-    loadPlaceObjectsForSelect();
 }
 
-function populatePlaceSelects() {
-    const fromSelect = document.getElementById('link-from');
-    const toSelect = document.getElementById('link-to');
-    
-    if (!fromSelect || !toSelect) return;
-
-    const options = '<option value="">-- Select Place --</option>' + 
-        places.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-    
-    fromSelect.innerHTML = options;
-    toSelect.innerHTML = options;
-}
-
-// OBJECT MANAGEMENT
-async function loadPlaceObjectsForSelect() {
-    const select = document.getElementById('object-place-select');
-    if (!select || !currentWorld) return;
-
-    select.innerHTML = '<option value="">-- Select Place --</option>' + 
-        places.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-}
-
-async function loadPlaceObjects() {
-    currentPlace = document.getElementById('object-place-select').value;
-    
-    if (!currentPlace) {
-        document.getElementById('object-form-panel').style.display = 'none';
-        document.getElementById('objects-list').innerHTML = '';
-        return;
-    }
-
+// ===== OBJECTS =====
+async function loadObjectsForPlace(placeId) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'get_objects',
-                place_id: currentPlace
+                place_id: placeId
             })
         });
 
         const data = await response.json();
         if (data.success) {
             objects = data.objects;
-            document.getElementById('object-form-panel').style.display = 'block';
             renderObjectsList();
-        } else {
-            showMessage('Error loading objects', 'error');
         }
     } catch (error) {
-        showMessage('Error loading objects: ' + error.message, 'error');
+        showMessage('Error loading objects', 'error', 'object-message');
     }
 }
 
 async function createObject(e) {
     e.preventDefault();
-
-    if (!currentPlace) {
-        showMessage('Please select a place first', 'error');
+    if (!navState.place_id) {
+        showMessage('Select a place first', 'error', 'object-message');
         return;
     }
 
@@ -398,7 +363,7 @@ async function createObject(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'create_object',
-                place_id: currentPlace,
+                place_id: navState.place_id,
                 name: name,
                 description: description
             })
@@ -406,22 +371,21 @@ async function createObject(e) {
 
         const data = await response.json();
         if (data.success) {
-            showMessage('Object created successfully!', 'success');
+            showMessage('Object created!', 'success', 'object-message');
             document.getElementById('object-form').reset();
-            loadPlaceObjects();
+            loadObjectsForPlace(navState.place_id);
         } else {
-            showMessage('Error: ' + data.message, 'error');
+            showMessage('Error: ' + data.message, 'error', 'object-message');
         }
     } catch (error) {
-        showMessage('Error creating object: ' + error.message, 'error');
+        showMessage('Error creating object', 'error', 'object-message');
     }
 }
 
 function renderObjectsList() {
     const container = document.getElementById('objects-list');
-    
     if (objects.length === 0) {
-        container.innerHTML = '<div class="empty-state">No objects in this place</div>';
+        container.innerHTML = '<p class="empty-state">No objects yet. Create one above!</p>';
         return;
     }
 
@@ -430,32 +394,16 @@ function renderObjectsList() {
             <div class="list-item-content">
                 <div class="list-item-title">${escapeHtml(obj.name)}</div>
                 <div class="list-item-desc">${escapeHtml(obj.description || '(no description)')}</div>
-                <div class="list-item-meta">
-                    Created: ${new Date(obj.created_at).toLocaleDateString()}
-                </div>
             </div>
-            <div class="list-item-actions">
-                <button class="btn-secondary" onclick="openMechanicsModal(${obj.id})">Add Mechanic</button>
-                <button class="btn-secondary" onclick="viewObjectMechanics(${obj.id})">View Mechanics</button>
-                <button class="btn-secondary" onclick="editObject(${obj.id})">Edit</button>
-            </div>
+            <button class="btn-primary" onclick="navigateToObjectDetails(${obj.id}, '${escapeHtml(obj.name).replace(/'/g, "\\'")}')" style="white-space: nowrap;">
+                View Details →
+            </button>
         </div>
     `).join('');
 }
 
-// MECHANICS MODAL
-function openMechanicsModal(objectId) {
-    document.getElementById('mechanic-object-id').value = objectId;
-    document.getElementById('mechanic-form').reset();
-    document.getElementById('mechanic-settings').style.display = 'none';
-    document.getElementById('mechanics-modal').style.display = 'flex';
-}
-
-function closeMechanicsModal() {
-    document.getElementById('mechanics-modal').style.display = 'none';
-}
-
-async function viewObjectMechanics(objectId) {
+// ===== OBJECT DETAILS =====
+async function loadObjectDetails(objectId) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -468,67 +416,43 @@ async function viewObjectMechanics(objectId) {
 
         const data = await response.json();
         if (data.success) {
-            showMechanicsModal(data.object, data.mechanics);
-        } else {
-            showMessage('Error loading mechanics: ' + data.message, 'error');
+            renderObjectDetails(data.object, data.mechanics);
         }
     } catch (error) {
-        showMessage('Error loading mechanics: ' + error.message, 'error');
+        showMessage('Error loading object details', 'error', 'mechanic-message');
     }
 }
 
-function showMechanicsModal(object, mechanics) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <button class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
-            <h2>${escapeHtml(object.name)} - Mechanics</h2>
-            <div style="max-height: 400px; overflow-y: auto; margin: 20px 0;">
-                ${mechanics.length === 0 ? '<p style="color: #90caf9; font-style: italic;">No mechanics added yet</p>' : mechanics.map(m => `
-                    <div style="background: #141829; padding: 15px; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid #2a5298;">
-                        <div style="color: #64b5f6; font-weight: bold; margin-bottom: 5px;">${escapeHtml(m.name)}</div>
-                        <div style="color: #90caf9; font-size: 13px; margin-bottom: 8px;">Type: <span style="color: #ffd700;">${m.type}</span></div>
-                        <div style="color: #b0bec5; font-size: 13px; margin-bottom: 8px;">${escapeHtml(m.description || '(no description)')}</div>
-                        ${m.action_value ? `<div style="color: #81c784; font-size: 12px; background: #0f1419; padding: 8px; border-radius: 3px; font-family: monospace; word-break: break-all;">Config: ${escapeHtml(typeof m.action_value === 'string' ? m.action_value : JSON.stringify(m.action_value))}</div>` : ''}
-                        <button class="btn-secondary" onclick="deleteMechanic(${m.id}, '${object.name}')" style="margin-top: 10px; background: #b71c1c; border-color: #ff5252; color: #ff5252;">Delete</button>
-                    </div>
-                `).join('')}
-            </div>
-            <button class="btn-primary" onclick="this.parentElement.parentElement.remove()">Close</button>
+function renderObjectDetails(object, mechanics) {
+    currentObjectMechanics = mechanics;
+    
+    const detailsDiv = document.getElementById('object-details-content');
+    detailsDiv.innerHTML = `
+        <div style="margin-bottom: 20px;">
+            <div style="color: #64b5f6; font-weight: bold; margin-bottom: 8px;">${escapeHtml(object.name)}</div>
+            <div style="color: #b0bec5;">${escapeHtml(object.description || '(no description)')}</div>
         </div>
     `;
-    document.body.appendChild(modal);
-}
 
-async function deleteMechanic(mechanicId, objectName) {
-    if (!confirm(`Delete this mechanic from ${objectName}?`)) return;
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'delete_mechanic',
-                mechanic_id: mechanicId
-            })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            showMessage('Mechanic deleted', 'success');
-            loadPlaceObjects();
-            // Close the modal by removing it
-            document.querySelectorAll('.modal').forEach(m => m.remove());
-        } else {
-            showMessage('Error deleting mechanic: ' + data.message, 'error');
-        }
-    } catch (error) {
-        showMessage('Error deleting mechanic: ' + error.message, 'error');
+    const mechanicsList = document.getElementById('mechanics-list');
+    if (mechanics.length === 0) {
+        mechanicsList.innerHTML = '<p class="empty-state">No mechanics yet. Add one above!</p>';
+    } else {
+        mechanicsList.innerHTML = mechanics.map(m => `
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">${escapeHtml(m.name)}</div>
+                    <div style="color: #ffd700; font-size: 12px; margin-bottom: 5px;">Type: ${m.type}</div>
+                    <div class="list-item-desc">${escapeHtml(m.description || '(no description)')}</div>
+                    ${m.action_value ? `<div style="color: #81c784; font-size: 11px; margin-top: 8px; font-family: monospace; background: #0f1419; padding: 8px; border-radius: 3px; word-break: break-all;">Config: ${escapeHtml(typeof m.action_value === 'string' ? m.action_value : JSON.stringify(m.action_value))}</div>` : ''}
+                </div>
+                <button class="btn-secondary" onclick="deleteMechanic(${m.id})" style="background: #b71c1c; border-color: #ff5252; color: #ff5252;">Delete</button>
+            </div>
+        `).join('');
     }
 }
 
+// ===== MECHANICS =====
 function showMechanicSettings() {
     const type = document.getElementById('mechanic-type').value;
     const settingsContainer = document.getElementById('mechanic-settings');
@@ -538,12 +462,10 @@ function showMechanicSettings() {
         return;
     }
     
-    // Hide all individual mechanic settings divs
     document.querySelectorAll('[id^="mechanic-"][id$="-settings"]').forEach(el => {
         el.style.display = 'none';
     });
     
-    // Show the appropriate settings for this type
     const typeSettingsId = `mechanic-${type}-settings`;
     const typeSettingsEl = document.getElementById(typeSettingsId);
     if (typeSettingsEl) {
@@ -556,8 +478,11 @@ function showMechanicSettings() {
 
 async function addMechanic(e) {
     e.preventDefault();
+    if (!navState.object_id) {
+        showMessage('Select an object first', 'error', 'mechanic-message');
+        return;
+    }
 
-    const objectId = document.getElementById('mechanic-object-id').value;
     const type = document.getElementById('mechanic-type').value;
     const name = document.getElementById('mechanic-name').value;
     const description = document.getElementById('mechanic-desc').value;
@@ -600,7 +525,7 @@ async function addMechanic(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'add_mechanic',
-                object_id: objectId,
+                object_id: navState.object_id,
                 type: type,
                 name: name,
                 description: description,
@@ -610,51 +535,53 @@ async function addMechanic(e) {
 
         const data = await response.json();
         if (data.success) {
-            showMessage('Mechanic added successfully!', 'success');
-            closeMechanicsModal();
-            loadPlaceObjects();
+            showMessage('Mechanic added!', 'success', 'mechanic-message');
+            document.getElementById('mechanic-form').reset();
+            loadObjectDetails(navState.object_id);
         } else {
-            showMessage('Error: ' + data.message, 'error');
+            showMessage('Error: ' + data.message, 'error', 'mechanic-message');
         }
     } catch (error) {
-        console.error('Error adding mechanic:', error);
-        showMessage('Error adding mechanic', 'error');
+        showMessage('Error adding mechanic', 'error', 'mechanic-message');
     }
 }
 
-// UTILITY FUNCTIONS
-function showMessage(message, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}`;
-    messageDiv.textContent = message;
+async function deleteMechanic(mechanicId) {
+    if (!confirm('Delete this mechanic?')) return;
     
-    const container = document.querySelector('.container');
-    container.insertBefore(messageDiv, container.firstChild);
-    
-    setTimeout(() => messageDiv.remove(), 5000);
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_mechanic',
+                mechanic_id: mechanicId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showMessage('Mechanic deleted', 'success', 'mechanic-message');
+            loadObjectDetails(navState.object_id);
+        } else {
+            showMessage('Error: ' + data.message, 'error', 'mechanic-message');
+        }
+    } catch (error) {
+        showMessage('Error deleting mechanic', 'error', 'mechanic-message');
+    }
+}
+
+// ===== UTILITIES =====
+function showMessage(message, type, elementId) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = message;
+        el.className = `message ${type}`;
+    }
 }
 
 function escapeHtml(text) {
-    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
-
-function editPlace(placeId) {
-    // TODO: Implement edit place modal
-    showMessage('Edit place feature coming soon', 'info');
-}
-
-function editObject(objectId) {
-    // TODO: Implement edit object modal
-    showMessage('Edit object feature coming soon', 'info');
-}
-
-// Close modal when clicking outside
-window.addEventListener('click', (e) => {
-    const modal = document.getElementById('mechanics-modal');
-    if (e.target === modal) {
-        closeMechanicsModal();
-    }
-});

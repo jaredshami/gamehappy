@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open World - Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="visible">
+        <div class="login-container">
+            <div class="login-box">
+                <h1>Open World Admin</h1>
+                <p>Phase 1: World Builder</p>
+                
+                <form onsubmit="performLogin(); return false;">
+                    <div class="form-group">
+                        <label for="login-username">Username:</label>
+                        <input type="text" id="login-username" value="admin" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password:</label>
+                        <input type="password" id="login-password" value="admin123" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+        <div class="container">
+            <header>
+                <h1>Open World - Admin Dashboard</h1>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </header>
+
+            <nav class="tabs">
+            <button class="tab-btn active" onclick="switchTab('worlds')">Worlds</button>
+            <button class="tab-btn" onclick="switchTab('places')">Places</button>
+            <button class="tab-btn" onclick="switchTab('objects')">Objects</button>
+        </nav>
+
+        <!-- WORLDS TAB -->
+        <section id="worlds" class="tab-content active">
+            <div class="panel">
+                <h2>Create New World</h2>
+                <form id="world-form" onsubmit="createWorld(event)">
+                    <input type="text" id="world-name" placeholder="World name" required>
+                    <textarea id="world-desc" placeholder="World description"></textarea>
+                    <label>
+                        <input type="checkbox" id="world-public"> Make Public
+                    </label>
+                    <button type="submit" class="btn-primary">Create World</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Worlds List</h2>
+                <div id="worlds-list"></div>
+            </div>
+        </section>
+
+        <!-- PLACES TAB -->
+        <section id="places" class="tab-content">
+            <div class="panel">
+                <h2>Select World</h2>
+                <select id="place-world-select" onchange="loadWorldPlaces()">
+                    <option value="">-- Select World --</option>
+                </select>
+            </div>
+
+            <div class="panel" id="place-form-panel" style="display:none;">
+                <h2>Create New Place</h2>
+                <form id="place-form" onsubmit="createPlace(event)">
+                    <input type="text" id="place-name" placeholder="Place name" required>
+                    <textarea id="place-desc" placeholder="Place description"></textarea>
+                    <button type="submit" class="btn-primary">Create Place</button>
+                </form>
+            </div>
+
+            <div class="panel" id="link-form-panel" style="display:none;">
+                <h2>Link Places</h2>
+                <form id="link-form" onsubmit="linkPlaces(event)">
+                    <label>From Place:
+                        <select id="link-from" required></select>
+                    </label>
+                    <label>Direction:
+                        <select id="link-direction" required>
+                            <option value="">-- Select Direction --</option>
+                            <option value="north">North</option>
+                            <option value="south">South</option>
+                            <option value="east">East</option>
+                            <option value="west">West</option>
+                            <option value="up">Up</option>
+                            <option value="down">Down</option>
+                        </select>
+                    </label>
+                    <label>To Place:
+                        <select id="link-to" required></select>
+                    </label>
+                    <button type="submit" class="btn-primary">Link Places</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Places in World</h2>
+                <div id="places-list"></div>
+            </div>
+        </section>
+
+        <!-- OBJECTS TAB -->
+        <section id="objects" class="tab-content">
+            <div class="panel">
+                <h2>Select Place</h2>
+                <select id="object-place-select" onchange="loadPlaceObjects()">
+                    <option value="">-- Select Place --</option>
+                </select>
+            </div>
+
+            <div class="panel" id="object-form-panel" style="display:none;">
+                <h2>Create Object</h2>
+                <form id="object-form" onsubmit="createObject(event)">
+                    <input type="text" id="object-name" placeholder="Object name" required>
+                    <textarea id="object-desc" placeholder="Object description"></textarea>
+                    <button type="submit" class="btn-primary">Create Object</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Objects in Place</h2>
+                <div id="objects-list"></div>
+            </div>
+        </section>
+
+        <!-- MECHANICS SECTION -->
+        <section id="mechanics-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeMechanicsModal()">&times;</button>
+                <h2>Add Mechanics to Object</h2>
+                <form id="mechanic-form" onsubmit="addMechanic(event)">
+                    <input type="hidden" id="mechanic-object-id">
+                    <label>Mechanic Type:
+                        <select id="mechanic-type" onchange="showMechanicSettings()" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="open">Open/Close</option>
+                            <option value="examine">Examine</option>
+                            <option value="take">Take/Pick Up</option>
+                            <option value="use">Use</option>
+                            <option value="purchase">Purchase (Gold)</option>
+                            <option value="teleport">Teleport</option>
+                            <option value="create_area">Create Sub-Area</option>
+                            <option value="trigger">Trigger Event</option>
+                        </select>
+                    </label>
+                    <input type="text" id="mechanic-name" placeholder="Mechanic name" required>
+                    <textarea id="mechanic-desc" placeholder="Mechanic description"></textarea>
+                    <div id="mechanic-settings" style="margin-top: 15px; padding: 10px; background: #222; border-radius: 4px; display: none;">
+                        <!-- Purchase mechanic -->
+                        <div id="mechanic-purchase-settings" style="display: none;">
+                            <label>Gold Price: <input type="number" id="mechanic-purchase-price" placeholder="0" min="0" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Open mechanic -->
+                        <div id="mechanic-open-settings" style="display: none;">
+                            <label>State: <input type="text" id="mechanic-open-state" placeholder="e.g., open, unlocked" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Examine mechanic -->
+                        <div id="mechanic-examine-settings" style="display: none;">
+                            <label>Description: <textarea id="mechanic-examine-desc" placeholder="What they see when examining" class="mechanic-input" rows="3" style="margin-left: 10px;"></textarea></label>
+                        </div>
+                        <!-- Take mechanic -->
+                        <div id="mechanic-take-settings" style="display: none;">
+                            <label>Item Name: <input type="text" id="mechanic-item-name" placeholder="What they take" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Use mechanic -->
+                        <div id="mechanic-use-settings" style="display: none;">
+                            <label>Effect: <textarea id="mechanic-use-effect" placeholder="What happens when used" class="mechanic-input" rows="3" style="margin-left: 10px;"></textarea></label>
+                        </div>
+                        <!-- Teleport mechanic -->
+                        <div id="mechanic-teleport-settings" style="display: none;">
+                            <label>Destination: <input type="text" id="mechanic-teleport-dest" placeholder="Target location" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Create Area mechanic -->
+                        <div id="mechanic-create_area-settings" style="display: none;">
+                            <label>Area Name: <input type="text" id="mechanic-create_area-name" placeholder="New area name" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Trigger mechanic -->
+                        <div id="mechanic-trigger-settings" style="display: none;">
+                            <label>Event Name: <input type="text" id="mechanic-trigger-event" placeholder="e.g., alarm, gate_opens" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Mechanic</button>
+                </form>
+            </div>
+        </section>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
