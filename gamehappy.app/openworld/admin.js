@@ -616,7 +616,7 @@ async function loadExitsForPlace(placeId) {
 }
 
 function renderDirectionButtons(existingExits) {
-    const directions = ['north', 'south', 'east', 'west', 'up', 'down'];
+    const directions = ['north', 'south', 'east', 'west'];
     const existingDirections = new Set(existingExits.map(e => e.direction.toLowerCase()));
     
     const container = document.getElementById('direction-buttons');
@@ -626,9 +626,7 @@ function renderDirectionButtons(existingExits) {
         'north': '↑',
         'south': '↓',
         'east': '→',
-        'west': '←',
-        'up': '⬆',
-        'down': '⬇'
+        'west': '←'
     };
     
     container.innerHTML = directions.map(dir => {
@@ -638,23 +636,21 @@ function renderDirectionButtons(existingExits) {
         
         if (exists) {
             return `
-                <div class="direction-button" style="position: relative;">
-                    <button type="button" class="btn-primary" disabled style="width: 100%; opacity: 0.6;">
-                        ${icon} ${dir.charAt(0).toUpperCase() + dir.slice(1)}
-                    </button>
-                    <div style="font-size: 12px; color: #90caf9; margin-top: 5px; text-align: center;">
-                        → ${escapeHtml(exit.destination_name || 'Unknown')}
-                    </div>
-                    <button type="button" class="btn-secondary" onclick="deleteExit(${exit.id})" style="width: 100%; margin-top: 5px; background: #b71c1c; border-color: #ff5252; color: #ff5252; font-size: 12px;">
-                        Delete
+                <div class="direction-button ${dir}">
+                    <button type="button" class="btn-primary" disabled title="${escapeHtml(exit.destination_name || 'Unknown')}">
+                        ${icon}
+                        <span class="arrow-label">${dir.charAt(0).toUpperCase() + dir.slice(1)}</span>
                     </button>
                 </div>
             `;
         } else {
             return `
-                <button type="button" class="btn-add" onclick="showDestinationView('${dir}')" style="width: 100%; padding: 15px; min-height: 80px;">
-                    ${icon} ${dir.charAt(0).toUpperCase() + dir.slice(1)}
-                </button>
+                <div class="direction-button ${dir}">
+                    <button type="button" class="btn-add" onclick="showDestinationView('${dir}')">
+                        ${icon}
+                        <span class="arrow-label">${dir.charAt(0).toUpperCase() + dir.slice(1)}</span>
+                    </button>
+                </div>
             `;
         }
     }).join('');

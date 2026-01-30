@@ -236,62 +236,52 @@ button {
 #direction-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto auto;
-    gap: 15px;
+    grid-template-rows: auto auto auto;
+    gap: 20px;
     margin: 30px 0;
-    min-height: 500px;
+    min-height: 400px;
     align-items: center;
     justify-items: center;
     padding: 20px;
 }
 
-/* Up - top center */
-#direction-buttons > :nth-child(5) {
-    grid-column: 2;
-    grid-row: 1;
-    width: 100%;
-}
-
-/* North - second row center */
+/* North - top center */
 #direction-buttons > :nth-child(1) {
     grid-column: 2;
-    grid-row: 2;
-    width: 100%;
+    grid-row: 1;
+    width: 120px;
+    height: 120px;
 }
 
-/* South - fourth row center */
+/* South - bottom center */
 #direction-buttons > :nth-child(2) {
     grid-column: 2;
-    grid-row: 4;
-    width: 100%;
+    grid-row: 3;
+    width: 120px;
+    height: 120px;
 }
 
 /* East - middle right */
 #direction-buttons > :nth-child(3) {
     grid-column: 3;
-    grid-row: 3;
-    width: 100%;
+    grid-row: 2;
+    width: 120px;
+    height: 120px;
 }
 
 /* West - middle left */
 #direction-buttons > :nth-child(4) {
     grid-column: 1;
-    grid-row: 3;
-    width: 100%;
-}
-
-/* Down - bottom center */
-#direction-buttons > :nth-child(6) {
-    grid-column: 2;
-    grid-row: 5;
-    width: 100%;
+    grid-row: 2;
+    width: 120px;
+    height: 120px;
 }
 
 /* Center place card */
 #direction-buttons::before {
     content: attr(data-place-name);
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     background: #1b5e20;
     border: 2px solid #4caf50;
     color: #81c784;
@@ -300,19 +290,62 @@ button {
     font-weight: bold;
     font-size: 16px;
     text-align: center;
-    width: 100%;
-    min-height: 100px;
+    width: 140px;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1;
+    word-wrap: break-word;
+    overflow: hidden;
 }
 
 .direction-button {
     display: flex;
     flex-direction: column;
-    min-height: 80px;
+    align-items: center;
+    justify-content: center;
     width: 100%;
+    height: 100%;
+}
+
+/* Arrow-shaped buttons */
+.direction-button.north button:first-child {
+    clip-path: polygon(50% 0%, 100% 80%, 80% 80%, 80% 100%, 20% 100%, 20% 80%, 0% 80%);
+}
+
+.direction-button.south button:first-child {
+    clip-path: polygon(0% 20%, 20% 20%, 20% 0%, 80% 0%, 80% 20%, 100% 20%, 50% 100%);
+}
+
+.direction-button.east button:first-child {
+    clip-path: polygon(0% 0%, 80% 0%, 80% 20%, 100% 50%, 80% 80%, 80% 100%, 0% 100%);
+}
+
+.direction-button.west button:first-child {
+    clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 20% 100%, 20% 80%, 0% 50%, 20% 20%);
+}
+
+.direction-button button {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 24px;
+    padding: 0;
+}
+
+.direction-button button:disabled {
+    opacity: 0.7;
+}
+
+.direction-button .arrow-label {
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
 }
 
 .btn-logout:hover {
