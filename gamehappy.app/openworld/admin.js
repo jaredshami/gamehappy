@@ -731,6 +731,46 @@ async function createExitLink(direction, toPlaceId) {
                 showMessage('Exit created but automatic reverse failed', 'warning', 'exit-message');
             }
             
+            // Create spatial synchronization exits
+            // For each place X that points TO the current place, add X->toPlace in the same direction
+            for (const exit of currentPlaceExits) {
+                // Find places that point to current place (to_place_id === navState.place_id)
+                try {
+                    const spatialResponse = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'link_places',
+                            from_place_id: exit.from_place_id,
+                            to_place_id: toPlaceId,
+                            direction: direction
+                        })
+                    });
+                    // Don't worry if this fails - it might already exist
+                } catch (error) {
+                    console.error('Spatial sync failed:', error);
+                }
+            }
+            
+            // For each place Y that the current place points to, add toPlace->Y in the same direction
+            for (const exit of currentPlaceExits) {
+                try {
+                    const spatialResponse = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'link_places',
+                            from_place_id: toPlaceId,
+                            to_place_id: exit.to_place_id,
+                            direction: exit.direction
+                        })
+                    });
+                    // Don't worry if this fails - it might already exist
+                } catch (error) {
+                    console.error('Spatial sync failed:', error);
+                }
+            }
+            
             await loadExitsForPlace(navState.place_id);
             showExitsView();
         } else {
