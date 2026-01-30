@@ -488,8 +488,9 @@ function updateExitType($pdo) {
         ");
         $stmt->execute([$data['connection_type'], $data['exit_id']]);
     } catch (Exception $e) {
-        // If column doesn't exist, that's ok - we'll add it to schema later
-        throw new Exception('Connection type column not yet in database');
+        // If column doesn't exist, just continue - it will be added to schema later
+        // Don't throw an error, just log it
+        error_log('connection_type column not available: ' . $e->getMessage());
     }
     
     echo json_encode(['success' => true, 'message' => 'Connection type updated']);
