@@ -230,6 +230,17 @@ button {
 }
 
 .btn-logout:hover {
+    background-color: #ff0000;
+}
+
+.direction-button {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.btn-logout:hover {
     background-color: #990000;
 }
 

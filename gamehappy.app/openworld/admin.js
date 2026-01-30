@@ -574,9 +574,22 @@ async function openManageExitsModal(placeId, placeName) {
     navState.place_id = placeId;
     navState.place_name = placeName;
     document.getElementById('exits-place-name').textContent = placeName;
-    loadExitDestinations();
+    showExitsView();
     await loadExitsForPlace(placeId);
     openModal('modal-manage-exits');
+}
+
+function showExitsView() {
+    document.getElementById('exits-view').style.display = 'block';
+    document.getElementById('select-destination-view').style.display = 'none';
+    document.getElementById('exit-message').textContent = '';
+}
+
+function showDestinationView(direction) {
+    document.getElementById('exits-view').style.display = 'none';
+    document.getElementById('select-destination-view').style.display = 'block';
+    document.getElementById('selected-direction-name').textContent = direction.charAt(0).toUpperCase() + direction.slice(1);
+    renderDestinationList(direction);
 }
 
 async function loadExitsForPlace(placeId) {
@@ -592,33 +605,99 @@ async function loadExitsForPlace(placeId) {
 
         const data = await response.json();
         if (data.success) {
-            renderExitsList(data.exits);
+            renderDirectionButtons(data.exits);
         } else {
-            document.getElementById('exits-list').innerHTML = '<p class="empty-state">No exits configured</p>';
+            renderDirectionButtons([]);
         }
     } catch (error) {
-        document.getElementById('exits-list').innerHTML = '<p class="empty-state">Error loading exits</p>';
+        console.error('Error loading exits:', error);
+        renderDirectionButtons([]);
     }
 }
 
-function renderExitsList(exits) {
-    const container = document.getElementById('exits-list');
-    if (!exits || exits.length === 0) {
-        container.innerHTML = '<p class="empty-state">No exits configured</p>';
+function renderDirectionButtons(existingExits) {
+    const directions = ['north', 'south', 'east', 'west', 'up', 'down'];
+    const existingDirections = new Set(existingExits.map(e => e.direction.toLowerCase()));
+    
+    const container = document.getElementById('direction-buttons');
+    container.innerHTML = directions.map(dir => {
+        const exists = existingDirections.has(dir);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
+        
+        if (exists) {
+            return `
+                <div class="direction-button" style="position: relative;">
+                    <button type="button" class="btn-primary" disabled style="width: 100%; opacity: 0.6;">
+                        ↑ ${dir.charAt(0).toUpperCase() + dir.slice(1)}
+                    </button>
+                    <div style="font-size: 12px; color: #90caf9; margin-top: 5px; text-align: center;">
+                        → ${escapeHtml(exit.destination_name || 'Unknown')}
+                    </div>
+                    <button type="button" class="btn-secondary" onclick="deleteExit(${exit.id})" style="width: 100%; margin-top: 5px; background: #b71c1c; border-color: #ff5252; color: #ff5252; font-size: 12px;">
+                        Delete
+                    </button>
+                </div>
+            `;
+        } else {
+            return `
+                <button type="button" class="btn-add" onclick="showDestinationView('${dir}')" style="width: 100%; padding: 15px;">
+                    ↑ ${dir.charAt(0).toUpperCase() + dir.slice(1)}
+                </button>
+            `;
+        }
+    }).join('');
+}
+
+function renderDestinationList(direction) {
+    const container = document.getElementById('destination-list');
+    
+    if (places.length === 0) {
+        container.innerHTML = '<p class="empty-state">No places available</p>';
         return;
     }
 
-    container.innerHTML = exits.map(exit => `
-        <div class="list-item" style="margin-bottom: 10px;">
+    // Filter out the current place
+    const availablePlaces = places.filter(p => p.id !== navState.place_id);
+    
+    if (availablePlaces.length === 0) {
+        container.innerHTML = '<p class="empty-state">No other places to link to</p>';
+        return;
+    }
+
+    container.innerHTML = availablePlaces.map(place => `
+        <div class="list-item clickable" onclick="createExitLink('${direction}', ${place.id})" style="cursor: pointer;">
             <div class="list-item-content">
-                <div style="color: #ffd700; font-weight: bold;">${escapeHtml(exit.direction)}</div>
-                <div style="color: #90caf9;">→ ${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <div class="list-item-title">${escapeHtml(place.name)}</div>
+                <div class="list-item-desc">${escapeHtml(place.description || '(no description)')}</div>
             </div>
-            <button class="btn-secondary" onclick="deleteExit(${exit.id})" style="background: #b71c1c; border-color: #ff5252; color: #ff5252;">
-                Delete
-            </button>
         </div>
     `).join('');
+}
+
+async function createExitLink(direction, toPlaceId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'link_places',
+                from_place_id: navState.place_id,
+                to_place_id: toPlaceId,
+                direction: direction
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showMessage('Exit created!', 'success', 'exit-message');
+            await loadExitsForPlace(navState.place_id);
+            showExitsView();
+        } else {
+            showMessage('Error: ' + data.message, 'error', 'exit-message');
+        }
+    } catch (error) {
+        showMessage('Error creating exit', 'error', 'exit-message');
+    }
 }
 
 async function deleteExit(exitId) {
