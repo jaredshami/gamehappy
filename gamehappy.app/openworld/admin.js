@@ -293,14 +293,14 @@ async function linkPlaces(e) {
 
         const data = await response.json();
         if (data.success) {
-            showMessage('Link created!', 'success', 'exit-message');
+            showMessage('Exit added!', 'success', 'exit-message');
             document.getElementById('exit-form').reset();
-            loadPlacesForWorld(navState.world_id);
+            loadExitsForPlace(navState.place_id);
         } else {
             showMessage('Error: ' + data.message, 'error', 'exit-message');
         }
     } catch (error) {
-        showMessage('Error creating link', 'error', 'exit-message');
+        showMessage('Error creating exit', 'error', 'exit-message');
     }
 }
 
@@ -312,11 +312,14 @@ function renderPlacesList() {
     }
 
     container.innerHTML = places.map(place => `
-        <div class="list-item clickable" onclick="navigateToObjects(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="cursor: pointer;">
-            <div class="list-item-content">
+        <div class="list-item">
+            <div class="list-item-content" onclick="navigateToObjects(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="cursor: pointer; flex: 1;">
                 <div class="list-item-title">${escapeHtml(place.name)}</div>
                 <div class="list-item-desc">${escapeHtml(place.description || '(no description)')}</div>
             </div>
+            <button class="btn-secondary" onclick="openManageExitsModal(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="white-space: nowrap;">
+                Manage Exits
+            </button>
         </div>
     `).join('');
 }
@@ -563,6 +566,83 @@ async function deleteMechanic(mechanicId) {
         }
     } catch (error) {
         showMessage('Error deleting mechanic', 'error', 'mechanic-message');
+    }
+}
+
+// ===== EXIT MANAGEMENT =====
+async function openManageExitsModal(placeId, placeName) {
+    navState.place_id = placeId;
+    navState.place_name = placeName;
+    document.getElementById('exits-place-name').textContent = placeName;
+    loadExitDestinations();
+    await loadExitsForPlace(placeId);
+    openModal('modal-manage-exits');
+}
+
+async function loadExitsForPlace(placeId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_exits',
+                place_id: placeId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            renderExitsList(data.exits);
+        } else {
+            document.getElementById('exits-list').innerHTML = '<p class="empty-state">No exits configured</p>';
+        }
+    } catch (error) {
+        document.getElementById('exits-list').innerHTML = '<p class="empty-state">Error loading exits</p>';
+    }
+}
+
+function renderExitsList(exits) {
+    const container = document.getElementById('exits-list');
+    if (!exits || exits.length === 0) {
+        container.innerHTML = '<p class="empty-state">No exits configured</p>';
+        return;
+    }
+
+    container.innerHTML = exits.map(exit => `
+        <div class="list-item" style="margin-bottom: 10px;">
+            <div class="list-item-content">
+                <div style="color: #ffd700; font-weight: bold;">${escapeHtml(exit.direction)}</div>
+                <div style="color: #90caf9;">→ ${escapeHtml(exit.destination_name || 'Unknown')}</div>
+            </div>
+            <button class="btn-secondary" onclick="deleteExit(${exit.id})" style="background: #b71c1c; border-color: #ff5252; color: #ff5252;">
+                Delete
+            </button>
+        </div>
+    `).join('');
+}
+
+async function deleteExit(exitId) {
+    if (!confirm('Delete this exit?')) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_exit',
+                exit_id: exitId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showMessage('Exit deleted', 'success', 'exit-message');
+            await loadExitsForPlace(navState.place_id);
+        } else {
+            showMessage('Error: ' + data.message, 'error', 'exit-message');
+        }
+    } catch (error) {
+        showMessage('Error deleting exit', 'error', 'exit-message');
     }
 }
 

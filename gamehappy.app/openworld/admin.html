@@ -64,28 +64,6 @@
                         </div>
                         <div id="places-list" class="list-container"></div>
                     </div>
-
-                    <div class="panel">
-                        <h2>Manage Exits</h2>
-                        <form id="exit-form" onsubmit="linkPlaces(event)">
-                            <label>From this place, go:</label>
-                            <select id="exit-direction" required>
-                                <option value="">-- Direction --</option>
-                                <option value="north">North</option>
-                                <option value="south">South</option>
-                                <option value="east">East</option>
-                                <option value="west">West</option>
-                                <option value="up">Up</option>
-                                <option value="down">Down</option>
-                            </select>
-                            <label>to this place:</label>
-                            <select id="exit-destination" required>
-                                <option value="">-- Select Destination --</option>
-                            </select>
-                            <button type="submit" class="btn-primary">Create Link</button>
-                        </form>
-                        <div id="exit-message" class="message"></div>
-                    </div>
                 </section>
 
                 <!-- OBJECTS VIEW -->
@@ -275,6 +253,46 @@
                 </div>
             </form>
             <div id="mechanic-message" class="message"></div>
+        </div>
+    </div>
+
+    <!-- Manage Place Exits Modal -->
+    <div id="modal-manage-exits" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-manage-exits')">×</button>
+            <h2>Manage Exits for <span id="exits-place-name"></span></h2>
+            
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #64b5f6; margin-bottom: 10px;">Current Exits</h3>
+                <div id="exits-list" style="margin-bottom: 15px;"></div>
+            </div>
+
+            <form id="exit-form" onsubmit="linkPlaces(event)">
+                <h3 style="color: #64b5f6; margin-bottom: 10px;">Add New Exit</h3>
+                <label>
+                    Direction
+                    <select id="exit-direction" required>
+                        <option value="">-- Select Direction --</option>
+                        <option value="north">North</option>
+                        <option value="south">South</option>
+                        <option value="east">East</option>
+                        <option value="west">West</option>
+                        <option value="up">Up</option>
+                        <option value="down">Down</option>
+                    </select>
+                </label>
+                <label>
+                    Destination Place
+                    <select id="exit-destination" required>
+                        <option value="">-- Select Destination --</option>
+                    </select>
+                </label>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Add Exit</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-manage-exits')">Done</button>
+                </div>
+            </form>
+            <div id="exit-message" class="message"></div>
         </div>
     </div>
 

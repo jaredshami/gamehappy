@@ -80,6 +80,12 @@ try {
         case 'delete_mechanic':
             deleteMechanic($pdo);
             break;
+        case 'get_exits':
+            getExits($pdo);
+            break;
+        case 'delete_exit':
+            deleteExit($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -367,5 +373,48 @@ function deleteMechanic($pdo) {
     $stmt->execute([$mechanicId]);
     
     echo json_encode(['success' => true, 'message' => 'Mechanic deleted']);
+    exit;
+}
+
+function getExits($pdo) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $placeId = $json_data['place_id'] ?? null;
+    
+    if (!$placeId) {
+        throw new Exception('Place ID required');
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            pe.id,
+            pe.direction,
+            pe.from_place_id,
+            pe.to_place_id,
+            p.name as destination_name
+        FROM ow_place_exits pe
+        LEFT JOIN ow_places p ON pe.to_place_id = p.id
+        WHERE pe.from_place_id = ?
+        ORDER BY pe.direction ASC
+    ");
+    
+    $stmt->execute([$placeId]);
+    $exits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo json_encode(['success' => true, 'exits' => $exits]);
+    exit;
+}
+
+function deleteExit($pdo) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $exitId = $json_data['exit_id'] ?? null;
+    
+    if (!$exitId) {
+        throw new Exception('Exit ID required');
+    }
+    
+    $stmt = $pdo->prepare("DELETE FROM ow_place_exits WHERE id = ?");
+    $stmt->execute([$exitId]);
+    
+    echo json_encode(['success' => true, 'message' => 'Exit deleted']);
     exit;
 }
