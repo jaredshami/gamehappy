@@ -592,120 +592,144 @@ function closeDestinationSelector() {
 }
 
 async function navigateExitsMap(placeId, direction) {
-    // Animate the tiles to their new positions based on navigation direction
-    const container = document.getElementById('direction-buttons');
-    const buttons = container.querySelectorAll('.direction-button');
-    
-    // Direction rotation map - how directions shift when you move in a direction
-    const directionRotations = {
-        'north': {
-            'north': 'center', 'center': 'south', 'south': 'out',
-            'northeast': 'east', 'northwest': 'west', 'southeast': 'out', 'southwest': 'out',
-            'east': 'out', 'west': 'out'
-        },
-        'south': {
-            'south': 'center', 'center': 'north', 'north': 'out',
-            'southeast': 'east', 'southwest': 'west', 'northeast': 'out', 'northwest': 'out',
-            'east': 'out', 'west': 'out'
-        },
-        'east': {
-            'east': 'center', 'center': 'west', 'west': 'out',
-            'northeast': 'north', 'southeast': 'south', 'northwest': 'out', 'southwest': 'out',
-            'north': 'out', 'south': 'out'
-        },
-        'west': {
-            'west': 'center', 'center': 'east', 'east': 'out',
-            'northwest': 'north', 'southwest': 'south', 'northeast': 'out', 'southeast': 'out',
-            'north': 'out', 'south': 'out'
-        },
-        'northeast': {
-            'northeast': 'center', 'center': 'southwest', 'southwest': 'out',
-            'north': 'west', 'east': 'south', 'northwest': 'out', 'southeast': 'out'
-        },
-        'northwest': {
-            'northwest': 'center', 'center': 'southeast', 'southeast': 'out',
-            'north': 'east', 'west': 'south', 'northeast': 'out', 'southwest': 'out'
-        },
-        'southeast': {
-            'southeast': 'center', 'center': 'northwest', 'northwest': 'out',
-            'south': 'west', 'east': 'north', 'southwest': 'out', 'northeast': 'out'
-        },
-        'southwest': {
-            'southwest': 'center', 'center': 'northeast', 'northeast': 'out',
-            'south': 'east', 'west': 'north', 'southeast': 'out', 'northwest': 'out'
-        }
-    };
-    
-    const gridPositions = {
-        'northwest': { row: 0, col: 0 },
-        'north': { row: 0, col: 1 },
-        'northeast': { row: 0, col: 2 },
-        'west': { row: 1, col: 0 },
-        'center': { row: 1, col: 1 },
-        'east': { row: 1, col: 2 },
-        'southwest': { row: 2, col: 0 },
-        'south': { row: 2, col: 1 },
-        'southeast': { row: 2, col: 2 }
-    };
-    
-    // Store animations for each button
-    const animations = [];
-    buttons.forEach(button => {
-        const dirClass = Array.from(button.classList).find(cls => 
-            ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'].includes(cls)
-        );
+    try {
+        // Animate the tiles to their new positions based on navigation direction
+        const container = document.getElementById('direction-buttons');
+        const buttons = container.querySelectorAll('.direction-button');
         
-        if (dirClass) {
-            const newPosition = directionRotations[direction]?.[dirClass];
-            if (newPosition) {
-                animations.push({
-                    button,
-                    oldDir: dirClass,
-                    newDir: newPosition
-                });
-            }
-        }
-    });
-    
-    // Animate each button
-    const animationDuration = 0.5; // seconds
-    const startTime = Date.now();
-    
-    const animateFrame = () => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const progress = Math.min(elapsed / animationDuration, 1);
+        console.log('Navigating to', placeId, 'via', direction, 'buttons:', buttons.length);
         
-        animations.forEach(({ button, oldDir, newDir }) => {
-            const oldPos = gridPositions[oldDir];
-            const newPos = gridPositions[newDir];
-            
-            // Calculate pixel offset for animation
-            const rowDiff = (newPos.row - oldPos.row) * 130; // 130px approx per grid cell
-            const colDiff = (newPos.col - oldPos.col) * 130;
-            
-            // Current position in animation
-            const currentRow = rowDiff * progress;
-            const currentCol = colDiff * progress;
-            
-            // Calculate opacity - fade out if going out of view, fade in if coming in
-            let opacity = 1;
-            if (newDir === 'out') {
-                opacity = 1 - progress;
+        // Direction rotation map - how directions shift when you move in a direction
+        const directionRotations = {
+            'north': {
+                'north': 'center', 'center': 'south', 'south': 'out',
+                'northeast': 'east', 'northwest': 'west', 'southeast': 'out', 'southwest': 'out',
+                'east': 'out', 'west': 'out'
+            },
+            'south': {
+                'south': 'center', 'center': 'north', 'north': 'out',
+                'southeast': 'east', 'southwest': 'west', 'northeast': 'out', 'northwest': 'out',
+                'east': 'out', 'west': 'out'
+            },
+            'east': {
+                'east': 'center', 'center': 'west', 'west': 'out',
+                'northeast': 'north', 'southeast': 'south', 'northwest': 'out', 'southwest': 'out',
+                'north': 'out', 'south': 'out'
+            },
+            'west': {
+                'west': 'center', 'center': 'east', 'east': 'out',
+                'northwest': 'north', 'southwest': 'south', 'northeast': 'out', 'southeast': 'out',
+                'north': 'out', 'south': 'out'
+            },
+            'northeast': {
+                'northeast': 'center', 'center': 'southwest', 'southwest': 'out',
+                'north': 'west', 'east': 'south', 'northwest': 'out', 'southeast': 'out',
+                'west': 'out', 'south': 'out'
+            },
+            'northwest': {
+                'northwest': 'center', 'center': 'southeast', 'southeast': 'out',
+                'north': 'east', 'west': 'south', 'northeast': 'out', 'southwest': 'out',
+                'east': 'out', 'south': 'out'
+            },
+            'southeast': {
+                'southeast': 'center', 'center': 'northwest', 'northwest': 'out',
+                'south': 'west', 'east': 'north', 'southwest': 'out', 'northeast': 'out',
+                'west': 'out', 'north': 'out'
+            },
+            'southwest': {
+                'southwest': 'center', 'center': 'northeast', 'northeast': 'out',
+                'south': 'east', 'west': 'north', 'southeast': 'out', 'northwest': 'out',
+                'east': 'out', 'north': 'out'
             }
+        };
+        
+        const gridPositions = {
+            'northwest': { row: 0, col: 0 },
+            'north': { row: 0, col: 1 },
+            'northeast': { row: 0, col: 2 },
+            'west': { row: 1, col: 0 },
+            'center': { row: 1, col: 1 },
+            'east': { row: 1, col: 2 },
+            'southwest': { row: 2, col: 0 },
+            'south': { row: 2, col: 1 },
+            'southeast': { row: 2, col: 2 }
+        };
+        
+        // Store animations for each button
+        const animations = [];
+        buttons.forEach(button => {
+            const dirClass = Array.from(button.classList).find(cls => 
+                ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'].includes(cls)
+            );
             
-            button.style.transform = `translate(${currentCol}px, ${currentRow}px)`;
-            button.style.opacity = opacity;
+            if (dirClass && directionRotations[direction]) {
+                const newPosition = directionRotations[direction][dirClass];
+                if (newPosition) {
+                    animations.push({
+                        button,
+                        oldDir: dirClass,
+                        newDir: newPosition
+                    });
+                }
+            }
         });
         
-        if (progress < 1) {
-            requestAnimationFrame(animateFrame);
-        } else {
-            // Animation complete - load new place
-            completeNavigation(placeId);
+        console.log('Animations to run:', animations.length);
+        
+        if (animations.length === 0) {
+            console.warn('No animations found, skipping animation');
+            await completeNavigation(placeId);
+            return;
         }
-    };
-    
-    requestAnimationFrame(animateFrame);
+        
+        // Animate each button
+        const animationDuration = 0.5; // seconds
+        const startTime = Date.now();
+        
+        const animateFrame = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const progress = Math.min(elapsed / animationDuration, 1);
+            
+            animations.forEach(({ button, oldDir, newDir }) => {
+                const oldPos = gridPositions[oldDir];
+                const newPos = gridPositions[newDir];
+                
+                if (!oldPos || !newPos) {
+                    console.warn('Missing position for', oldDir, 'or', newDir);
+                    return;
+                }
+                
+                // Calculate pixel offset for animation
+                const rowDiff = (newPos.row - oldPos.row) * 130; // 130px approx per grid cell
+                const colDiff = (newPos.col - oldPos.col) * 130;
+                
+                // Current position in animation
+                const currentRow = rowDiff * progress;
+                const currentCol = colDiff * progress;
+                
+                // Calculate opacity - fade out if going out of view, fade in if coming in
+                let opacity = 1;
+                if (newDir === 'out') {
+                    opacity = 1 - progress;
+                }
+                
+                button.style.transform = `translate(${currentCol}px, ${currentRow}px)`;
+                button.style.opacity = opacity;
+            });
+            
+            if (progress < 1) {
+                requestAnimationFrame(animateFrame);
+            } else {
+                // Animation complete - load new place
+                completeNavigation(placeId).catch(err => console.error('Navigation error:', err));
+            }
+        };
+        
+        requestAnimationFrame(animateFrame);
+    } catch (error) {
+        console.error('Navigation animation error:', error);
+        completeNavigation(placeId).catch(err => console.error('Navigation error:', err));
+    }
 }
 
 async function completeNavigation(placeId) {
