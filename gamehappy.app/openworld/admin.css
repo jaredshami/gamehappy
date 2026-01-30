@@ -462,11 +462,11 @@ button {
     z-index: 10;
 }
 
-/* Northeast badge - at bottom-right corner of northeast place */
+/* Northeast badge - at bottom-left corner of northeast place */
 .connection-badge-northeast {
     position: absolute;
     bottom: -14px;
-    right: -14px;
+    left: -14px;
     z-index: 10;
 }
 
@@ -478,18 +478,18 @@ button {
     z-index: 10;
 }
 
-/* Southeast badge - at bottom-right corner of southeast place */
+/* Southeast badge - at top-left corner of southeast place */
 .connection-badge-southeast {
     position: absolute;
-    bottom: -14px;
-    right: -14px;
+    top: -14px;
+    left: -14px;
     z-index: 10;
 }
 
-/* Southwest badge - at bottom-right corner of southwest place */
+/* Southwest badge - at top-right corner of southwest place */
 .connection-badge-southwest {
     position: absolute;
-    bottom: -14px;
+    top: -14px;
     right: -14px;
     z-index: 10;
 }
