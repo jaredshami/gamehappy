@@ -759,12 +759,12 @@ function renderDirectionButtons(existingExits) {
     </div>`;
     
     // Inject the cardinal directions and center tile
-    let html = '';
+    let gridHtml = '';
     const cardinalDirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
     
     // Reconstruct HTML with proper grid positioning
     // North row
-    html += cardinalDirs.filter(d => d === 'northwest').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'northwest').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -779,7 +779,7 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    html += cardinalDirs.filter(d => d === 'north').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'north').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -794,7 +794,7 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    html += cardinalDirs.filter(d => d === 'northeast').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'northeast').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -810,7 +810,7 @@ function renderDirectionButtons(existingExits) {
     }).join('');
     
     // Middle row
-    html += cardinalDirs.filter(d => d === 'west').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'west').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -825,9 +825,9 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    html += centerTile;
+    gridHtml += centerTile;
     
-    html += cardinalDirs.filter(d => d === 'east').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'east').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -841,12 +841,9 @@ function renderDirectionButtons(existingExits) {
             return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
         }
     }).join('');
-    
-    // Vertical bars on the right side
-    html += `<div class="vertical-bars-container">${upBar}${downBar}</div>`;
     
     // Bottom row
-    html += cardinalDirs.filter(d => d === 'southwest').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'southwest').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -861,7 +858,7 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    html += cardinalDirs.filter(d => d === 'south').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'south').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -876,7 +873,7 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    html += cardinalDirs.filter(d => d === 'southeast').map(d => {
+    gridHtml += cardinalDirs.filter(d => d === 'southeast').map(d => {
         const exists = existingDirections.has(d);
         const exit = existingExits.find(e => e.direction.toLowerCase() === d);
         const icon = directionIcons[d];
@@ -890,6 +887,10 @@ function renderDirectionButtons(existingExits) {
             return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
         }
     }).join('');
+    
+    // Assemble final HTML with compass grid and vertical bars underneath
+    let html = `<div class="compass-grid">${gridHtml}</div>`;
+    html += `<div class="vertical-bars-container">${upBar}${downBar}</div>`;
     
     container.innerHTML = html;
 }
