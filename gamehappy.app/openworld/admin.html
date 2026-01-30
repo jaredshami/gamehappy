@@ -260,14 +260,13 @@
     <div id="modal-manage-exits" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal('modal-manage-exits')">×</button>
-            <h2>Manage Exits for <span id="exits-place-name"></span></h2>
+            <h2 style="margin-bottom: 20px;">Manage Exits for <span id="exits-place-name"></span></h2>
             
             <div id="exits-view" style="display: block;">
-                <h3 style="color: #64b5f6; margin-bottom: 15px;">Available Directions</h3>
-                <div id="direction-buttons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;"></div>
+                <div id="direction-buttons"></div>
             </div>
 
-            <div id="select-destination-view" style="display: none;">
+            <div id="select-destination-view" style="display: none; max-height: 350px; overflow-y: auto;">
                 <h3 style="color: #64b5f6; margin-bottom: 15px;">Select Destination for <span id="selected-direction-name" style="color: #ffd700;"></span></h3>
                 <div id="destination-list" style="margin-bottom: 15px;"></div>
                 <button type="button" class="btn-secondary" onclick="showExitsView()" style="width: 100%; margin-top: 10px;">← Back</button>
