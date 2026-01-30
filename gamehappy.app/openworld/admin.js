@@ -655,8 +655,8 @@ async function navigateExitsMap(placeId, direction) {
             'southeast': { row: 2, col: 2 }
         };
         
-        // Store animations for each button
-        const animations = [];
+        // Store current positions for each button
+        const animationData = [];
         buttons.forEach(button => {
             const dirClass = Array.from(button.classList).find(cls => 
                 ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'].includes(cls)
@@ -665,22 +665,44 @@ async function navigateExitsMap(placeId, direction) {
             if (dirClass && directionRotations[direction]) {
                 const newPosition = directionRotations[direction][dirClass];
                 if (newPosition) {
-                    animations.push({
+                    // Get current position on screen
+                    const rect = button.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    animationData.push({
                         button,
                         oldDir: dirClass,
-                        newDir: newPosition
+                        newDir: newPosition,
+                        startX: rect.left - containerRect.left,
+                        startY: rect.top - containerRect.top,
+                        startWidth: rect.width,
+                        startHeight: rect.height
                     });
                 }
             }
         });
         
-        console.log('Animations to run:', animations.length);
+        console.log('Animations to run:', animationData.length);
         
-        if (animations.length === 0) {
+        if (animationData.length === 0) {
             console.warn('No animations found, skipping animation');
             await completeNavigation(placeId);
             return;
         }
+        
+        // Switch container to position relative for absolute positioning
+        const originalDisplay = container.style.display;
+        const originalPosition = container.style.position;
+        container.style.position = 'relative';
+        
+        // Position buttons absolutely at their starting positions
+        animationData.forEach(({ button, startX, startY, startWidth, startHeight }) => {
+            button.style.position = 'absolute';
+            button.style.left = startX + 'px';
+            button.style.top = startY + 'px';
+            button.style.width = startWidth + 'px';
+            button.style.height = startHeight + 'px';
+        });
         
         // Animate each button
         const animationDuration = 0.5; // seconds
@@ -690,7 +712,7 @@ async function navigateExitsMap(placeId, direction) {
             const elapsed = (Date.now() - startTime) / 1000;
             const progress = Math.min(elapsed / animationDuration, 1);
             
-            animations.forEach(({ button, oldDir, newDir }) => {
+            animationData.forEach(({ button, oldDir, newDir, startX, startY, startWidth, startHeight }) => {
                 const oldPos = gridPositions[oldDir];
                 const newPos = gridPositions[newDir];
                 
@@ -699,28 +721,40 @@ async function navigateExitsMap(placeId, direction) {
                     return;
                 }
                 
-                // Calculate pixel offset for animation
-                const rowDiff = (newPos.row - oldPos.row) * 130; // 130px approx per grid cell
-                const colDiff = (newPos.col - oldPos.col) * 130;
+                // Calculate target position (130px cell + 10px gap)
+                const cellSize = startWidth + 10; // approximate cell size with gap
+                const targetX = startX + (newPos.col - oldPos.col) * cellSize;
+                const targetY = startY + (newPos.row - oldPos.row) * cellSize;
                 
-                // Current position in animation
-                const currentRow = rowDiff * progress;
-                const currentCol = colDiff * progress;
+                // Interpolate position
+                const currentX = startX + (targetX - startX) * progress;
+                const currentY = startY + (targetY - startY) * progress;
                 
-                // Calculate opacity - fade out if going out of view, fade in if coming in
+                // Calculate opacity - fade out if going out of view
                 let opacity = 1;
                 if (newDir === 'out') {
                     opacity = 1 - progress;
                 }
                 
-                button.style.transform = `translate(${currentCol}px, ${currentRow}px)`;
+                button.style.left = currentX + 'px';
+                button.style.top = currentY + 'px';
                 button.style.opacity = opacity;
             });
             
             if (progress < 1) {
                 requestAnimationFrame(animateFrame);
             } else {
-                // Animation complete - load new place
+                // Animation complete - reset positioning and load new place
+                animationData.forEach(({ button }) => {
+                    button.style.position = '';
+                    button.style.left = '';
+                    button.style.top = '';
+                    button.style.width = '';
+                    button.style.height = '';
+                    button.style.opacity = '';
+                    button.style.transform = '';
+                });
+                container.style.position = originalPosition;
                 completeNavigation(placeId).catch(err => console.error('Navigation error:', err));
             }
         };
