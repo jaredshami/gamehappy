@@ -591,16 +591,46 @@ function closeDestinationSelector() {
     showExitsView();
 }
 
-async function navigateExitsMap(placeId) {
-    // Navigate to a different place within the exits modal
+async function navigateExitsMap(placeId, direction) {
+    // Animate the transition to the new place
+    const container = document.getElementById('direction-buttons');
+    
+    // Calculate position shift based on direction
+    const directionShifts = {
+        'north': { x: 0, y: 1 },
+        'south': { x: 0, y: -1 },
+        'east': { x: -1, y: 0 },
+        'west': { x: 1, y: 0 },
+        'northeast': { x: -1, y: 1 },
+        'northwest': { x: 1, y: 1 },
+        'southeast': { x: -1, y: -1 },
+        'southwest': { x: 1, y: -1 }
+    };
+    
+    const shift = directionShifts[direction] || { x: 0, y: 0 };
+    
+    // Apply fade out animation
+    container.style.opacity = '0';
+    container.style.transition = 'opacity 0.3s ease-out';
+    
+    // Wait for fade out to start
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
+    // Update place info
     navState.place_id = placeId;
-    // Find place name from the places array
     const place = places.find(p => p.id === placeId);
     if (place) {
         navState.place_name = place.name;
     }
     document.getElementById('exits-place-name').textContent = navState.place_name;
+    
+    // Load exits for new place
     await loadExitsForPlace(placeId);
+    
+    // Re-enable transitions and fade back in
+    container.style.transition = 'opacity 0.4s ease-in';
+    container.style.opacity = '1';
+    
     showExitsView();
 }
 
@@ -673,7 +703,7 @@ function renderDirectionButtons(existingExits) {
         
         if (exists) {
             return `
-                <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer; position: relative;">
+                <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${dir}')" style="cursor: pointer; position: relative;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
                         <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
