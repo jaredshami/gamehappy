@@ -235,49 +235,73 @@ button {
 
 #direction-buttons {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: auto auto auto auto;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
     gap: 15px;
     margin: 30px 0;
-    min-height: 400px;
+    min-height: 300px;
+    align-items: center;
+    justify-items: center;
 }
 
-#direction-buttons > :nth-child(1) { /* North */
+/* North - top center */
+#direction-buttons > :nth-child(1) {
     grid-column: 2;
     grid-row: 1;
+    width: 100%;
 }
 
-#direction-buttons > :nth-child(2) { /* South */
+/* South - bottom center */
+#direction-buttons > :nth-child(2) {
     grid-column: 2;
-    grid-row: 4;
+    grid-row: 3;
+    width: 100%;
 }
 
-#direction-buttons > :nth-child(3) { /* East */
+/* East - middle right (before Up/Down column) */
+#direction-buttons > :nth-child(3) {
     grid-column: 3;
-    grid-row: 2 / 4;
-    align-self: center;
+    grid-row: 2;
+    width: 100%;
 }
 
-#direction-buttons > :nth-child(4) { /* West */
+/* West - middle left */
+#direction-buttons > :nth-child(4) {
     grid-column: 1;
-    grid-row: 2 / 4;
-    align-self: center;
+    grid-row: 2;
+    width: 100%;
 }
 
-#direction-buttons > :nth-child(5) { /* Up */
-    grid-column: 3;
+/* Up - top far right */
+#direction-buttons > :nth-child(5) {
+    grid-column: 4;
     grid-row: 1;
+    width: 100%;
 }
 
-#direction-buttons > :nth-child(6) { /* Down */
-    grid-column: 3;
-    grid-row: 4;
+/* Down - bottom far right */
+#direction-buttons > :nth-child(6) {
+    grid-column: 4;
+    grid-row: 3;
+    width: 100%;
+}
+
+/* Center place label */
+#direction-buttons::before {
+    content: 'Place';
+    grid-column: 2;
+    grid-row: 2;
+    color: #64b5f6;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
 }
 
 .direction-button {
     display: flex;
     flex-direction: column;
     min-height: 80px;
+    width: 100%;
 }
 
 .btn-logout:hover {
