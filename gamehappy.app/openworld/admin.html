@@ -143,12 +143,13 @@
                 <form id="mechanic-form" onsubmit="addMechanic(event)">
                     <input type="hidden" id="mechanic-object-id">
                     <label>Mechanic Type:
-                        <select id="mechanic-type" required>
+                        <select id="mechanic-type" onchange="showMechanicSettings()" required>
                             <option value="">-- Select Type --</option>
                             <option value="open">Open/Close</option>
                             <option value="examine">Examine</option>
                             <option value="take">Take/Pick Up</option>
                             <option value="use">Use</option>
+                            <option value="purchase">Purchase (Gold)</option>
                             <option value="teleport">Teleport</option>
                             <option value="create_area">Create Sub-Area</option>
                             <option value="trigger">Trigger Event</option>
@@ -156,7 +157,40 @@
                     </label>
                     <input type="text" id="mechanic-name" placeholder="Mechanic name" required>
                     <textarea id="mechanic-desc" placeholder="Mechanic description"></textarea>
-                    <div id="mechanic-settings"></div>
+                    <div id="mechanic-settings" style="margin-top: 15px; padding: 10px; background: #222; border-radius: 4px; display: none;">
+                        <!-- Purchase mechanic -->
+                        <div id="mechanic-purchase-settings" style="display: none;">
+                            <label>Gold Price: <input type="number" id="mechanic-purchase-price" placeholder="0" min="0" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Open mechanic -->
+                        <div id="mechanic-open-settings" style="display: none;">
+                            <label>State: <input type="text" id="mechanic-open-state" placeholder="e.g., open, unlocked" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Examine mechanic -->
+                        <div id="mechanic-examine-settings" style="display: none;">
+                            <label>Description: <textarea id="mechanic-examine-desc" placeholder="What they see when examining" class="mechanic-input" rows="3" style="margin-left: 10px;"></textarea></label>
+                        </div>
+                        <!-- Take mechanic -->
+                        <div id="mechanic-take-settings" style="display: none;">
+                            <label>Item Name: <input type="text" id="mechanic-item-name" placeholder="What they take" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Use mechanic -->
+                        <div id="mechanic-use-settings" style="display: none;">
+                            <label>Effect: <textarea id="mechanic-use-effect" placeholder="What happens when used" class="mechanic-input" rows="3" style="margin-left: 10px;"></textarea></label>
+                        </div>
+                        <!-- Teleport mechanic -->
+                        <div id="mechanic-teleport-settings" style="display: none;">
+                            <label>Destination: <input type="text" id="mechanic-teleport-dest" placeholder="Target location" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Create Area mechanic -->
+                        <div id="mechanic-create_area-settings" style="display: none;">
+                            <label>Area Name: <input type="text" id="mechanic-create_area-name" placeholder="New area name" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                        <!-- Trigger mechanic -->
+                        <div id="mechanic-trigger-settings" style="display: none;">
+                            <label>Event Name: <input type="text" id="mechanic-trigger-event" placeholder="e.g., alarm, gate_opens" class="mechanic-input" style="margin-left: 10px;"></label>
+                        </div>
+                    </div>
                     <button type="submit" class="btn-primary">Add Mechanic</button>
                 </form>
             </div>

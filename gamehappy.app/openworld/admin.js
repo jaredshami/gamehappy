@@ -446,7 +446,7 @@ function renderObjectsList() {
 function openMechanicsModal(objectId) {
     document.getElementById('mechanic-object-id').value = objectId;
     document.getElementById('mechanic-form').reset();
-    document.getElementById('mechanic-settings').innerHTML = '';
+    document.getElementById('mechanic-settings').style.display = 'none';
     document.getElementById('mechanics-modal').style.display = 'flex';
 }
 
@@ -457,46 +457,26 @@ function closeMechanicsModal() {
 function showMechanicSettings() {
     const type = document.getElementById('mechanic-type').value;
     const settingsContainer = document.getElementById('mechanic-settings');
-    let settings = '';
-
-    switch(type) {
-        case 'open':
-            settings = `
-                <div class="mechanic-setting">
-                    <label>Opens to:</label>
-                    <input type="text" id="mechanic-open-state" placeholder="e.g., open, unlocked">
-                </div>
-            `;
-            break;
-        case 'take':
-            settings = `
-                <div class="mechanic-setting">
-                    <label>Item name:</label>
-                    <input type="text" id="mechanic-item-name" placeholder="What the player takes">
-                </div>
-            `;
-            break;
-        case 'teleport':
-            settings = `
-                <div class="mechanic-setting">
-                    <label>Destination place:</label>
-                    <select id="mechanic-teleport-place">
-                        ${places.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
-                    </select>
-                </div>
-            `;
-            break;
-        case 'trigger':
-            settings = `
-                <div class="mechanic-setting">
-                    <label>Trigger message:</label>
-                    <input type="text" id="mechanic-trigger-msg" placeholder="What happens">
-                </div>
-            `;
-            break;
+    
+    if (!type) {
+        settingsContainer.style.display = 'none';
+        return;
     }
-
-    settingsContainer.innerHTML = settings;
+    
+    // Hide all individual mechanic settings divs
+    document.querySelectorAll('[id^="mechanic-"][id$="-settings"]').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // Show the appropriate settings for this type
+    const typeSettingsId = `mechanic-${type}-settings`;
+    const typeSettingsEl = document.getElementById(typeSettingsId);
+    if (typeSettingsEl) {
+        typeSettingsEl.style.display = 'block';
+        settingsContainer.style.display = 'block';
+    } else {
+        settingsContainer.style.display = 'none';
+    }
 }
 
 async function addMechanic(e) {
@@ -511,17 +491,32 @@ async function addMechanic(e) {
 
     switch(type) {
         case 'open':
-            actionValue = { state: document.getElementById('mechanic-open-state').value || 'open' };
+            actionValue = { state: document.getElementById('mechanic-open-state')?.value || 'open' };
+            break;
+        case 'examine':
+            actionValue = { description: document.getElementById('mechanic-examine-desc')?.value || '' };
             break;
         case 'take':
-            actionValue = { item: document.getElementById('mechanic-item-name').value || 'item' };
+            actionValue = { item: document.getElementById('mechanic-item-name')?.value || 'item' };
+            break;
+        case 'use':
+            actionValue = { effect: document.getElementById('mechanic-use-effect')?.value || '' };
+            break;
+        case 'purchase':
+            const priceInput = document.getElementById('mechanic-purchase-price');
+            actionValue = { gold_price: parseInt(priceInput?.value || '0') || 0 };
             break;
         case 'teleport':
-            actionValue = { destination: document.getElementById('mechanic-teleport-place').value };
+            actionValue = { destination: document.getElementById('mechanic-teleport-dest')?.value || '' };
+            break;
+        case 'create_area':
+            actionValue = { area_name: document.getElementById('mechanic-create_area-name')?.value || 'New Area' };
             break;
         case 'trigger':
-            actionValue = { message: document.getElementById('mechanic-trigger-msg').value || 'Something happens' };
+            actionValue = { event_name: document.getElementById('mechanic-trigger-event')?.value || 'trigger' };
             break;
+        default:
+            actionValue = {};
     }
 
     try {
@@ -543,6 +538,14 @@ async function addMechanic(e) {
             showMessage('Mechanic added successfully!', 'success');
             closeMechanicsModal();
             loadPlaceObjects();
+        } else {
+            showMessage('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error adding mechanic:', error);
+        showMessage('Error adding mechanic', 'error');
+    }
+}
         } else {
             showMessage('Error: ' + data.message, 'error');
         }
