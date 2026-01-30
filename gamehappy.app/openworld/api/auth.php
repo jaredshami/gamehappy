@@ -4,9 +4,19 @@
  */
 
 header('Content-Type: application/json');
-session_start();
+
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $action = $_GET['action'] ?? $_POST['action'] ?? null;
+
+if (!$action) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Action parameter required']);
+    exit;
+}
 
 switch ($action) {
     case 'login':
@@ -21,7 +31,7 @@ switch ($action) {
         break;
     default:
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
 }
 
 function login() {
