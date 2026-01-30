@@ -731,13 +731,16 @@ async function createExitLink(direction, toPlaceId) {
                 showMessage('Exit created but automatic reverse failed', 'warning', 'exit-message');
             }
             
-            // Create spatial synchronization exits for places the current place already connects to
-            // If current place has exits to other places, create exits from new place to those same places
+            // Create spatial synchronization exits for grid alignment
+            // For each place the current place connects to, create corresponding exits from new place
             for (const exit of currentPlaceExits) {
-                // Only sync if it's a different direction
+                // Only sync if it's a DIFFERENT direction (not the same direction we just created)
                 if (exit.direction.toLowerCase() !== direction.toLowerCase()) {
                     try {
-                        // Create exit from new place to existing destinations
+                        // The exit is FROM current place TO exit.to_place_id in exit.direction
+                        // This means: current place is south/west/etc of exit.to_place_id
+                        // So new place should be south/west/etc of exit.to_place_id too
+                        // Create exit from new place to that same destination in same direction
                         const spatialResponse = await fetch(API_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
