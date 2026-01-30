@@ -754,6 +754,28 @@ async function createExitLink(direction, toPlaceId) {
                 showMessage('Exit created but automatic reverse failed', 'warning', 'exit-message');
             }
             
+            // Smart spatial synchronization for adjacent places
+            // If assigning diagonally or to cardinal directions, sync adjacent places
+            for (const exit of currentPlaceExits) {
+                const calculatedDirection = calculateRelativeDirection(direction, exit.direction);
+                if (calculatedDirection) {
+                    try {
+                        await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'link_places',
+                                from_place_id: toPlaceId,
+                                to_place_id: exit.to_place_id,
+                                direction: calculatedDirection
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Spatial sync failed:', error);
+                    }
+                }
+            }
+            
             await loadExitsForPlace(navState.place_id);
             showExitsView();
         } else {
@@ -762,6 +784,49 @@ async function createExitLink(direction, toPlaceId) {
     } catch (error) {
         showMessage('Error creating exit', 'error', 'exit-message');
     }
+}
+
+function calculateRelativeDirection(fromDirection, toDirection) {
+    // Calculate where place X is relative to place B if:
+    // B is fromDirection from A, and X is toDirection from A
+    // Returns the direction from B to X
+    
+    // Direction vectors
+    const directionMap = {
+        'north': { x: 0, y: -1 },
+        'south': { x: 0, y: 1 },
+        'east': { x: 1, y: 0 },
+        'west': { x: -1, y: 0 },
+        'northeast': { x: 1, y: -1 },
+        'northwest': { x: -1, y: -1 },
+        'southeast': { x: 1, y: 1 },
+        'southwest': { x: -1, y: 1 }
+    };
+    
+    const reverseMap = {
+        '1,-1': 'northeast',
+        '-1,-1': 'northwest',
+        '1,1': 'southeast',
+        '-1,1': 'southwest',
+        '1,0': 'east',
+        '-1,0': 'west',
+        '0,1': 'south',
+        '0,-1': 'north'
+    };
+    
+    const from = directionMap[fromDirection];
+    const to = directionMap[toDirection];
+    
+    if (!from || !to) return null;
+    
+    // Calculate relative position: where 'to' is relative to 'from'
+    const relX = to.x - from.x;
+    const relY = to.y - from.y;
+    
+    // Ignore if same direction
+    if (relX === 0 && relY === 0) return null;
+    
+    return reverseMap[relX + ',' + relY] || null;
 }
 
 async function deleteExit(exitId) {
