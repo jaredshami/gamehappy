@@ -708,12 +708,16 @@ function renderDestinationList(direction) {
 }
 
 async function createExitLink(direction, toPlaceId) {
-    // Map opposite directions
+    // Map opposite directions (including diagonals)
     const oppositeDirections = {
         'north': 'south',
         'south': 'north',
         'east': 'west',
-        'west': 'east'
+        'west': 'east',
+        'northeast': 'southwest',
+        'southwest': 'northeast',
+        'northwest': 'southeast',
+        'southeast': 'northwest'
     };
     
     try {
@@ -751,33 +755,6 @@ async function createExitLink(direction, toPlaceId) {
                 showMessage('Exit created but automatic reverse failed', 'warning', 'exit-message');
             }
             
-            // Create spatial synchronization exits for grid alignment
-            // For each place the current place connects to, create corresponding exits from new place
-            for (const exit of currentPlaceExits) {
-                // Only sync if it's a DIFFERENT direction (not the same direction we just created)
-                if (exit.direction.toLowerCase() !== direction.toLowerCase()) {
-                    try {
-                        // The exit is FROM current place TO exit.to_place_id in exit.direction
-                        // This means: current place is south/west/etc of exit.to_place_id
-                        // So new place should be south/west/etc of exit.to_place_id too
-                        // Create exit from new place to that same destination in same direction
-                        const spatialResponse = await fetch(API_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                action: 'link_places',
-                                from_place_id: toPlaceId,
-                                to_place_id: exit.to_place_id,
-                                direction: exit.direction
-                            })
-                        });
-                        // Don't worry if this fails - it might already exist
-                    } catch (error) {
-                        console.error('Spatial sync failed:', error);
-                    }
-                }
-            }
-            
             await loadExitsForPlace(navState.place_id);
             showExitsView();
         } else {
@@ -791,12 +768,16 @@ async function createExitLink(direction, toPlaceId) {
 async function deleteExit(exitId) {
     if (!confirm('Delete this exit?')) return;
     
-    // Map opposite directions
+    // Map opposite directions (including diagonals)
     const oppositeDirections = {
         'north': 'south',
         'south': 'north',
         'east': 'west',
-        'west': 'east'
+        'west': 'east',
+        'northeast': 'southwest',
+        'southwest': 'northeast',
+        'northwest': 'southeast',
+        'southeast': 'northwest'
     };
     
     // Find the exit to get its destination and direction
