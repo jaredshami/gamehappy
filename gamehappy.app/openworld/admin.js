@@ -720,7 +720,7 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    // Build vertical bars HTML (for inside center tile)
+    // Build vertical bars HTML (for right side)
     const renderVerticalBar = (dir) => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
@@ -729,42 +729,34 @@ function renderDirectionButtons(existingExits) {
         const dirLabel = dir === 'up' ? 'Up' : 'Down';
         
         if (exists) {
-            return `
-                <div class="vertical-bar-inside ${dir}" style="cursor: pointer;">
-                    <div class="exit-content">
-                        <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
-                        <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
-                    </div>
-                    <div class="connection-type-badge connection-badge-${dir}" 
-                         style="background-color: ${connectionTypeColors[connType]}"
-                         title="${connectionTypeLabels[connType]}"
-                         onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
-                        ${connectionTypeLabels[connType].charAt(0)}
-                    </div>
+            return `<div class="vertical-bar ${dir}" onclick="navigateExitsMap(${exit.to_place_id}, '${dir}')" style="cursor: pointer;">
+                <div class="exit-content">
+                    <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                    <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
                 </div>
-            `;
+                <div class="connection-type-badge connection-badge-${dir}" 
+                     style="background-color: ${connectionTypeColors[connType]}"
+                     title="${connectionTypeLabels[connType]}"
+                     onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
+                    ${connectionTypeLabels[connType].charAt(0)}
+                </div>
+            </div>`;
         } else {
-            return `
-                <div class="vertical-bar-inside ${dir}">
-                    <button type="button" class="btn-add" onclick="showDestinationView('${dir}')">
-                        ${icon} ${dirLabel}
-                    </button>
-                </div>
-            `;
+            return `<div class="vertical-bar ${dir}">
+                <button type="button" class="btn-add" onclick="showDestinationView('${dir}')">
+                    ${icon} ${dirLabel}
+                </button>
+            </div>`;
         }
     };
     
     const upBar = renderVerticalBar('up');
     const downBar = renderVerticalBar('down');
     
-    // Build center tile with vertical bars inside
-    const centerTile = `
-        <div class="center-tile">
-            ${upBar}
-            <span class="place-name">${escapeHtml(navState.place_name)}</span>
-            ${downBar}
-        </div>
-    `;
+    // Build center tile without vertical bars
+    const centerTile = `<div class="center-tile">
+        <span class="place-name">${escapeHtml(navState.place_name)}</span>
+    </div>`;
     
     // Inject the cardinal directions and center tile
     let html = '';
@@ -849,6 +841,9 @@ function renderDirectionButtons(existingExits) {
             return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
         }
     }).join('');
+    
+    // Vertical bars on the right side
+    html += `<div class="vertical-bars-container">${upBar}${downBar}</div>`;
     
     // Bottom row
     html += cardinalDirs.filter(d => d === 'southwest').map(d => {
