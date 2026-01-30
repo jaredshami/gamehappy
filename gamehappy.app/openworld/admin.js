@@ -662,18 +662,6 @@ function renderDirectionButtons(existingExits) {
         'no_throughway': '#888888'
     };
     
-    // Adjacency map - which directions are next to each other
-    const adjacentDirections = {
-        'north': ['northwest', 'northeast'],
-        'south': ['southwest', 'southeast'],
-        'east': ['northeast', 'southeast'],
-        'west': ['northwest', 'southwest'],
-        'northeast': ['north', 'east'],
-        'northwest': ['north', 'west'],
-        'southeast': ['south', 'east'],
-        'southwest': ['south', 'west']
-    };
-    
     container.innerHTML = directions.map(dir => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
@@ -681,40 +669,18 @@ function renderDirectionButtons(existingExits) {
         const connType = exit?.connection_type || 'full';
         
         if (exists) {
-            // Create badge for center-to-direction connection
-            let badgesHtml = `
-                <div class="connection-type-badge connection-badge-${dir}" 
-                     style="background-color: ${connectionTypeColors[connType]}"
-                     title="${connectionTypeLabels[connType]}"
-                     onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
-                    ${connectionTypeLabels[connType].charAt(0)}
-                </div>
-            `;
-            
-            // Create badges between this direction and adjacent directions
-            const adjacents = adjacentDirections[dir];
-            for (const adjDir of adjacents) {
-                if (existingDirections.has(adjDir)) {
-                    const adjExit = existingExits.find(e => e.direction.toLowerCase() === adjDir);
-                    const adjConnType = adjExit?.connection_type || 'full';
-                    badgesHtml += `
-                        <div class="connection-type-badge connection-badge-between-${dir}-${adjDir}" 
-                             style="background-color: ${connectionTypeColors[adjConnType]}"
-                             title="${connectionTypeLabels[adjConnType]}"
-                             onclick="showConnectionTypeModal(${adjExit.id}, '${adjConnType}'); event.stopPropagation();">
-                            ${connectionTypeLabels[adjConnType].charAt(0)}
-                        </div>
-                    `;
-                }
-            }
-            
             return `
                 <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
                         <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
                     </div>
-                    ${badgesHtml}
+                    <div class="connection-type-badge connection-badge-${dir}" 
+                         style="background-color: ${connectionTypeColors[connType]}"
+                         title="${connectionTypeLabels[connType]}"
+                         onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
+                        ${connectionTypeLabels[connType].charAt(0)}
+                    </div>
                 </div>
             `;
         } else {

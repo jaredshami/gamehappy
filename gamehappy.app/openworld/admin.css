@@ -420,162 +420,72 @@ button {
     position: relative;
 }
 
-/* Main connection badges (center to direction) */
+/* North badge - positioned between north place bottom and center place top */
 .connection-badge-north {
-    top: -14px;
+    position: absolute;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 10;
 }
 
+/* South badge - positioned between center place bottom and south place top */
 .connection-badge-south {
-    bottom: -14px;
+    position: absolute;
+    bottom: -85px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
 }
 
+/* East badge - positioned between center place right and east place left */
 .connection-badge-east {
+    position: absolute;
     top: 50%;
-    right: -14px;
+    right: -85px;
     transform: translateY(-50%);
     z-index: 10;
 }
 
+/* West badge - positioned between west place right and center place left */
 .connection-badge-west {
+    position: absolute;
     top: 50%;
-    left: -14px;
+    left: -85px;
     transform: translateY(-50%);
     z-index: 10;
 }
 
+/* Northeast badge - positioned at corner between center and NE */
 .connection-badge-northeast {
-    top: -14px;
-    right: -14px;
+    position: absolute;
+    top: -85px;
+    right: -85px;
     z-index: 10;
 }
 
+/* Northwest badge - positioned at corner between center and NW */
 .connection-badge-northwest {
-    top: -14px;
-    left: -14px;
+    position: absolute;
+    top: -85px;
+    left: -85px;
     z-index: 10;
 }
 
+/* Southeast badge - positioned at corner between center and SE */
 .connection-badge-southeast {
-    bottom: -14px;
-    right: -14px;
+    position: absolute;
+    bottom: -85px;
+    right: -85px;
     z-index: 10;
 }
 
+/* Southwest badge - positioned at corner between center and SW */
 .connection-badge-southwest {
-    bottom: -14px;
-    left: -14px;
+    position: absolute;
+    bottom: -85px;
+    left: -85px;
     z-index: 10;
-}
-
-/* Badges between adjacent places */
-/* North adjacent to NE and NW */
-.connection-badge-between-north-northeast {
-    top: -7px;
-    right: -21px;
-    z-index: 9;
-}
-
-.connection-badge-between-north-northwest {
-    top: -7px;
-    left: -21px;
-    z-index: 9;
-}
-
-/* South adjacent to SE and SW */
-.connection-badge-between-south-southeast {
-    bottom: -7px;
-    right: -21px;
-    z-index: 9;
-}
-
-.connection-badge-between-south-southwest {
-    bottom: -7px;
-    left: -21px;
-    z-index: 9;
-}
-
-/* East adjacent to NE and SE */
-.connection-badge-between-east-northeast {
-    top: -21px;
-    right: -7px;
-    z-index: 9;
-}
-
-.connection-badge-between-east-southeast {
-    bottom: -21px;
-    right: -7px;
-    z-index: 9;
-}
-
-/* West adjacent to NW and SW */
-.connection-badge-between-west-northwest {
-    top: -21px;
-    left: -7px;
-    z-index: 9;
-}
-
-.connection-badge-between-west-southwest {
-    bottom: -21px;
-    left: -7px;
-    z-index: 9;
-}
-
-/* NE adjacent to N and E */
-.connection-badge-between-northeast-north {
-    left: -21px;
-    top: -7px;
-    z-index: 9;
-}
-
-.connection-badge-between-northeast-east {
-    top: -21px;
-    right: -7px;
-    z-index: 9;
-}
-
-/* NW adjacent to N and W */
-.connection-badge-between-northwest-north {
-    right: -21px;
-    top: -7px;
-    z-index: 9;
-}
-
-.connection-badge-between-northwest-west {
-    top: -21px;
-    left: -7px;
-    z-index: 9;
-}
-
-/* SE adjacent to S and E */
-.connection-badge-between-southeast-south {
-    left: -21px;
-    bottom: -7px;
-    z-index: 9;
-}
-
-.connection-badge-between-southeast-east {
-    bottom: -21px;
-    right: -7px;
-    z-index: 9;
-}
-
-/* SW adjacent to S and W */
-.connection-badge-between-southwest-south {
-    right: -21px;
-    bottom: -7px;
-    z-index: 9;
-}
-
-.connection-badge-between-southwest-west {
-    bottom: -21px;
-    left: -7px;
-    z-index: 9;
 }
 
 .direction-button button.btn-remove {
