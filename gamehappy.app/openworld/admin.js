@@ -636,7 +636,7 @@ function renderDirectionButtons(existingExits) {
     // Store exits globally for use in destination list filtering
     currentPlaceExits = existingExits;
     
-    const directions = ['north', 'south', 'east', 'west'];
+    const directions = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
     const existingDirections = new Set(existingExits.map(e => e.direction.toLowerCase()));
     
     const container = document.getElementById('direction-buttons');
@@ -646,7 +646,11 @@ function renderDirectionButtons(existingExits) {
         'north': '↑',
         'south': '↓',
         'east': '→',
-        'west': '←'
+        'west': '←',
+        'northeast': '↗',
+        'northwest': '↖',
+        'southeast': '↘',
+        'southwest': '↙'
     };
     
     container.innerHTML = directions.map(dir => {

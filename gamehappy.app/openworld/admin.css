@@ -276,6 +276,38 @@ button {
     height: 140px;
 }
 
+/* Northeast - top right */
+#direction-buttons > :nth-child(5) {
+    grid-column: 3;
+    grid-row: 1;
+    width: 140px;
+    height: 140px;
+}
+
+/* Northwest - top left */
+#direction-buttons > :nth-child(6) {
+    grid-column: 1;
+    grid-row: 1;
+    width: 140px;
+    height: 140px;
+}
+
+/* Southeast - bottom right */
+#direction-buttons > :nth-child(7) {
+    grid-column: 3;
+    grid-row: 3;
+    width: 140px;
+    height: 140px;
+}
+
+/* Southwest - bottom left */
+#direction-buttons > :nth-child(8) {
+    grid-column: 1;
+    grid-row: 3;
+    width: 140px;
+    height: 140px;
+}
+
 /* Center place card */
 #direction-buttons::before {
     content: attr(data-place-name);
