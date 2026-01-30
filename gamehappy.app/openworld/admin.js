@@ -757,6 +757,16 @@ async function createExitLink(direction, toPlaceId) {
             // Smart spatial synchronization for adjacent places
             // Check all 8 possible directions from the new place and auto-assign any that exist
             const allDirections = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
+            const oppositeMap = {
+                'north': 'south',
+                'south': 'north',
+                'east': 'west',
+                'west': 'east',
+                'northeast': 'southwest',
+                'southwest': 'northeast',
+                'northwest': 'southeast',
+                'southeast': 'northwest'
+            };
             
             for (const checkDir of allDirections) {
                 // For each direction FROM the new place, find if a place exists in that calculated position
@@ -764,13 +774,15 @@ async function createExitLink(direction, toPlaceId) {
                     const calculatedDirection = calculateRelativeDirection(direction, exit.direction);
                     if (calculatedDirection === checkDir) {
                         try {
+                            // Create exit FROM the adjacent place TO the new place in the calculated direction
+                            // (not the other way around)
                             await fetch(API_URL, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     action: 'link_places',
-                                    from_place_id: toPlaceId,
-                                    to_place_id: exit.to_place_id,
+                                    from_place_id: exit.to_place_id,
+                                    to_place_id: toPlaceId,
                                     direction: checkDir
                                 })
                             });
