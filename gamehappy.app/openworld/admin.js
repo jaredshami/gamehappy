@@ -592,30 +592,123 @@ function closeDestinationSelector() {
 }
 
 async function navigateExitsMap(placeId, direction) {
-    // Animate the transition to the new place
+    // Animate the tiles to their new positions based on navigation direction
     const container = document.getElementById('direction-buttons');
+    const buttons = container.querySelectorAll('.direction-button');
     
-    // Calculate position shift based on direction
-    const directionShifts = {
-        'north': { x: 0, y: 1 },
-        'south': { x: 0, y: -1 },
-        'east': { x: -1, y: 0 },
-        'west': { x: 1, y: 0 },
-        'northeast': { x: -1, y: 1 },
-        'northwest': { x: 1, y: 1 },
-        'southeast': { x: -1, y: -1 },
-        'southwest': { x: 1, y: -1 }
+    // Direction rotation map - how directions shift when you move in a direction
+    const directionRotations = {
+        'north': {
+            'north': 'center', 'center': 'south', 'south': 'out',
+            'northeast': 'east', 'northwest': 'west', 'southeast': 'out', 'southwest': 'out',
+            'east': 'out', 'west': 'out'
+        },
+        'south': {
+            'south': 'center', 'center': 'north', 'north': 'out',
+            'southeast': 'east', 'southwest': 'west', 'northeast': 'out', 'northwest': 'out',
+            'east': 'out', 'west': 'out'
+        },
+        'east': {
+            'east': 'center', 'center': 'west', 'west': 'out',
+            'northeast': 'north', 'southeast': 'south', 'northwest': 'out', 'southwest': 'out',
+            'north': 'out', 'south': 'out'
+        },
+        'west': {
+            'west': 'center', 'center': 'east', 'east': 'out',
+            'northwest': 'north', 'southwest': 'south', 'northeast': 'out', 'southeast': 'out',
+            'north': 'out', 'south': 'out'
+        },
+        'northeast': {
+            'northeast': 'center', 'center': 'southwest', 'southwest': 'out',
+            'north': 'west', 'east': 'south', 'northwest': 'out', 'southeast': 'out'
+        },
+        'northwest': {
+            'northwest': 'center', 'center': 'southeast', 'southeast': 'out',
+            'north': 'east', 'west': 'south', 'northeast': 'out', 'southwest': 'out'
+        },
+        'southeast': {
+            'southeast': 'center', 'center': 'northwest', 'northwest': 'out',
+            'south': 'west', 'east': 'north', 'southwest': 'out', 'northeast': 'out'
+        },
+        'southwest': {
+            'southwest': 'center', 'center': 'northeast', 'northeast': 'out',
+            'south': 'east', 'west': 'north', 'southeast': 'out', 'northwest': 'out'
+        }
     };
     
-    const shift = directionShifts[direction] || { x: 0, y: 0 };
+    const gridPositions = {
+        'northwest': { row: 0, col: 0 },
+        'north': { row: 0, col: 1 },
+        'northeast': { row: 0, col: 2 },
+        'west': { row: 1, col: 0 },
+        'center': { row: 1, col: 1 },
+        'east': { row: 1, col: 2 },
+        'southwest': { row: 2, col: 0 },
+        'south': { row: 2, col: 1 },
+        'southeast': { row: 2, col: 2 }
+    };
     
-    // Apply fade out animation
-    container.style.opacity = '0';
-    container.style.transition = 'opacity 0.3s ease-out';
+    // Store animations for each button
+    const animations = [];
+    buttons.forEach(button => {
+        const dirClass = Array.from(button.classList).find(cls => 
+            ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'].includes(cls)
+        );
+        
+        if (dirClass) {
+            const newPosition = directionRotations[direction]?.[dirClass];
+            if (newPosition) {
+                animations.push({
+                    button,
+                    oldDir: dirClass,
+                    newDir: newPosition
+                });
+            }
+        }
+    });
     
-    // Wait for fade out to start
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // Animate each button
+    const animationDuration = 0.5; // seconds
+    const startTime = Date.now();
     
+    const animateFrame = () => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min(elapsed / animationDuration, 1);
+        
+        animations.forEach(({ button, oldDir, newDir }) => {
+            const oldPos = gridPositions[oldDir];
+            const newPos = gridPositions[newDir];
+            
+            // Calculate pixel offset for animation
+            const rowDiff = (newPos.row - oldPos.row) * 130; // 130px approx per grid cell
+            const colDiff = (newPos.col - oldPos.col) * 130;
+            
+            // Current position in animation
+            const currentRow = rowDiff * progress;
+            const currentCol = colDiff * progress;
+            
+            // Calculate opacity - fade out if going out of view, fade in if coming in
+            let opacity = 1;
+            if (newDir === 'out') {
+                opacity = 1 - progress;
+            }
+            
+            button.style.transform = `translate(${currentCol}px, ${currentRow}px)`;
+            button.style.opacity = opacity;
+        });
+        
+        if (progress < 1) {
+            requestAnimationFrame(animateFrame);
+        } else {
+            // Animation complete - load new place
+            completeNavigation(placeId);
+        }
+    };
+    
+    requestAnimationFrame(animateFrame);
+}
+
+async function completeNavigation(placeId) {
     // Update place info
     navState.place_id = placeId;
     const place = places.find(p => p.id === placeId);
@@ -626,11 +719,6 @@ async function navigateExitsMap(placeId, direction) {
     
     // Load exits for new place
     await loadExitsForPlace(placeId);
-    
-    // Re-enable transitions and fade back in
-    container.style.transition = 'opacity 0.4s ease-in';
-    container.style.opacity = '1';
-    
     showExitsView();
 }
 
