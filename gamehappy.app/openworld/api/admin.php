@@ -89,6 +89,9 @@ try {
         case 'update_exit_type':
             updateExitType($pdo);
             break;
+        case 'ensure_connection_type_column':
+            ensureConnectionTypeColumn($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -495,4 +498,22 @@ function updateExitType($pdo) {
     
     echo json_encode(['success' => true, 'message' => 'Connection type updated']);
     exit;
+}
+
+function ensureConnectionTypeColumn($pdo) {
+    try {
+        // Check if column exists by trying to select it
+        $stmt = $pdo->query("SELECT connection_type FROM ow_place_exits LIMIT 1");
+        echo json_encode(['success' => true, 'message' => 'Column already exists']);
+        exit;
+    } catch (Exception $e) {
+        // Column doesn't exist, try to create it
+        try {
+            $pdo->exec("ALTER TABLE ow_place_exits ADD COLUMN connection_type VARCHAR(20) DEFAULT 'full'");
+            echo json_encode(['success' => true, 'message' => 'Column created successfully']);
+            exit;
+        } catch (Exception $createError) {
+            throw new Exception('Failed to create column: ' . $createError->getMessage());
+        }
+    }
 }
