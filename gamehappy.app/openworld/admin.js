@@ -636,11 +636,11 @@ function renderDirectionButtons(existingExits) {
         
         if (exists) {
             return `
-                <div class="direction-button ${dir}">
-                    <button type="button" class="btn-primary" disabled title="${escapeHtml(exit.destination_name || 'Unknown')}">
-                        ${icon}
-                        <span class="arrow-label">${dir.charAt(0).toUpperCase() + dir.slice(1)}</span>
-                    </button>
+                <div class="direction-button ${dir} has-exit">
+                    <div class="exit-content">
+                        <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                        <button type="button" class="btn-remove" onclick="deleteExit(${exit.id})">Remove</button>
+                    </div>
                 </div>
             `;
         } else {

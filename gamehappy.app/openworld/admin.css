@@ -332,6 +332,49 @@ button {
     white-space: nowrap;
 }
 
+.direction-button.has-exit {
+    background-color: #FFD700;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.exit-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+}
+
+.exit-destination {
+    color: #000;
+    font-weight: bold;
+    font-size: 13px;
+    word-wrap: break-word;
+    max-width: 120px;
+}
+
+.btn-remove {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.btn-remove:hover {
+    background-color: #cc0000;
+}
+
 .btn-logout:hover {
     background-color: #990000;
 }
