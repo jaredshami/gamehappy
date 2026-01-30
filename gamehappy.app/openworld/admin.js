@@ -837,9 +837,10 @@ function calculateRelativeDirection(fromDirection, toDirection) {
     
     if (!from || !to) return null;
     
-    // Calculate relative position: where 'to' is relative to 'from'
-    const relX = to.x - from.x;
-    const relY = to.y - from.y;
+    // Calculate relative position: where 'from' is relative to 'to'
+    // (reverse the subtraction to get the correct direction)
+    const relX = from.x - to.x;
+    const relY = from.y - to.y;
     
     // Ignore if same direction
     if (relX === 0 && relY === 0) return null;
