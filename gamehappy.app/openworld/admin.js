@@ -670,7 +670,7 @@ function renderDirectionButtons(existingExits) {
         
         if (exists) {
             return `
-                <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer;">
+                <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer; position: relative;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
                         <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>

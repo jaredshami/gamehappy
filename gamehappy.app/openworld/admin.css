@@ -420,71 +420,71 @@ button {
     position: relative;
 }
 
-/* North badge - positioned between north place bottom and center place top */
+/* North badge - at bottom of north place */
 .connection-badge-north {
     position: absolute;
-    top: -14px;
+    bottom: -14px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
 }
 
-/* South badge - positioned between center place bottom and south place top */
+/* South badge - at bottom of south place */
 .connection-badge-south {
     position: absolute;
-    bottom: -85px;
+    bottom: -14px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
 }
 
-/* East badge - positioned between center place right and east place left */
+/* East badge - at right edge of east place */
 .connection-badge-east {
     position: absolute;
+    right: -14px;
     top: 50%;
-    right: -85px;
     transform: translateY(-50%);
     z-index: 10;
 }
 
-/* West badge - positioned between west place right and center place left */
+/* West badge - at right edge of west place */
 .connection-badge-west {
     position: absolute;
+    right: -14px;
     top: 50%;
-    left: -85px;
     transform: translateY(-50%);
     z-index: 10;
 }
 
-/* Northeast badge - positioned at corner between center and NE */
+/* Northeast badge - at bottom-right corner of northeast place */
 .connection-badge-northeast {
     position: absolute;
-    top: -85px;
-    right: -85px;
+    bottom: -14px;
+    right: -14px;
     z-index: 10;
 }
 
-/* Northwest badge - positioned at corner between center and NW */
+/* Northwest badge - at bottom-right corner of northwest place */
 .connection-badge-northwest {
     position: absolute;
-    top: -85px;
-    left: -85px;
+    bottom: -14px;
+    right: -14px;
     z-index: 10;
 }
 
-/* Southeast badge - positioned at corner between center and SE */
+/* Southeast badge - at bottom-right corner of southeast place */
 .connection-badge-southeast {
     position: absolute;
-    bottom: -85px;
-    right: -85px;
+    bottom: -14px;
+    right: -14px;
     z-index: 10;
 }
 
-/* Southwest badge - positioned at corner between center and SW */
+/* Southwest badge - at bottom-right corner of southwest place */
 .connection-badge-southwest {
     position: absolute;
-    bottom: -85px;
-    left: -85px;
+    bottom: -14px;
+    right: -14px;
     z-index: 10;
 }
 
