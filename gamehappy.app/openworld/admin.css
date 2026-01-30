@@ -235,66 +235,77 @@ button {
 
 #direction-buttons {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto auto auto;
     gap: 15px;
     margin: 30px 0;
-    min-height: 300px;
+    min-height: 500px;
     align-items: center;
     justify-items: center;
+    padding: 20px;
 }
 
-/* North - top center */
-#direction-buttons > :nth-child(1) {
+/* Up - top center */
+#direction-buttons > :nth-child(5) {
     grid-column: 2;
     grid-row: 1;
     width: 100%;
 }
 
-/* South - bottom center */
-#direction-buttons > :nth-child(2) {
+/* North - second row center */
+#direction-buttons > :nth-child(1) {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     width: 100%;
 }
 
-/* East - middle right (before Up/Down column) */
+/* South - fourth row center */
+#direction-buttons > :nth-child(2) {
+    grid-column: 2;
+    grid-row: 4;
+    width: 100%;
+}
+
+/* East - middle right */
 #direction-buttons > :nth-child(3) {
     grid-column: 3;
-    grid-row: 2;
+    grid-row: 3;
     width: 100%;
 }
 
 /* West - middle left */
 #direction-buttons > :nth-child(4) {
     grid-column: 1;
-    grid-row: 2;
-    width: 100%;
-}
-
-/* Up - top far right */
-#direction-buttons > :nth-child(5) {
-    grid-column: 4;
-    grid-row: 1;
-    width: 100%;
-}
-
-/* Down - bottom far right */
-#direction-buttons > :nth-child(6) {
-    grid-column: 4;
     grid-row: 3;
     width: 100%;
 }
 
-/* Center place label */
-#direction-buttons::before {
-    content: 'Place';
+/* Down - bottom center */
+#direction-buttons > :nth-child(6) {
     grid-column: 2;
-    grid-row: 2;
-    color: #64b5f6;
+    grid-row: 5;
+    width: 100%;
+}
+
+/* Center place card */
+#direction-buttons::before {
+    content: attr(data-place-name);
+    grid-column: 2;
+    grid-row: 3;
+    background: #1b5e20;
+    border: 2px solid #4caf50;
+    color: #81c784;
+    padding: 20px;
+    border-radius: 8px;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 16px;
     text-align: center;
+    width: 100%;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
 }
 
 .direction-button {

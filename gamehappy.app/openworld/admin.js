@@ -620,15 +620,27 @@ function renderDirectionButtons(existingExits) {
     const existingDirections = new Set(existingExits.map(e => e.direction.toLowerCase()));
     
     const container = document.getElementById('direction-buttons');
+    container.setAttribute('data-place-name', navState.place_name);
+    
+    const directionIcons = {
+        'north': '↑',
+        'south': '↓',
+        'east': '→',
+        'west': '←',
+        'up': '⬆',
+        'down': '⬇'
+    };
+    
     container.innerHTML = directions.map(dir => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
+        const icon = directionIcons[dir];
         
         if (exists) {
             return `
                 <div class="direction-button" style="position: relative;">
                     <button type="button" class="btn-primary" disabled style="width: 100%; opacity: 0.6;">
-                        ↑ ${dir.charAt(0).toUpperCase() + dir.slice(1)}
+                        ${icon} ${dir.charAt(0).toUpperCase() + dir.slice(1)}
                     </button>
                     <div style="font-size: 12px; color: #90caf9; margin-top: 5px; text-align: center;">
                         → ${escapeHtml(exit.destination_name || 'Unknown')}
@@ -641,7 +653,7 @@ function renderDirectionButtons(existingExits) {
         } else {
             return `
                 <button type="button" class="btn-add" onclick="showDestinationView('${dir}')" style="width: 100%; padding: 15px; min-height: 80px;">
-                    ${dir === 'north' ? '↑' : dir === 'south' ? '↓' : dir === 'east' ? '→' : dir === 'west' ? '←' : dir === 'up' ? '⬆' : '⬇'} ${dir.charAt(0).toUpperCase() + dir.slice(1)}
+                    ${icon} ${dir.charAt(0).toUpperCase() + dir.slice(1)}
                 </button>
             `;
         }
