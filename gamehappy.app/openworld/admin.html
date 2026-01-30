@@ -47,17 +47,10 @@
                 <!-- WORLDS VIEW -->
                 <section id="view-worlds" class="view active">
                     <div class="panel">
-                        <h2>Create New World</h2>
-                        <form id="world-form" onsubmit="createWorld(event)">
-                            <input type="text" id="world-name" placeholder="World name" required>
-                            <textarea id="world-desc" placeholder="World description"></textarea>
-                            <button type="submit" class="btn-primary">Create World</button>
-                        </form>
-                        <div id="world-message" class="message"></div>
-                    </div>
-
-                    <div class="panel">
-                        <h2>Worlds</h2>
+                        <div class="section-header">
+                            <h2>Worlds</h2>
+                            <button class="btn-add" onclick="openModal('modal-create-world')">+ Add World</button>
+                        </div>
                         <div id="worlds-list" class="list-container"></div>
                     </div>
                 </section>
@@ -65,13 +58,11 @@
                 <!-- PLACES VIEW -->
                 <section id="view-places" class="view">
                     <div class="panel">
-                        <h2>Create New Place</h2>
-                        <form id="place-form" onsubmit="createPlace(event)">
-                            <input type="text" id="place-name" placeholder="Place name" required>
-                            <textarea id="place-desc" placeholder="Place description"></textarea>
-                            <button type="submit" class="btn-primary">Create Place</button>
-                        </form>
-                        <div id="place-message" class="message"></div>
+                        <div class="section-header">
+                            <h2>Places</h2>
+                            <button class="btn-add" onclick="openModal('modal-create-place')">+ Add Place</button>
+                        </div>
+                        <div id="places-list" class="list-container"></div>
                     </div>
 
                     <div class="panel">
@@ -95,27 +86,15 @@
                         </form>
                         <div id="exit-message" class="message"></div>
                     </div>
-
-                    <div class="panel">
-                        <h2>Places in World</h2>
-                        <div id="places-list" class="list-container"></div>
-                    </div>
                 </section>
 
                 <!-- OBJECTS VIEW -->
                 <section id="view-objects" class="view">
                     <div class="panel">
-                        <h2>Create New Object</h2>
-                        <form id="object-form" onsubmit="createObject(event)">
-                            <input type="text" id="object-name" placeholder="Object name" required>
-                            <textarea id="object-desc" placeholder="Object description"></textarea>
-                            <button type="submit" class="btn-primary">Create Object</button>
-                        </form>
-                        <div id="object-message" class="message"></div>
-                    </div>
-
-                    <div class="panel">
-                        <h2>Objects in Place</h2>
+                        <div class="section-header">
+                            <h2>Objects</h2>
+                            <button class="btn-add" onclick="openModal('modal-create-object')">+ Add Object</button>
+                        </div>
                         <div id="objects-list" class="list-container"></div>
                     </div>
                 </section>
@@ -128,59 +107,174 @@
                     </div>
 
                     <div class="panel">
-                        <h2>Add Mechanic</h2>
-                        <form id="mechanic-form" onsubmit="addMechanic(event)">
-                            <label>Mechanic Type:</label>
-                            <select id="mechanic-type" onchange="showMechanicSettings()" required>
-                                <option value="">-- Select Type --</option>
-                                <option value="open">Open/Close</option>
-                                <option value="examine">Examine</option>
-                                <option value="take">Take/Pick Up</option>
-                                <option value="use">Use</option>
-                                <option value="purchase">Purchase (Gold)</option>
-                                <option value="teleport">Teleport</option>
-                                <option value="create_area">Create Sub-Area</option>
-                                <option value="trigger">Trigger Event</option>
-                            </select>
-                            <input type="text" id="mechanic-name" placeholder="Mechanic name" required>
-                            <textarea id="mechanic-desc" placeholder="Mechanic description"></textarea>
-                            <div id="mechanic-settings" style="margin-top: 15px; padding: 10px; background: #222; border-radius: 4px; display: none;">
-                                <div id="mechanic-purchase-settings" style="display: none;">
-                                    <label>Gold Price: <input type="number" id="mechanic-purchase-price" placeholder="0" min="0" style="margin-left: 10px;"></label>
-                                </div>
-                                <div id="mechanic-open-settings" style="display: none;">
-                                    <label>State: <input type="text" id="mechanic-open-state" placeholder="e.g., open, unlocked" style="margin-left: 10px;"></label>
-                                </div>
-                                <div id="mechanic-examine-settings" style="display: none;">
-                                    <label>Description: <textarea id="mechanic-examine-desc" placeholder="What they see when examining" rows="3" style="margin-left: 10px;"></textarea></label>
-                                </div>
-                                <div id="mechanic-take-settings" style="display: none;">
-                                    <label>Item Name: <input type="text" id="mechanic-item-name" placeholder="What they take" style="margin-left: 10px;"></label>
-                                </div>
-                                <div id="mechanic-use-settings" style="display: none;">
-                                    <label>Effect: <textarea id="mechanic-use-effect" placeholder="What happens when used" rows="3" style="margin-left: 10px;"></textarea></label>
-                                </div>
-                                <div id="mechanic-teleport-settings" style="display: none;">
-                                    <label>Destination: <input type="text" id="mechanic-teleport-dest" placeholder="Target location" style="margin-left: 10px;"></label>
-                                </div>
-                                <div id="mechanic-create_area-settings" style="display: none;">
-                                    <label>Area Name: <input type="text" id="mechanic-create_area-name" placeholder="New area name" style="margin-left: 10px;"></label>
-                                </div>
-                                <div id="mechanic-trigger-settings" style="display: none;">
-                                    <label>Event Name: <input type="text" id="mechanic-trigger-event" placeholder="e.g., alarm, gate_opens" style="margin-left: 10px;"></label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn-primary">Add Mechanic</button>
-                        </form>
-                        <div id="mechanic-message" class="message"></div>
-                    </div>
-
-                    <div class="panel">
-                        <h2>Mechanics</h2>
+                        <div class="section-header">
+                            <h2>Mechanics</h2>
+                            <button class="btn-add" onclick="openModal('modal-add-mechanic')">+ Add Mechanic</button>
+                        </div>
                         <div id="mechanics-list" class="list-container"></div>
                     </div>
                 </section>
             </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    
+    <!-- Create World Modal -->
+    <div id="modal-create-world" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-create-world')">×</button>
+            <h2>Create New World</h2>
+            <form id="world-form" onsubmit="createWorld(event)">
+                <label>
+                    World Name
+                    <input type="text" id="world-name" placeholder="Enter world name" required>
+                </label>
+                <label>
+                    Description
+                    <textarea id="world-desc" placeholder="Enter world description"></textarea>
+                </label>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Create World</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-create-world')">Cancel</button>
+                </div>
+            </form>
+            <div id="world-message" class="message"></div>
+        </div>
+    </div>
+
+    <!-- Create Place Modal -->
+    <div id="modal-create-place" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-create-place')">×</button>
+            <h2>Create New Place</h2>
+            <form id="place-form" onsubmit="createPlace(event)">
+                <label>
+                    Place Name
+                    <input type="text" id="place-name" placeholder="Enter place name" required>
+                </label>
+                <label>
+                    Description
+                    <textarea id="place-desc" placeholder="Enter place description"></textarea>
+                </label>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Create Place</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-create-place')">Cancel</button>
+                </div>
+            </form>
+            <div id="place-message" class="message"></div>
+        </div>
+    </div>
+
+    <!-- Create Object Modal -->
+    <div id="modal-create-object" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-create-object')">×</button>
+            <h2>Create New Object</h2>
+            <form id="object-form" onsubmit="createObject(event)">
+                <label>
+                    Object Name
+                    <input type="text" id="object-name" placeholder="Enter object name" required>
+                </label>
+                <label>
+                    Description
+                    <textarea id="object-desc" placeholder="Enter object description"></textarea>
+                </label>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Create Object</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-create-object')">Cancel</button>
+                </div>
+            </form>
+            <div id="object-message" class="message"></div>
+        </div>
+    </div>
+
+    <!-- Add Mechanic Modal -->
+    <div id="modal-add-mechanic" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-add-mechanic')">×</button>
+            <h2>Add Mechanic</h2>
+            <form id="mechanic-form" onsubmit="addMechanic(event)">
+                <label>
+                    Mechanic Type
+                    <select id="mechanic-type" onchange="showMechanicSettings()" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="open">Open/Close</option>
+                        <option value="examine">Examine</option>
+                        <option value="take">Take/Pick Up</option>
+                        <option value="use">Use</option>
+                        <option value="purchase">Purchase (Gold)</option>
+                        <option value="teleport">Teleport</option>
+                        <option value="create_area">Create Sub-Area</option>
+                        <option value="trigger">Trigger Event</option>
+                    </select>
+                </label>
+                <label>
+                    Mechanic Name
+                    <input type="text" id="mechanic-name" placeholder="Enter mechanic name" required>
+                </label>
+                <label>
+                    Description
+                    <textarea id="mechanic-desc" placeholder="Enter mechanic description"></textarea>
+                </label>
+                
+                <div id="mechanic-settings" style="display: none;">
+                    <div id="mechanic-purchase-settings" style="display: none;">
+                        <label>
+                            Gold Price
+                            <input type="number" id="mechanic-purchase-price" placeholder="0" min="0">
+                        </label>
+                    </div>
+                    <div id="mechanic-open-settings" style="display: none;">
+                        <label>
+                            State
+                            <input type="text" id="mechanic-open-state" placeholder="e.g., open, unlocked">
+                        </label>
+                    </div>
+                    <div id="mechanic-examine-settings" style="display: none;">
+                        <label>
+                            Description
+                            <textarea id="mechanic-examine-desc" placeholder="What they see when examining" rows="3"></textarea>
+                        </label>
+                    </div>
+                    <div id="mechanic-take-settings" style="display: none;">
+                        <label>
+                            Item Name
+                            <input type="text" id="mechanic-item-name" placeholder="What they take">
+                        </label>
+                    </div>
+                    <div id="mechanic-use-settings" style="display: none;">
+                        <label>
+                            Effect
+                            <textarea id="mechanic-use-effect" placeholder="What happens when used" rows="3"></textarea>
+                        </label>
+                    </div>
+                    <div id="mechanic-teleport-settings" style="display: none;">
+                        <label>
+                            Destination
+                            <input type="text" id="mechanic-teleport-dest" placeholder="Target location">
+                        </label>
+                    </div>
+                    <div id="mechanic-create_area-settings" style="display: none;">
+                        <label>
+                            Area Name
+                            <input type="text" id="mechanic-create_area-name" placeholder="New area name">
+                        </label>
+                    </div>
+                    <div id="mechanic-trigger-settings" style="display: none;">
+                        <label>
+                            Event Name
+                            <input type="text" id="mechanic-trigger-event" placeholder="e.g., alarm, gate_opens">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Add Mechanic</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-add-mechanic')">Cancel</button>
+                </div>
+            </form>
+            <div id="mechanic-message" class="message"></div>
         </div>
     </div>
 

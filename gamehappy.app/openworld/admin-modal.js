@@ -1,4 +1,4 @@
-// Admin Dashboard - Hierarchical Navigation
+// Admin Dashboard - Modal-based Forms with Clickable Lists
 const API_URL = '/openworld/api/admin.php';
 
 // Navigation state
@@ -16,6 +16,53 @@ let worlds = [];
 let places = [];
 let objects = [];
 let currentObjectMechanics = [];
+
+// ===== MODAL FUNCTIONS =====
+function openWorldModal() {
+    document.getElementById('modal-create-world').style.display = 'flex';
+}
+
+function openPlaceModal() {
+    if (!navState.world_id) {
+        alert('Select a world first');
+        return;
+    }
+    document.getElementById('modal-create-place').style.display = 'flex';
+}
+
+function openObjectModal() {
+    if (!navState.place_id) {
+        alert('Select a place first');
+        return;
+    }
+    document.getElementById('modal-create-object').style.display = 'flex';
+}
+
+function openMechanicModal() {
+    if (!navState.object_id) {
+        alert('Select an object first');
+        return;
+    }
+    document.getElementById('modal-create-mechanic').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    // Reset forms
+    const modal = document.getElementById(modalId);
+    const form = modal.querySelector('form');
+    if (form) form.reset();
+    // Clear messages
+    const messages = modal.querySelectorAll('.message');
+    messages.forEach(m => m.textContent = '');
+}
+
+// Close modal on background click
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
 
 // ===== AUTHENTICATION =====
 window.addEventListener('load', () => {
@@ -176,9 +223,10 @@ async function createWorld(e) {
         const data = await response.json();
         if (data.success) {
             showMessage('World created!', 'success', 'world-message');
-            document.getElementById('world-form').reset();
-            loadWorlds();
-            closeModal('modal-create-world');
+            setTimeout(() => {
+                closeModal('modal-create-world');
+                loadWorlds();
+            }, 800);
         } else {
             showMessage('Error: ' + data.message, 'error', 'world-message');
         }
@@ -190,12 +238,12 @@ async function createWorld(e) {
 function renderWorldsList() {
     const container = document.getElementById('worlds-list');
     if (worlds.length === 0) {
-        container.innerHTML = '<p class="empty-state">No worlds yet. Create one to get started!</p>';
+        container.innerHTML = '<p class="empty-state">No worlds yet. Click + Add World to create one!</p>';
         return;
     }
 
     container.innerHTML = worlds.map(world => `
-        <div class="list-item clickable" onclick="navigateToPlaces(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="cursor: pointer;">
+        <div class="list-item clickable" onclick="navigateToPlaces(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" title="Click to view places">
             <div class="list-item-content">
                 <div class="list-item-title">${escapeHtml(world.name)}</div>
                 <div class="list-item-desc">${escapeHtml(world.description || '(no description)')}</div>
@@ -252,9 +300,10 @@ async function createPlace(e) {
         const data = await response.json();
         if (data.success) {
             showMessage('Place created!', 'success', 'place-message');
-            document.getElementById('place-form').reset();
-            loadPlacesForWorld(navState.world_id);
-            closeModal('modal-create-place');
+            setTimeout(() => {
+                closeModal('modal-create-place');
+                loadPlacesForWorld(navState.world_id);
+            }, 800);
         } else {
             showMessage('Error: ' + data.message, 'error', 'place-message');
         }
@@ -307,12 +356,12 @@ async function linkPlaces(e) {
 function renderPlacesList() {
     const container = document.getElementById('places-list');
     if (places.length === 0) {
-        container.innerHTML = '<p class="empty-state">No places yet. Create one to get started!</p>';
+        container.innerHTML = '<p class="empty-state">No places yet. Click + Add Place to create one!</p>';
         return;
     }
 
     container.innerHTML = places.map(place => `
-        <div class="list-item clickable" onclick="navigateToObjects(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="cursor: pointer;">
+        <div class="list-item clickable" onclick="navigateToObjects(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" title="Click to view objects">
             <div class="list-item-content">
                 <div class="list-item-title">${escapeHtml(place.name)}</div>
                 <div class="list-item-desc">${escapeHtml(place.description || '(no description)')}</div>
@@ -368,9 +417,10 @@ async function createObject(e) {
         const data = await response.json();
         if (data.success) {
             showMessage('Object created!', 'success', 'object-message');
-            document.getElementById('object-form').reset();
-            loadObjectsForPlace(navState.place_id);
-            closeModal('modal-create-object');
+            setTimeout(() => {
+                closeModal('modal-create-object');
+                loadObjectsForPlace(navState.place_id);
+            }, 800);
         } else {
             showMessage('Error: ' + data.message, 'error', 'object-message');
         }
@@ -382,12 +432,12 @@ async function createObject(e) {
 function renderObjectsList() {
     const container = document.getElementById('objects-list');
     if (objects.length === 0) {
-        container.innerHTML = '<p class="empty-state">No objects yet. Create one to get started!</p>';
+        container.innerHTML = '<p class="empty-state">No objects yet. Click + Add Object to create one!</p>';
         return;
     }
 
     container.innerHTML = objects.map(obj => `
-        <div class="list-item clickable" onclick="navigateToObjectDetails(${obj.id}, '${escapeHtml(obj.name).replace(/'/g, "\\'")}')" style="cursor: pointer;">
+        <div class="list-item clickable" onclick="navigateToObjectDetails(${obj.id}, '${escapeHtml(obj.name).replace(/'/g, "\\'")}')" title="Click to view mechanics">
             <div class="list-item-content">
                 <div class="list-item-title">${escapeHtml(obj.name)}</div>
                 <div class="list-item-desc">${escapeHtml(obj.description || '(no description)')}</div>
@@ -419,6 +469,7 @@ async function loadObjectDetails(objectId) {
 
 function renderObjectDetails(object, mechanics) {
     currentObjectMechanics = mechanics;
+    document.getElementById('object-title').textContent = object.name;
     
     const detailsDiv = document.getElementById('object-details-content');
     detailsDiv.innerHTML = `
@@ -430,7 +481,7 @@ function renderObjectDetails(object, mechanics) {
 
     const mechanicsList = document.getElementById('mechanics-list');
     if (mechanics.length === 0) {
-        mechanicsList.innerHTML = '<p class="empty-state">No mechanics yet. Add one above!</p>';
+        mechanicsList.innerHTML = '<p class="empty-state">No mechanics yet. Click + Add Mechanic above!</p>';
     } else {
         mechanicsList.innerHTML = mechanics.map(m => `
             <div class="list-item">
@@ -530,9 +581,10 @@ async function addMechanic(e) {
         const data = await response.json();
         if (data.success) {
             showMessage('Mechanic added!', 'success', 'mechanic-message');
-            document.getElementById('mechanic-form').reset();
-            loadObjectDetails(navState.object_id);
-            closeModal('modal-add-mechanic');
+            setTimeout(() => {
+                closeModal('modal-create-mechanic');
+                loadObjectDetails(navState.object_id);
+            }, 800);
         } else {
             showMessage('Error: ' + data.message, 'error', 'mechanic-message');
         }
@@ -565,38 +617,6 @@ async function deleteMechanic(mechanicId) {
         showMessage('Error deleting mechanic', 'error', 'mechanic-message');
     }
 }
-
-// ===== MODAL FUNCTIONS =====
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Close modal when clicking outside
-window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-        e.target.style.display = 'none';
-    }
-});
-
-// Close modal when clicking close button
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal-close')) {
-        const modal = e.target.closest('.modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-});
 
 // ===== UTILITIES =====
 function showMessage(message, type, elementId) {
