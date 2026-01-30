@@ -360,6 +360,26 @@ button {
     max-width: 120px;
 }
 
+.direction-button button.btn-remove {
+    width: auto;
+    height: auto;
+    font-size: 11px;
+    background-color: transparent;
+    color: #ff4444;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: underline;
+    flex-direction: row;
+    gap: 0;
+}
+
+.direction-button button.btn-remove:hover {
+    color: #cc0000;
+}
+
 .btn-remove {
     background-color: transparent;
     color: #ff4444;
