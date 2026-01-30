@@ -786,6 +786,19 @@ async function createExitLink(direction, toPlaceId) {
                                     direction: checkDir
                                 })
                             });
+                            
+                            // Also create the reverse exit (FROM new place TO adjacent place)
+                            const reverseDir = oppositeMap[checkDir];
+                            await fetch(API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'link_places',
+                                    from_place_id: toPlaceId,
+                                    to_place_id: exit.to_place_id,
+                                    direction: reverseDir
+                                })
+                            });
                         } catch (error) {
                             console.error('Spatial sync failed:', error);
                         }
